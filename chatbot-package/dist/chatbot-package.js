@@ -6,166 +6,82 @@ var e = Object.defineProperty, t = (t, n) => {
 		enumerable: !0
 	});
 	return n || e(r, Symbol.toStringTag, { value: "Module" }), r;
-}, n = {
-	xmlns: "http://www.w3.org/2000/svg",
-	width: 24,
-	height: 24,
-	viewBox: "0 0 24 24",
-	fill: "none",
-	stroke: "currentColor",
-	"stroke-width": 2,
-	"stroke-linecap": "round",
-	"stroke-linejoin": "round"
-}, r = ([e, t, n]) => {
-	let i = document.createElementNS("http://www.w3.org/2000/svg", e);
-	return Object.keys(t).forEach((e) => {
-		i.setAttribute(e, String(t[e]));
-	}), n?.length && n.forEach((e) => {
-		let t = r(e);
-		i.appendChild(t);
-	}), i;
-}, i = (e, t = {}) => r([
-	"svg",
-	{
-		...n,
-		...t
-	},
-	e
-]), a = (e) => {
-	for (let t in e) if (t.startsWith("aria-") || t === "role" || t === "title") return !0;
-	return !1;
-}, o = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) === t).join(" ").trim(), s = (e) => e.replace(/^([A-Z])|[\s-_]+(\w)/g, (e, t, n) => n ? n.toUpperCase() : t.toLowerCase()), c = (e) => {
-	let t = s(e);
-	return t.charAt(0).toUpperCase() + t.slice(1);
-}, l = (e) => Array.from(e.attributes).reduce((e, t) => (e[t.name] = t.value, e), {}), u = (e) => typeof e == "string" ? e : !e || !e.class ? "" : e.class && typeof e.class == "string" ? e.class.split(" ") : e.class && Array.isArray(e.class) ? e.class : "", d = (e, { nameAttr: t, icons: r, attrs: s }) => {
-	let d = e.getAttribute(t);
-	if (d == null) return;
-	let f = r[c(d)];
-	if (!f) return console.warn(`${e.outerHTML} icon name was not found in the provided icons object.`);
-	let p = l(e), ee = a(p) ? {} : { "aria-hidden": "true" }, m = {
-		...n,
-		"data-lucide": d,
-		...ee,
-		...s,
-		...p
-	}, te = u(p), h = u(s), g = o("lucide", `lucide-${d}`, ...te, ...h);
-	g && Object.assign(m, { class: g });
-	let _ = i(f, m);
-	return e.parentNode?.replaceChild(_, e);
-}, f = [["path", { d: "m12 19-7-7 7-7" }], ["path", { d: "M19 12H5" }]], p = [
-	["path", { d: "M12 8V4H8" }],
-	["rect", {
-		width: "16",
-		height: "12",
-		x: "4",
-		y: "8",
-		rx: "2"
-	}],
-	["path", { d: "M2 14h2" }],
-	["path", { d: "M20 14h2" }],
-	["path", { d: "M15 13v2" }],
-	["path", { d: "M9 13v2" }]
-], ee = [["path", { d: "M21.801 10A10 10 0 1 1 17 3.335" }], ["path", { d: "m9 11 3 3L22 4" }]], m = [["path", { d: "M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719" }]], te = [["path", { d: "M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z" }], ["path", { d: "M6 12h16" }]], h = [["circle", {
-	cx: "12",
-	cy: "8",
-	r: "5"
-}], ["path", { d: "M20 21a8 8 0 0 0-16 0" }]], g = [["path", { d: "M18 6 6 18" }], ["path", { d: "m6 6 12 12" }]], _ = ({ icons: e = {}, nameAttr: t = "data-lucide", attrs: n = {}, root: r = document, inTemplates: i } = {}) => {
-	if (!Object.values(e).length) throw Error("Please provide an icons object.\nIf you want to use all the icons you can import it like:\n `import { createIcons, icons } from 'lucide';\nlucide.createIcons({icons});`");
-	if (r === void 0) throw Error("`createIcons()` only works in a browser environment.");
-	if (Array.from(r.querySelectorAll(`[${t}]`)).forEach((r) => d(r, {
-		nameAttr: t,
-		icons: e,
-		attrs: n
-	})), i && Array.from(r.querySelectorAll("template")).forEach((r) => _({
-		icons: e,
-		nameAttr: t,
-		attrs: n,
-		root: r.content,
-		inTemplates: i
-	})), t === "data-lucide") {
-		let t = r.querySelectorAll("[icon-name]");
-		t.length > 0 && (console.warn("[Lucide] Some icons were found with the now deprecated icon-name attribute. These will still be replaced for backwards compatibility, but will no longer be supported in v1.0 and you should switch to data-lucide"), Array.from(t).forEach((t) => d(t, {
-			nameAttr: "icon-name",
-			icons: e,
-			attrs: n
-		})));
-	}
-}, v = Object.create(null);
-v.open = "0", v.close = "1", v.ping = "2", v.pong = "3", v.message = "4", v.upgrade = "5", v.noop = "6";
-var y = Object.create(null);
-Object.keys(v).forEach((e) => {
-	y[v[e]] = e;
+}, n = Object.create(null);
+n.open = "0", n.close = "1", n.ping = "2", n.pong = "3", n.message = "4", n.upgrade = "5", n.noop = "6";
+var r = Object.create(null);
+Object.keys(n).forEach((e) => {
+	r[n[e]] = e;
 });
-var b = {
+var i = {
 	type: "error",
 	data: "parser error"
-}, ne = typeof Blob == "function" || typeof Blob < "u" && Object.prototype.toString.call(Blob) === "[object BlobConstructor]", x = typeof ArrayBuffer == "function", S = (e) => typeof ArrayBuffer.isView == "function" ? ArrayBuffer.isView(e) : e && e.buffer instanceof ArrayBuffer, C = ({ type: e, data: t }, n, r) => ne && t instanceof Blob ? n ? r(t) : w(t, r) : x && (t instanceof ArrayBuffer || S(t)) ? n ? r(t) : w(new Blob([t]), r) : r(v[e] + (t || "")), w = (e, t) => {
+}, a = typeof Blob == "function" || typeof Blob < "u" && Object.prototype.toString.call(Blob) === "[object BlobConstructor]", o = typeof ArrayBuffer == "function", s = (e) => typeof ArrayBuffer.isView == "function" ? ArrayBuffer.isView(e) : e && e.buffer instanceof ArrayBuffer, c = ({ type: e, data: t }, r, i) => a && t instanceof Blob ? r ? i(t) : l(t, i) : o && (t instanceof ArrayBuffer || s(t)) ? r ? i(t) : l(new Blob([t]), i) : i(n[e] + (t || "")), l = (e, t) => {
 	let n = new FileReader();
 	return n.onload = function() {
 		let e = n.result.split(",")[1];
 		t("b" + (e || ""));
 	}, n.readAsDataURL(e);
 };
-function T(e) {
+function u(e) {
 	return e instanceof Uint8Array ? e : e instanceof ArrayBuffer ? new Uint8Array(e) : new Uint8Array(e.buffer, e.byteOffset, e.byteLength);
 }
-var E;
-function re(e, t) {
-	if (ne && e.data instanceof Blob) return e.data.arrayBuffer().then(T).then(t);
-	if (x && (e.data instanceof ArrayBuffer || S(e.data))) return t(T(e.data));
-	C(e, !1, (e) => {
-		E ||= new TextEncoder(), t(E.encode(e));
+var d;
+function f(e, t) {
+	if (a && e.data instanceof Blob) return e.data.arrayBuffer().then(u).then(t);
+	if (o && (e.data instanceof ArrayBuffer || s(e.data))) return t(u(e.data));
+	c(e, !1, (e) => {
+		d ||= new TextEncoder(), t(d.encode(e));
 	});
 }
 //#endregion
 //#region node_modules/engine.io-parser/build/esm/contrib/base64-arraybuffer.js
-var D = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/", O = typeof Uint8Array > "u" ? [] : new Uint8Array(256);
-for (let e = 0; e < 64; e++) O[D.charCodeAt(e)] = e;
-var ie = (e) => {
+var p = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/", m = typeof Uint8Array > "u" ? [] : new Uint8Array(256);
+for (let e = 0; e < 64; e++) m[p.charCodeAt(e)] = e;
+var h = (e) => {
 	let t = e.length * .75, n = e.length, r, i = 0, a, o, s, c;
 	e[e.length - 1] === "=" && (t--, e[e.length - 2] === "=" && t--);
 	let l = new ArrayBuffer(t), u = new Uint8Array(l);
-	for (r = 0; r < n; r += 4) a = O[e.charCodeAt(r)], o = O[e.charCodeAt(r + 1)], s = O[e.charCodeAt(r + 2)], c = O[e.charCodeAt(r + 3)], u[i++] = a << 2 | o >> 4, u[i++] = (o & 15) << 4 | s >> 2, u[i++] = (s & 3) << 6 | c & 63;
+	for (r = 0; r < n; r += 4) a = m[e.charCodeAt(r)], o = m[e.charCodeAt(r + 1)], s = m[e.charCodeAt(r + 2)], c = m[e.charCodeAt(r + 3)], u[i++] = a << 2 | o >> 4, u[i++] = (o & 15) << 4 | s >> 2, u[i++] = (s & 3) << 6 | c & 63;
 	return l;
-}, ae = typeof ArrayBuffer == "function", k = (e, t) => {
+}, g = typeof ArrayBuffer == "function", _ = (e, t) => {
 	if (typeof e != "string") return {
 		type: "message",
-		data: se(e, t)
+		data: te(e, t)
 	};
 	let n = e.charAt(0);
 	return n === "b" ? {
 		type: "message",
-		data: oe(e.substring(1), t)
-	} : y[n] ? e.length > 1 ? {
-		type: y[n],
+		data: ee(e.substring(1), t)
+	} : r[n] ? e.length > 1 ? {
+		type: r[n],
 		data: e.substring(1)
-	} : { type: y[n] } : b;
-}, oe = (e, t) => ae ? se(ie(e), t) : {
+	} : { type: r[n] } : i;
+}, ee = (e, t) => g ? te(h(e), t) : {
 	base64: !0,
 	data: e
-}, se = (e, t) => {
+}, te = (e, t) => {
 	switch (t) {
 		case "blob": return e instanceof Blob ? e : new Blob([e]);
 		default: return e instanceof ArrayBuffer ? e : e.buffer;
 	}
-}, ce = "", A = (e, t) => {
+}, v = "", y = (e, t) => {
 	let n = e.length, r = Array(n), i = 0;
 	e.forEach((e, a) => {
-		C(e, !1, (e) => {
-			r[a] = e, ++i === n && t(r.join(ce));
+		c(e, !1, (e) => {
+			r[a] = e, ++i === n && t(r.join(v));
 		});
 	});
-}, le = (e, t) => {
-	let n = e.split(ce), r = [];
+}, b = (e, t) => {
+	let n = e.split(v), r = [];
 	for (let e = 0; e < n.length; e++) {
-		let i = k(n[e], t);
+		let i = _(n[e], t);
 		if (r.push(i), i.type === "error") break;
 	}
 	return r;
 };
-function j() {
+function x() {
 	return new TransformStream({ transform(e, t) {
-		re(e, (n) => {
+		f(e, (n) => {
 			let r = n.length, i;
 			if (r < 126) i = new Uint8Array(1), new DataView(i.buffer).setUint8(0, r);
 			else if (r < 65536) {
@@ -181,44 +97,44 @@ function j() {
 		});
 	} });
 }
-var M;
-function N(e) {
+var S;
+function C(e) {
 	return e.reduce((e, t) => e + t.length, 0);
 }
-function P(e, t) {
+function w(e, t) {
 	if (e[0].length === t) return e.shift();
 	let n = new Uint8Array(t), r = 0;
 	for (let i = 0; i < t; i++) n[i] = e[0][r++], r === e[0].length && (e.shift(), r = 0);
 	return e.length && r < e[0].length && (e[0] = e[0].slice(r)), n;
 }
-function F(e, t) {
-	M ||= new TextDecoder();
-	let n = [], r = 0, i = -1, a = !1;
-	return new TransformStream({ transform(o, s) {
-		for (n.push(o);;) {
+function ne(e, t) {
+	S ||= new TextDecoder();
+	let n = [], r = 0, a = -1, o = !1;
+	return new TransformStream({ transform(s, c) {
+		for (n.push(s);;) {
 			if (r === 0) {
-				if (N(n) < 1) break;
-				let e = P(n, 1);
-				a = (e[0] & 128) == 128, i = e[0] & 127, r = i < 126 ? 3 : i === 126 ? 1 : 2;
+				if (C(n) < 1) break;
+				let e = w(n, 1);
+				o = (e[0] & 128) == 128, a = e[0] & 127, r = a < 126 ? 3 : a === 126 ? 1 : 2;
 			} else if (r === 1) {
-				if (N(n) < 2) break;
-				let e = P(n, 2);
-				i = new DataView(e.buffer, e.byteOffset, e.length).getUint16(0), r = 3;
+				if (C(n) < 2) break;
+				let e = w(n, 2);
+				a = new DataView(e.buffer, e.byteOffset, e.length).getUint16(0), r = 3;
 			} else if (r === 2) {
-				if (N(n) < 8) break;
-				let e = P(n, 8), t = new DataView(e.buffer, e.byteOffset, e.length), a = t.getUint32(0);
-				if (a > 2 ** 21 - 1) {
-					s.enqueue(b);
+				if (C(n) < 8) break;
+				let e = w(n, 8), t = new DataView(e.buffer, e.byteOffset, e.length), o = t.getUint32(0);
+				if (o > 2 ** 21 - 1) {
+					c.enqueue(i);
 					break;
 				}
-				i = a * 2 ** 32 + t.getUint32(4), r = 3;
+				a = o * 2 ** 32 + t.getUint32(4), r = 3;
 			} else {
-				if (N(n) < i) break;
-				let e = P(n, i);
-				s.enqueue(k(a ? e : M.decode(e), t)), r = 0;
+				if (C(n) < a) break;
+				let e = w(n, a);
+				c.enqueue(_(o ? e : S.decode(e), t)), r = 0;
 			}
-			if (i === 0 || i > e) {
-				s.enqueue(b);
+			if (a === 0 || a > e) {
+				c.enqueue(i);
 				break;
 			}
 		}
@@ -226,21 +142,21 @@ function F(e, t) {
 }
 //#endregion
 //#region node_modules/@socket.io/component-emitter/lib/esm/index.js
-function I(e) {
-	if (e) return ue(e);
+function T(e) {
+	if (e) return E(e);
 }
-function ue(e) {
-	for (var t in I.prototype) e[t] = I.prototype[t];
+function E(e) {
+	for (var t in T.prototype) e[t] = T.prototype[t];
 	return e;
 }
-I.prototype.on = I.prototype.addEventListener = function(e, t) {
+T.prototype.on = T.prototype.addEventListener = function(e, t) {
 	return this._callbacks = this._callbacks || {}, (this._callbacks["$" + e] = this._callbacks["$" + e] || []).push(t), this;
-}, I.prototype.once = function(e, t) {
+}, T.prototype.once = function(e, t) {
 	function n() {
 		this.off(e, n), t.apply(this, arguments);
 	}
 	return n.fn = t, this.on(e, n), this;
-}, I.prototype.off = I.prototype.removeListener = I.prototype.removeAllListeners = I.prototype.removeEventListener = function(e, t) {
+}, T.prototype.off = T.prototype.removeListener = T.prototype.removeAllListeners = T.prototype.removeEventListener = function(e, t) {
 	if (this._callbacks = this._callbacks || {}, arguments.length == 0) return this._callbacks = {}, this;
 	var n = this._callbacks["$" + e];
 	if (!n) return this;
@@ -250,7 +166,7 @@ I.prototype.on = I.prototype.addEventListener = function(e, t) {
 		break;
 	}
 	return n.length === 0 && delete this._callbacks["$" + e], this;
-}, I.prototype.emit = function(e) {
+}, T.prototype.emit = function(e) {
 	this._callbacks = this._callbacks || {};
 	for (var t = Array(arguments.length - 1), n = this._callbacks["$" + e], r = 1; r < arguments.length; r++) t[r - 1] = arguments[r];
 	if (n) {
@@ -258,43 +174,43 @@ I.prototype.on = I.prototype.addEventListener = function(e, t) {
 		for (var r = 0, i = n.length; r < i; ++r) n[r].apply(this, t);
 	}
 	return this;
-}, I.prototype.emitReserved = I.prototype.emit, I.prototype.listeners = function(e) {
+}, T.prototype.emitReserved = T.prototype.emit, T.prototype.listeners = function(e) {
 	return this._callbacks = this._callbacks || {}, this._callbacks["$" + e] || [];
-}, I.prototype.hasListeners = function(e) {
+}, T.prototype.hasListeners = function(e) {
 	return !!this.listeners(e).length;
 };
 //#endregion
 //#region node_modules/engine.io-client/build/esm/globals.js
-var L = typeof Promise == "function" && typeof Promise.resolve == "function" ? (e) => Promise.resolve().then(e) : (e, t) => t(e, 0), R = typeof self < "u" ? self : typeof window < "u" ? window : Function("return this")(), de = "arraybuffer";
+var D = typeof Promise == "function" && typeof Promise.resolve == "function" ? (e) => Promise.resolve().then(e) : (e, t) => t(e, 0), O = typeof self < "u" ? self : typeof window < "u" ? window : Function("return this")(), k = "arraybuffer";
 //#endregion
 //#region node_modules/engine.io-client/build/esm/util.js
-function z(e, ...t) {
+function A(e, ...t) {
 	return t.reduce((t, n) => (e.hasOwnProperty(n) && (t[n] = e[n]), t), {});
 }
-var B = R.setTimeout, V = R.clearTimeout;
-function H(e, t) {
-	t.useNativeTimers ? (e.setTimeoutFn = B.bind(R), e.clearTimeoutFn = V.bind(R)) : (e.setTimeoutFn = R.setTimeout.bind(R), e.clearTimeoutFn = R.clearTimeout.bind(R));
+var j = O.setTimeout, M = O.clearTimeout;
+function N(e, t) {
+	t.useNativeTimers ? (e.setTimeoutFn = j.bind(O), e.clearTimeoutFn = M.bind(O)) : (e.setTimeoutFn = O.setTimeout.bind(O), e.clearTimeoutFn = O.clearTimeout.bind(O));
 }
-var U = 1.33;
-function fe(e) {
-	return typeof e == "string" ? pe(e) : Math.ceil((e.byteLength || e.size) * U);
+var P = 1.33;
+function F(e) {
+	return typeof e == "string" ? I(e) : Math.ceil((e.byteLength || e.size) * P);
 }
-function pe(e) {
+function I(e) {
 	let t = 0, n = 0;
 	for (let r = 0, i = e.length; r < i; r++) t = e.charCodeAt(r), t < 128 ? n += 1 : t < 2048 ? n += 2 : t < 55296 || t >= 57344 ? n += 3 : (r++, n += 4);
 	return n;
 }
-function W() {
+function L() {
 	return Date.now().toString(36).substring(3) + Math.random().toString(36).substring(2, 5);
 }
 //#endregion
 //#region node_modules/engine.io-client/build/esm/contrib/parseqs.js
-function G(e) {
+function R(e) {
 	let t = "";
 	for (let n in e) e.hasOwnProperty(n) && (t.length && (t += "&"), t += encodeURIComponent(n) + "=" + encodeURIComponent(e[n]));
 	return t;
 }
-function me(e) {
+function re(e) {
 	let t = {}, n = e.split("&");
 	for (let e = 0, r = n.length; e < r; e++) {
 		let r = n[e].split("=");
@@ -304,16 +220,16 @@ function me(e) {
 }
 //#endregion
 //#region node_modules/engine.io-client/build/esm/transport.js
-var K = class extends Error {
+var ie = class extends Error {
 	constructor(e, t, n) {
 		super(e), this.description = t, this.context = n, this.type = "TransportError";
 	}
-}, he = class extends I {
+}, z = class extends T {
 	constructor(e) {
-		super(), this.writable = !1, H(this, e), this.opts = e, this.query = e.query, this.socket = e.socket, this.supportsBinary = !e.forceBase64;
+		super(), this.writable = !1, N(this, e), this.opts = e, this.query = e.query, this.socket = e.socket, this.supportsBinary = !e.forceBase64;
 	}
 	onError(e, t, n) {
-		return super.emitReserved("error", new K(e, t, n)), this;
+		return super.emitReserved("error", new ie(e, t, n)), this;
 	}
 	open() {
 		return this.readyState = "opening", this.doOpen(), this;
@@ -328,7 +244,7 @@ var K = class extends Error {
 		this.readyState = "open", this.writable = !0, super.emitReserved("open");
 	}
 	onData(e) {
-		let t = k(e, this.socket.binaryType);
+		let t = _(e, this.socket.binaryType);
 		this.onPacket(t);
 	}
 	onPacket(e) {
@@ -349,10 +265,10 @@ var K = class extends Error {
 		return this.opts.port && (this.opts.secure && Number(this.opts.port) !== 443 || !this.opts.secure && Number(this.opts.port) !== 80) ? ":" + this.opts.port : "";
 	}
 	_query(e) {
-		let t = G(e);
+		let t = R(e);
 		return t.length ? "?" + t : "";
 	}
-}, q = class extends he {
+}, ae = class extends z {
 	constructor() {
 		super(...arguments), this._polling = !1;
 	}
@@ -380,7 +296,7 @@ var K = class extends Error {
 		this._polling = !0, this.doPoll(), this.emitReserved("poll");
 	}
 	onData(e) {
-		le(e, this.socket.binaryType).forEach((e) => {
+		b(e, this.socket.binaryType).forEach((e) => {
 			if (this.readyState === "opening" && e.type === "open" && this.onOpen(), e.type === "close") return this.onClose({ description: "transport closed by the server" }), !1;
 			this.onPacket(e);
 		}), this.readyState !== "closed" && (this._polling = !1, this.emitReserved("pollComplete"), this.readyState === "open" && this._poll());
@@ -392,7 +308,7 @@ var K = class extends Error {
 		this.readyState === "open" ? e() : this.once("open", e);
 	}
 	write(e) {
-		this.writable = !1, A(e, (e) => {
+		this.writable = !1, y(e, (e) => {
 			this.doWrite(e, () => {
 				this.writable = !0, this.emitReserved("drain");
 			});
@@ -400,17 +316,17 @@ var K = class extends Error {
 	}
 	uri() {
 		let e = this.opts.secure ? "https" : "http", t = this.query || {};
-		return !1 !== this.opts.timestampRequests && (t[this.opts.timestampParam] = W()), !this.supportsBinary && !t.sid && (t.b64 = 1), this.createUri(e, t);
+		return !1 !== this.opts.timestampRequests && (t[this.opts.timestampParam] = L()), !this.supportsBinary && !t.sid && (t.b64 = 1), this.createUri(e, t);
 	}
-}, J = !1;
+}, oe = !1;
 try {
-	J = typeof XMLHttpRequest < "u" && "withCredentials" in new XMLHttpRequest();
+	oe = typeof XMLHttpRequest < "u" && "withCredentials" in new XMLHttpRequest();
 } catch {}
-var ge = J;
+var se = oe;
 //#endregion
 //#region node_modules/engine.io-client/build/esm/transports/polling-xhr.js
-function _e() {}
-var ve = class extends q {
+function ce() {}
+var le = class extends ae {
 	constructor(e) {
 		if (super(e), typeof location < "u") {
 			let t = location.protocol === "https:", n = location.port;
@@ -432,13 +348,13 @@ var ve = class extends q {
 			this.onError("xhr poll error", e, t);
 		}), this.pollXhr = e;
 	}
-}, Y = class e extends I {
+}, B = class e extends T {
 	constructor(e, t, n) {
-		super(), this.createRequest = e, H(this, n), this._opts = n, this._method = n.method || "GET", this._uri = t, this._data = n.data === void 0 ? null : n.data, this._create();
+		super(), this.createRequest = e, N(this, n), this._opts = n, this._method = n.method || "GET", this._uri = t, this._data = n.data === void 0 ? null : n.data, this._create();
 	}
 	_create() {
 		var t;
-		let n = z(this._opts, "agent", "pfx", "key", "passphrase", "cert", "ca", "ciphers", "rejectUnauthorized", "autoUnref");
+		let n = A(this._opts, "agent", "pfx", "key", "passphrase", "cert", "ca", "ciphers", "rejectUnauthorized", "autoUnref");
 		n.xdomain = !!this._opts.xd;
 		let r = this._xhr = this.createRequest(n);
 		try {
@@ -474,7 +390,7 @@ var ve = class extends q {
 	}
 	_cleanup(t) {
 		if (!(this._xhr === void 0 || this._xhr === null)) {
-			if (this._xhr.onreadystatechange = _e, t) try {
+			if (this._xhr.onreadystatechange = ce, t) try {
 				this._xhr.abort();
 			} catch {}
 			typeof document < "u" && delete e.requests[this._index], this._xhr = null;
@@ -488,46 +404,46 @@ var ve = class extends q {
 		this._cleanup();
 	}
 };
-if (Y.requestsCount = 0, Y.requests = {}, typeof document < "u") {
-	if (typeof attachEvent == "function") attachEvent("onunload", ye);
+if (B.requestsCount = 0, B.requests = {}, typeof document < "u") {
+	if (typeof attachEvent == "function") attachEvent("onunload", ue);
 	else if (typeof addEventListener == "function") {
-		let e = "onpagehide" in R ? "pagehide" : "unload";
-		addEventListener(e, ye, !1);
+		let e = "onpagehide" in O ? "pagehide" : "unload";
+		addEventListener(e, ue, !1);
 	}
 }
-function ye() {
-	for (let e in Y.requests) Y.requests.hasOwnProperty(e) && Y.requests[e].abort();
+function ue() {
+	for (let e in B.requests) B.requests.hasOwnProperty(e) && B.requests[e].abort();
 }
-var be = (function() {
-	let e = Se({ xdomain: !1 });
+var de = (function() {
+	let e = pe({ xdomain: !1 });
 	return e && e.responseType !== null;
-})(), xe = class extends ve {
+})(), fe = class extends le {
 	constructor(e) {
 		super(e);
 		let t = e && e.forceBase64;
-		this.supportsBinary = be && !t;
+		this.supportsBinary = de && !t;
 	}
 	request(e = {}) {
-		return Object.assign(e, { xd: this.xd }, this.opts), new Y(Se, this.uri(), e);
+		return Object.assign(e, { xd: this.xd }, this.opts), new B(pe, this.uri(), e);
 	}
 };
-function Se(e) {
+function pe(e) {
 	let t = e.xdomain;
 	try {
-		if (typeof XMLHttpRequest < "u" && (!t || ge)) return new XMLHttpRequest();
+		if (typeof XMLHttpRequest < "u" && (!t || se)) return new XMLHttpRequest();
 	} catch {}
 	if (!t) try {
-		return new R[["Active", "Object"].join("X")]("Microsoft.XMLHTTP");
+		return new O[["Active", "Object"].join("X")]("Microsoft.XMLHTTP");
 	} catch {}
 }
 //#endregion
 //#region node_modules/engine.io-client/build/esm/transports/websocket.js
-var Ce = typeof navigator < "u" && typeof navigator.product == "string" && navigator.product.toLowerCase() === "reactnative", we = class extends he {
+var me = typeof navigator < "u" && typeof navigator.product == "string" && navigator.product.toLowerCase() === "reactnative", he = class extends z {
 	get name() {
 		return "websocket";
 	}
 	doOpen() {
-		let e = this.uri(), t = this.opts.protocols, n = Ce ? {} : z(this.opts, "agent", "perMessageDeflate", "pfx", "key", "passphrase", "cert", "ca", "ciphers", "rejectUnauthorized", "localAddress", "protocolVersion", "origin", "maxPayload", "family", "checkServerIdentity");
+		let e = this.uri(), t = this.opts.protocols, n = me ? {} : A(this.opts, "agent", "perMessageDeflate", "pfx", "key", "passphrase", "cert", "ca", "ciphers", "rejectUnauthorized", "localAddress", "protocolVersion", "origin", "maxPayload", "family", "checkServerIdentity");
 		this.opts.extraHeaders && (n.headers = this.opts.extraHeaders);
 		try {
 			this.ws = this.createSocket(e, t, n);
@@ -548,11 +464,11 @@ var Ce = typeof navigator < "u" && typeof navigator.product == "string" && navig
 		this.writable = !1;
 		for (let t = 0; t < e.length; t++) {
 			let n = e[t], r = t === e.length - 1;
-			C(n, this.supportsBinary, (e) => {
+			c(n, this.supportsBinary, (e) => {
 				try {
 					this.doWrite(n, e);
 				} catch {}
-				r && L(() => {
+				r && D(() => {
 					this.writable = !0, this.emitReserved("drain");
 				}, this.setTimeoutFn);
 			});
@@ -563,18 +479,18 @@ var Ce = typeof navigator < "u" && typeof navigator.product == "string" && navig
 	}
 	uri() {
 		let e = this.opts.secure ? "wss" : "ws", t = this.query || {};
-		return this.opts.timestampRequests && (t[this.opts.timestampParam] = W()), this.supportsBinary || (t.b64 = 1), this.createUri(e, t);
+		return this.opts.timestampRequests && (t[this.opts.timestampParam] = L()), this.supportsBinary || (t.b64 = 1), this.createUri(e, t);
 	}
-}, Te = R.WebSocket || R.MozWebSocket, Ee = {
-	websocket: class extends we {
+}, V = O.WebSocket || O.MozWebSocket, ge = {
+	websocket: class extends he {
 		createSocket(e, t, n) {
-			return Ce ? new Te(e, t, n) : t ? new Te(e, t) : new Te(e);
+			return me ? new V(e, t, n) : t ? new V(e, t) : new V(e);
 		}
 		doWrite(e, t) {
 			this.ws.send(t);
 		}
 	},
-	webtransport: class extends he {
+	webtransport: class extends z {
 		get name() {
 			return "webtransport";
 		}
@@ -590,7 +506,7 @@ var Ce = typeof navigator < "u" && typeof navigator.product == "string" && navig
 				this.onError("webtransport error", e);
 			}), this._transport.ready.then(() => {
 				this._transport.createBidirectionalStream().then((e) => {
-					let t = F(2 ** 53 - 1, this.socket.binaryType), n = e.readable.pipeThrough(t).getReader(), r = j();
+					let t = ne(2 ** 53 - 1, this.socket.binaryType), n = e.readable.pipeThrough(t).getReader(), r = x();
 					r.readable.pipeTo(e.writable), this._writer = r.writable.getWriter();
 					let i = () => {
 						n.read().then(({ done: e, value: t }) => {
@@ -608,7 +524,7 @@ var Ce = typeof navigator < "u" && typeof navigator.product == "string" && navig
 			for (let t = 0; t < e.length; t++) {
 				let n = e[t], r = t === e.length - 1;
 				this._writer.write(n).then(() => {
-					r && L(() => {
+					r && D(() => {
 						this.writable = !0, this.emitReserved("drain");
 					}, this.setTimeoutFn);
 				});
@@ -619,8 +535,8 @@ var Ce = typeof navigator < "u" && typeof navigator.product == "string" && navig
 			(e = this._transport) == null || e.close();
 		}
 	},
-	polling: xe
-}, De = /^(?:(?![^:@\/?#]+:[^:@\/]*@)(http|https|ws|wss):\/\/)?((?:(([^:@\/?#]*)(?::([^:@\/?#]*))?)?@)?((?:[a-f0-9]{0,4}:){2,7}[a-f0-9]{0,4}|[^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/, Oe = [
+	polling: fe
+}, _e = /^(?:(?![^:@\/?#]+:[^:@\/]*@)(http|https|ws|wss):\/\/)?((?:(([^:@\/?#]*)(?::([^:@\/?#]*))?)?@)?((?:[a-f0-9]{0,4}:){2,7}[a-f0-9]{0,4}|[^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/, ve = [
 	"source",
 	"protocol",
 	"authority",
@@ -636,19 +552,19 @@ var Ce = typeof navigator < "u" && typeof navigator.product == "string" && navig
 	"query",
 	"anchor"
 ];
-function ke(e) {
+function H(e) {
 	if (e.length > 8e3) throw "URI too long";
 	let t = e, n = e.indexOf("["), r = e.indexOf("]");
 	n != -1 && r != -1 && (e = e.substring(0, n) + e.substring(n, r).replace(/:/g, ";") + e.substring(r, e.length));
-	let i = De.exec(e || ""), a = {}, o = 14;
-	for (; o--;) a[Oe[o]] = i[o] || "";
-	return n != -1 && r != -1 && (a.source = t, a.host = a.host.substring(1, a.host.length - 1).replace(/;/g, ":"), a.authority = a.authority.replace("[", "").replace("]", "").replace(/;/g, ":"), a.ipv6uri = !0), a.pathNames = Ae(a, a.path), a.queryKey = je(a, a.query), a;
+	let i = _e.exec(e || ""), a = {}, o = 14;
+	for (; o--;) a[ve[o]] = i[o] || "";
+	return n != -1 && r != -1 && (a.source = t, a.host = a.host.substring(1, a.host.length - 1).replace(/;/g, ":"), a.authority = a.authority.replace("[", "").replace("]", "").replace(/;/g, ":"), a.ipv6uri = !0), a.pathNames = ye(a, a.path), a.queryKey = be(a, a.query), a;
 }
-function Ae(e, t) {
+function ye(e, t) {
 	let n = t.replace(/\/{2,9}/g, "/").split("/");
 	return (t.slice(0, 1) == "/" || t.length === 0) && n.splice(0, 1), t.slice(-1) == "/" && n.splice(n.length - 1, 1), n;
 }
-function je(e, t) {
+function be(e, t) {
 	let n = {};
 	return t.replace(/(?:^|&)([^&=]*)=?([^&]*)/g, function(e, t, r) {
 		t && (n[t] = r);
@@ -656,17 +572,17 @@ function je(e, t) {
 }
 //#endregion
 //#region node_modules/engine.io-client/build/esm/socket.js
-var Me = typeof addEventListener == "function" && typeof removeEventListener == "function", Ne = [];
-Me && addEventListener("offline", () => {
-	Ne.forEach((e) => e());
+var xe = typeof addEventListener == "function" && typeof removeEventListener == "function", U = [];
+xe && addEventListener("offline", () => {
+	U.forEach((e) => e());
 }, !1);
-var Pe = class e extends I {
+var W = class e extends T {
 	constructor(e, t) {
-		if (super(), this.binaryType = de, this.writeBuffer = [], this._prevBufferLen = 0, this._pingInterval = -1, this._pingTimeout = -1, this._maxPayload = -1, this._pingTimeoutTime = Infinity, e && typeof e == "object" && (t = e, e = null), e) {
-			let n = ke(e);
+		if (super(), this.binaryType = k, this.writeBuffer = [], this._prevBufferLen = 0, this._pingInterval = -1, this._pingTimeout = -1, this._maxPayload = -1, this._pingTimeoutTime = Infinity, e && typeof e == "object" && (t = e, e = null), e) {
+			let n = H(e);
 			t.hostname = n.host, t.secure = n.protocol === "https" || n.protocol === "wss", t.port = n.port, n.query && (t.query = n.query);
-		} else t.host && (t.hostname = ke(t.host).host);
-		H(this, t), this.secure = t.secure == null ? typeof location < "u" && location.protocol === "https:" : t.secure, t.hostname && !t.port && (t.port = this.secure ? "443" : "80"), this.hostname = t.hostname || (typeof location < "u" ? location.hostname : "localhost"), this.port = t.port || (typeof location < "u" && location.port ? location.port : this.secure ? "443" : "80"), this.transports = [], this._transportsByName = {}, t.transports.forEach((e) => {
+		} else t.host && (t.hostname = H(t.host).host);
+		N(this, t), this.secure = t.secure == null ? typeof location < "u" && location.protocol === "https:" : t.secure, t.hostname && !t.port && (t.port = this.secure ? "443" : "80"), this.hostname = t.hostname || (typeof location < "u" ? location.hostname : "localhost"), this.port = t.port || (typeof location < "u" && location.port ? location.port : this.secure ? "443" : "80"), this.transports = [], this._transportsByName = {}, t.transports.forEach((e) => {
 			let t = e.prototype.name;
 			this.transports.push(t), this._transportsByName[t] = e;
 		}), this.opts = Object.assign({
@@ -681,11 +597,11 @@ var Pe = class e extends I {
 			perMessageDeflate: { threshold: 1024 },
 			transportOptions: {},
 			closeOnBeforeunload: !1
-		}, t), this.opts.path = this.opts.path.replace(/\/$/, "") + (this.opts.addTrailingSlash ? "/" : ""), typeof this.opts.query == "string" && (this.opts.query = me(this.opts.query)), Me && (this.opts.closeOnBeforeunload && (this._beforeunloadEventListener = () => {
+		}, t), this.opts.path = this.opts.path.replace(/\/$/, "") + (this.opts.addTrailingSlash ? "/" : ""), typeof this.opts.query == "string" && (this.opts.query = re(this.opts.query)), xe && (this.opts.closeOnBeforeunload && (this._beforeunloadEventListener = () => {
 			this.transport && (this.transport.removeAllListeners(), this.transport.close());
 		}, addEventListener("beforeunload", this._beforeunloadEventListener, !1)), this.hostname !== "localhost" && (this._offlineEventListener = () => {
 			this._onClose("transport close", { description: "network connection lost" });
-		}, Ne.push(this._offlineEventListener))), this.opts.withCredentials && (this._cookieJar = void 0), this._open();
+		}, U.push(this._offlineEventListener))), this.opts.withCredentials && (this._cookieJar = void 0), this._open();
 	}
 	createTransport(e) {
 		let t = Object.assign({}, this.opts.query);
@@ -758,7 +674,7 @@ var Pe = class e extends I {
 		let e = 1;
 		for (let t = 0; t < this.writeBuffer.length; t++) {
 			let n = this.writeBuffer[t].data;
-			if (n && (e += fe(n)), t > 0 && e > this._maxPayload) return this.writeBuffer.slice(0, t);
+			if (n && (e += F(n)), t > 0 && e > this._maxPayload) return this.writeBuffer.slice(0, t);
 			e += 2;
 		}
 		return this.writeBuffer;
@@ -766,7 +682,7 @@ var Pe = class e extends I {
 	_hasPingExpired() {
 		if (!this._pingTimeoutTime) return !0;
 		let e = Date.now() > this._pingTimeoutTime;
-		return e && (this._pingTimeoutTime = 0, L(() => {
+		return e && (this._pingTimeoutTime = 0, D(() => {
 			this._onClose("ping timeout");
 		}, this.setTimeoutFn)), e;
 	}
@@ -804,16 +720,16 @@ var Pe = class e extends I {
 	}
 	_onClose(e, t) {
 		if (this.readyState === "opening" || this.readyState === "open" || this.readyState === "closing") {
-			if (this.clearTimeoutFn(this._pingTimeoutTimer), this.transport.removeAllListeners("close"), this.transport.close(), this.transport.removeAllListeners(), Me && (this._beforeunloadEventListener && removeEventListener("beforeunload", this._beforeunloadEventListener, !1), this._offlineEventListener)) {
-				let e = Ne.indexOf(this._offlineEventListener);
-				e !== -1 && Ne.splice(e, 1);
+			if (this.clearTimeoutFn(this._pingTimeoutTimer), this.transport.removeAllListeners("close"), this.transport.close(), this.transport.removeAllListeners(), xe && (this._beforeunloadEventListener && removeEventListener("beforeunload", this._beforeunloadEventListener, !1), this._offlineEventListener)) {
+				let e = U.indexOf(this._offlineEventListener);
+				e !== -1 && U.splice(e, 1);
 			}
 			this.readyState = "closed", this.id = null, this.emitReserved("close", e, t), this.writeBuffer = [], this._prevBufferLen = 0;
 		}
 	}
 };
-Pe.protocol = 4;
-var Fe = class extends Pe {
+W.protocol = 4;
+var Se = class extends W {
 	constructor() {
 		super(...arguments), this._upgrades = [];
 	}
@@ -822,7 +738,7 @@ var Fe = class extends Pe {
 	}
 	_probe(e) {
 		let t = this.createTransport(e), n = !1;
-		Pe.priorWebsocketSuccess = !1;
+		W.priorWebsocketSuccess = !1;
 		let r = () => {
 			n || (t.send([{
 				type: "ping",
@@ -830,7 +746,7 @@ var Fe = class extends Pe {
 			}]), t.once("packet", (e) => {
 				if (!n) if (e.type === "pong" && e.data === "probe") {
 					if (this.upgrading = !0, this.emitReserved("upgrading", t), !t) return;
-					Pe.priorWebsocketSuccess = t.name === "websocket", this.transport.pause(() => {
+					W.priorWebsocketSuccess = t.name === "websocket", this.transport.pause(() => {
 						n || this.readyState !== "closed" && (l(), this.setTransport(t), t.send([{ type: "upgrade" }]), this.emitReserved("upgrade", t), t = null, this.upgrading = !1, this.flush());
 					});
 				} else {
@@ -870,54 +786,54 @@ var Fe = class extends Pe {
 		for (let n = 0; n < e.length; n++) ~this.transports.indexOf(e[n]) && t.push(e[n]);
 		return t;
 	}
-}, Ie = class extends Fe {
+}, Ce = class extends Se {
 	constructor(e, t = {}) {
 		let n = typeof e == "object" ? e : t;
 		(!n.transports || n.transports && typeof n.transports[0] == "string") && (n.transports = (n.transports || [
 			"polling",
 			"websocket",
 			"webtransport"
-		]).map((e) => Ee[e]).filter((e) => !!e)), super(e, n);
+		]).map((e) => ge[e]).filter((e) => !!e)), super(e, n);
 	}
 };
-Ie.protocol;
+Ce.protocol;
 //#endregion
 //#region node_modules/socket.io-client/build/esm/url.js
-function Le(e, t = "", n) {
+function we(e, t = "", n) {
 	let r = e;
-	n ||= typeof location < "u" && location, e ??= n.protocol + "//" + n.host, typeof e == "string" && (e.charAt(0) === "/" && (e = e.charAt(1) === "/" ? n.protocol + e : n.host + e), /^(https?|wss?):\/\//.test(e) || (e = n === void 0 ? "https://" + e : n.protocol + "//" + e), r = ke(e)), r.port || (/^(http|ws)$/.test(r.protocol) ? r.port = "80" : /^(http|ws)s$/.test(r.protocol) && (r.port = "443")), r.path = r.path || "/";
+	n ||= typeof location < "u" && location, e ??= n.protocol + "//" + n.host, typeof e == "string" && (e.charAt(0) === "/" && (e = e.charAt(1) === "/" ? n.protocol + e : n.host + e), /^(https?|wss?):\/\//.test(e) || (e = n === void 0 ? "https://" + e : n.protocol + "//" + e), r = H(e)), r.port || (/^(http|ws)$/.test(r.protocol) ? r.port = "80" : /^(http|ws)s$/.test(r.protocol) && (r.port = "443")), r.path = r.path || "/";
 	let i = r.host.indexOf(":") === -1 ? r.host : "[" + r.host + "]";
 	return r.id = r.protocol + "://" + i + ":" + r.port + t, r.href = r.protocol + "://" + i + (n && n.port === r.port ? "" : ":" + r.port), r;
 }
 //#endregion
 //#region node_modules/socket.io-parser/build/esm/is-binary.js
-var Re = typeof ArrayBuffer == "function", ze = (e) => typeof ArrayBuffer.isView == "function" ? ArrayBuffer.isView(e) : e.buffer instanceof ArrayBuffer, Be = Object.prototype.toString, Ve = typeof Blob == "function" || typeof Blob < "u" && Be.call(Blob) === "[object BlobConstructor]", He = typeof File == "function" || typeof File < "u" && Be.call(File) === "[object FileConstructor]";
-function Ue(e) {
-	return Re && (e instanceof ArrayBuffer || ze(e)) || Ve && e instanceof Blob || He && e instanceof File;
+var Te = typeof ArrayBuffer == "function", Ee = (e) => typeof ArrayBuffer.isView == "function" ? ArrayBuffer.isView(e) : e.buffer instanceof ArrayBuffer, De = Object.prototype.toString, Oe = typeof Blob == "function" || typeof Blob < "u" && De.call(Blob) === "[object BlobConstructor]", ke = typeof File == "function" || typeof File < "u" && De.call(File) === "[object FileConstructor]";
+function Ae(e) {
+	return Te && (e instanceof ArrayBuffer || Ee(e)) || Oe && e instanceof Blob || ke && e instanceof File;
 }
-function We(e, t) {
+function G(e, t) {
 	if (!e || typeof e != "object") return !1;
 	if (Array.isArray(e)) {
-		for (let t = 0, n = e.length; t < n; t++) if (We(e[t])) return !0;
+		for (let t = 0, n = e.length; t < n; t++) if (G(e[t])) return !0;
 		return !1;
 	}
-	if (Ue(e)) return !0;
-	if (e.toJSON && typeof e.toJSON == "function" && arguments.length === 1) return We(e.toJSON(), !0);
-	for (let t in e) if (Object.prototype.hasOwnProperty.call(e, t) && We(e[t])) return !0;
+	if (Ae(e)) return !0;
+	if (e.toJSON && typeof e.toJSON == "function" && arguments.length === 1) return G(e.toJSON(), !0);
+	for (let t in e) if (Object.prototype.hasOwnProperty.call(e, t) && G(e[t])) return !0;
 	return !1;
 }
 //#endregion
 //#region node_modules/socket.io-parser/build/esm/binary.js
-function Ge(e) {
+function je(e) {
 	let t = [], n = e.data, r = e;
-	return r.data = Ke(n, t), r.attachments = t.length, {
+	return r.data = Me(n, t), r.attachments = t.length, {
 		packet: r,
 		buffers: t
 	};
 }
-function Ke(e, t) {
+function Me(e, t) {
 	if (!e) return e;
-	if (Ue(e)) {
+	if (Ae(e)) {
 		let n = {
 			_placeholder: !0,
 			num: t.length
@@ -925,53 +841,53 @@ function Ke(e, t) {
 		return t.push(e), n;
 	} else if (Array.isArray(e)) {
 		let n = Array(e.length);
-		for (let r = 0; r < e.length; r++) n[r] = Ke(e[r], t);
+		for (let r = 0; r < e.length; r++) n[r] = Me(e[r], t);
 		return n;
 	} else if (typeof e == "object" && !(e instanceof Date)) {
 		let n = {};
-		for (let r in e) Object.prototype.hasOwnProperty.call(e, r) && (n[r] = Ke(e[r], t));
+		for (let r in e) Object.prototype.hasOwnProperty.call(e, r) && (n[r] = Me(e[r], t));
 		return n;
 	}
 	return e;
 }
-function qe(e, t) {
-	return e.data = Je(e.data, t), delete e.attachments, e;
+function Ne(e, t) {
+	return e.data = Pe(e.data, t), delete e.attachments, e;
 }
-function Je(e, t) {
+function Pe(e, t) {
 	if (!e) return e;
 	if (e && e._placeholder === !0) {
 		if (typeof e.num == "number" && e.num >= 0 && e.num < t.length) return t[e.num];
 		throw Error("illegal attachments");
-	} else if (Array.isArray(e)) for (let n = 0; n < e.length; n++) e[n] = Je(e[n], t);
-	else if (typeof e == "object") for (let n in e) Object.prototype.hasOwnProperty.call(e, n) && (e[n] = Je(e[n], t));
+	} else if (Array.isArray(e)) for (let n = 0; n < e.length; n++) e[n] = Pe(e[n], t);
+	else if (typeof e == "object") for (let n in e) Object.prototype.hasOwnProperty.call(e, n) && (e[n] = Pe(e[n], t));
 	return e;
 }
 //#endregion
 //#region node_modules/socket.io-parser/build/esm/index.js
-var Ye = /* @__PURE__ */ t({
-	Decoder: () => Qe,
-	Encoder: () => Ze,
-	PacketType: () => X,
-	isPacketValid: () => at,
+var Fe = /* @__PURE__ */ t({
+	Decoder: () => Re,
+	Encoder: () => Le,
+	PacketType: () => K,
+	isPacketValid: () => We,
 	protocol: () => 5
-}), Xe = [
+}), Ie = [
 	"connect",
 	"connect_error",
 	"disconnect",
 	"disconnecting",
 	"newListener",
 	"removeListener"
-], X;
+], K;
 (function(e) {
 	e[e.CONNECT = 0] = "CONNECT", e[e.DISCONNECT = 1] = "DISCONNECT", e[e.EVENT = 2] = "EVENT", e[e.ACK = 3] = "ACK", e[e.CONNECT_ERROR = 4] = "CONNECT_ERROR", e[e.BINARY_EVENT = 5] = "BINARY_EVENT", e[e.BINARY_ACK = 6] = "BINARY_ACK";
-})(X ||= {});
-var Ze = class {
+})(K ||= {});
+var Le = class {
 	constructor(e) {
 		this.replacer = e;
 	}
 	encode(e) {
-		return (e.type === X.EVENT || e.type === X.ACK) && We(e) ? this.encodeAsBinary({
-			type: e.type === X.EVENT ? X.BINARY_EVENT : X.BINARY_ACK,
+		return (e.type === K.EVENT || e.type === K.ACK) && G(e) ? this.encodeAsBinary({
+			type: e.type === K.EVENT ? K.BINARY_EVENT : K.BINARY_ACK,
 			nsp: e.nsp,
 			data: e.data,
 			id: e.id
@@ -979,13 +895,13 @@ var Ze = class {
 	}
 	encodeAsString(e) {
 		let t = "" + e.type;
-		return (e.type === X.BINARY_EVENT || e.type === X.BINARY_ACK) && (t += e.attachments + "-"), e.nsp && e.nsp !== "/" && (t += e.nsp + ","), e.id != null && (t += e.id), e.data != null && (t += JSON.stringify(e.data, this.replacer)), t;
+		return (e.type === K.BINARY_EVENT || e.type === K.BINARY_ACK) && (t += e.attachments + "-"), e.nsp && e.nsp !== "/" && (t += e.nsp + ","), e.id != null && (t += e.id), e.data != null && (t += JSON.stringify(e.data, this.replacer)), t;
 	}
 	encodeAsBinary(e) {
-		let t = Ge(e), n = this.encodeAsString(t.packet), r = t.buffers;
+		let t = je(e), n = this.encodeAsString(t.packet), r = t.buffers;
 		return r.unshift(n), r;
 	}
-}, Qe = class e extends I {
+}, Re = class e extends T {
 	constructor(e) {
 		super(), this.opts = Object.assign({
 			reviver: void 0,
@@ -997,22 +913,22 @@ var Ze = class {
 		if (typeof e == "string") {
 			if (this.reconstructor) throw Error("got plaintext data when reconstructing a packet");
 			t = this.decodeString(e);
-			let n = t.type === X.BINARY_EVENT;
-			n || t.type === X.BINARY_ACK ? (t.type = n ? X.EVENT : X.ACK, this.reconstructor = new $e(t), t.attachments === 0 && super.emitReserved("decoded", t)) : super.emitReserved("decoded", t);
-		} else if (Ue(e) || e.base64) if (this.reconstructor) t = this.reconstructor.takeBinaryData(e), t && (this.reconstructor = null, super.emitReserved("decoded", t));
+			let n = t.type === K.BINARY_EVENT;
+			n || t.type === K.BINARY_ACK ? (t.type = n ? K.EVENT : K.ACK, this.reconstructor = new ze(t), t.attachments === 0 && super.emitReserved("decoded", t)) : super.emitReserved("decoded", t);
+		} else if (Ae(e) || e.base64) if (this.reconstructor) t = this.reconstructor.takeBinaryData(e), t && (this.reconstructor = null, super.emitReserved("decoded", t));
 		else throw Error("got binary data when not reconstructing a packet");
 		else throw Error("Unknown type: " + e);
 	}
 	decodeString(t) {
 		let n = 0, r = { type: Number(t.charAt(0)) };
-		if (X[r.type] === void 0) throw Error("unknown packet type " + r.type);
-		if (r.type === X.BINARY_EVENT || r.type === X.BINARY_ACK) {
+		if (K[r.type] === void 0) throw Error("unknown packet type " + r.type);
+		if (r.type === K.BINARY_EVENT || r.type === K.BINARY_ACK) {
 			let e = n + 1;
 			for (; t.charAt(++n) !== "-" && n != t.length;);
 			let i = t.substring(e, n);
 			if (i != Number(i) || t.charAt(n) !== "-") throw Error("Illegal attachments");
 			let a = Number(i);
-			if (!tt(a) || a < 0) throw Error("Illegal attachments");
+			if (!Ve(a) || a < 0) throw Error("Illegal attachments");
 			if (a > this.opts.maxAttachments) throw Error("too many attachments");
 			r.attachments = a;
 		}
@@ -1050,25 +966,25 @@ var Ze = class {
 	}
 	static isPayloadValid(e, t) {
 		switch (e) {
-			case X.CONNECT: return rt(t);
-			case X.DISCONNECT: return t === void 0;
-			case X.CONNECT_ERROR: return typeof t == "string" || rt(t);
-			case X.EVENT:
-			case X.BINARY_EVENT: return Array.isArray(t) && (typeof t[0] == "number" || typeof t[0] == "string" && Xe.indexOf(t[0]) === -1);
-			case X.ACK:
-			case X.BINARY_ACK: return Array.isArray(t);
+			case K.CONNECT: return q(t);
+			case K.DISCONNECT: return t === void 0;
+			case K.CONNECT_ERROR: return typeof t == "string" || q(t);
+			case K.EVENT:
+			case K.BINARY_EVENT: return Array.isArray(t) && (typeof t[0] == "number" || typeof t[0] == "string" && Ie.indexOf(t[0]) === -1);
+			case K.ACK:
+			case K.BINARY_ACK: return Array.isArray(t);
 		}
 	}
 	destroy() {
 		this.reconstructor &&= (this.reconstructor.finishedReconstruction(), null);
 	}
-}, $e = class {
+}, ze = class {
 	constructor(e) {
 		this.packet = e, this.buffers = [], this.reconPack = e;
 	}
 	takeBinaryData(e) {
 		if (this.buffers.push(e), this.buffers.length === this.reconPack.attachments) {
-			let e = qe(this.reconPack, this.buffers);
+			let e = Ne(this.reconPack, this.buffers);
 			return this.finishedReconstruction(), e;
 		}
 		return null;
@@ -1077,48 +993,48 @@ var Ze = class {
 		this.reconPack = null, this.buffers = [];
 	}
 };
-function et(e) {
+function Be(e) {
 	return typeof e == "string";
 }
-var tt = Number.isInteger || function(e) {
+var Ve = Number.isInteger || function(e) {
 	return typeof e == "number" && isFinite(e) && Math.floor(e) === e;
 };
-function nt(e) {
-	return e === void 0 || tt(e);
+function He(e) {
+	return e === void 0 || Ve(e);
 }
-function rt(e) {
+function q(e) {
 	return Object.prototype.toString.call(e) === "[object Object]";
 }
-function it(e, t) {
+function Ue(e, t) {
 	switch (e) {
-		case X.CONNECT: return t === void 0 || rt(t);
-		case X.DISCONNECT: return t === void 0;
-		case X.EVENT: return Array.isArray(t) && (typeof t[0] == "number" || typeof t[0] == "string" && Xe.indexOf(t[0]) === -1);
-		case X.ACK: return Array.isArray(t);
-		case X.CONNECT_ERROR: return typeof t == "string" || rt(t);
+		case K.CONNECT: return t === void 0 || q(t);
+		case K.DISCONNECT: return t === void 0;
+		case K.EVENT: return Array.isArray(t) && (typeof t[0] == "number" || typeof t[0] == "string" && Ie.indexOf(t[0]) === -1);
+		case K.ACK: return Array.isArray(t);
+		case K.CONNECT_ERROR: return typeof t == "string" || q(t);
 		default: return !1;
 	}
 }
-function at(e) {
-	return et(e.nsp) && nt(e.id) && it(e.type, e.data);
+function We(e) {
+	return Be(e.nsp) && He(e.id) && Ue(e.type, e.data);
 }
 //#endregion
 //#region node_modules/socket.io-client/build/esm/on.js
-function Z(e, t, n) {
+function J(e, t, n) {
 	return e.on(t, n), function() {
 		e.off(t, n);
 	};
 }
 //#endregion
 //#region node_modules/socket.io-client/build/esm/socket.js
-var ot = Object.freeze({
+var Ge = Object.freeze({
 	connect: 1,
 	connect_error: 1,
 	disconnect: 1,
 	disconnecting: 1,
 	newListener: 1,
 	removeListener: 1
-}), st = class extends I {
+}), Ke = class extends T {
 	constructor(e, t, n) {
 		super(), this.connected = !1, this.recovered = !1, this.receiveBuffer = [], this.sendBuffer = [], this._queue = [], this._queueSeq = 0, this.ids = 0, this.acks = {}, this.flags = {}, this.io = e, this.nsp = t, n && n.auth && (this.auth = n.auth), this._opts = Object.assign({}, n), this.io._autoConnect && this.open();
 	}
@@ -1129,10 +1045,10 @@ var ot = Object.freeze({
 		if (this.subs) return;
 		let e = this.io;
 		this.subs = [
-			Z(e, "open", this.onopen.bind(this)),
-			Z(e, "packet", this.onpacket.bind(this)),
-			Z(e, "error", this.onerror.bind(this)),
-			Z(e, "close", this.onclose.bind(this))
+			J(e, "open", this.onopen.bind(this)),
+			J(e, "packet", this.onpacket.bind(this)),
+			J(e, "error", this.onerror.bind(this)),
+			J(e, "close", this.onclose.bind(this))
 		];
 	}
 	get active() {
@@ -1148,10 +1064,10 @@ var ot = Object.freeze({
 		return e.unshift("message"), this.emit.apply(this, e), this;
 	}
 	emit(e, ...t) {
-		if (ot.hasOwnProperty(e)) throw Error("\"" + e.toString() + "\" is a reserved event name");
+		if (Ge.hasOwnProperty(e)) throw Error("\"" + e.toString() + "\" is a reserved event name");
 		if (t.unshift(e), this._opts.retries && !this.flags.fromQueue && !this.flags.volatile) return this._addToQueue(t), this;
 		let n = {
-			type: X.EVENT,
+			type: K.EVENT,
 			data: t
 		};
 		if (n.options = {}, n.options.compress = this.flags.compress !== !1, typeof t[t.length - 1] == "function") {
@@ -1209,7 +1125,7 @@ var ot = Object.freeze({
 	}
 	_sendConnectPacket(e) {
 		this.packet({
-			type: X.CONNECT,
+			type: K.CONNECT,
 			data: this._pid ? Object.assign({
 				pid: this._pid,
 				offset: this._lastOffset
@@ -1232,21 +1148,21 @@ var ot = Object.freeze({
 	}
 	onpacket(e) {
 		if (e.nsp === this.nsp) switch (e.type) {
-			case X.CONNECT:
+			case K.CONNECT:
 				e.data && e.data.sid ? this.onconnect(e.data.sid, e.data.pid) : this.emitReserved("connect_error", /* @__PURE__ */ Error("It seems you are trying to reach a Socket.IO server in v2.x with a v3.x client, but they are not compatible (more information here: https://socket.io/docs/v3/migrating-from-2-x-to-3-0/)"));
 				break;
-			case X.EVENT:
-			case X.BINARY_EVENT:
+			case K.EVENT:
+			case K.BINARY_EVENT:
 				this.onevent(e);
 				break;
-			case X.ACK:
-			case X.BINARY_ACK:
+			case K.ACK:
+			case K.BINARY_ACK:
 				this.onack(e);
 				break;
-			case X.DISCONNECT:
+			case K.DISCONNECT:
 				this.ondisconnect();
 				break;
-			case X.CONNECT_ERROR:
+			case K.CONNECT_ERROR:
 				this.destroy();
 				let t = Error(e.data.message);
 				t.data = e.data.data, this.emitReserved("connect_error", t);
@@ -1268,7 +1184,7 @@ var ot = Object.freeze({
 		let t = this, n = !1;
 		return function(...r) {
 			n || (n = !0, t.packet({
-				type: X.ACK,
+				type: K.ACK,
 				id: e,
 				data: r
 			}));
@@ -1293,7 +1209,7 @@ var ot = Object.freeze({
 		this.subs &&= (this.subs.forEach((e) => e()), void 0), this.io._destroy(this);
 	}
 	disconnect() {
-		return this.connected && this.packet({ type: X.DISCONNECT }), this.destroy(), this.connected && this.onclose("io client disconnect"), this;
+		return this.connected && this.packet({ type: K.DISCONNECT }), this.destroy(), this.connected && this.onclose("io client disconnect"), this;
 	}
 	close() {
 		return this.disconnect();
@@ -1350,35 +1266,35 @@ var ot = Object.freeze({
 };
 //#endregion
 //#region node_modules/socket.io-client/build/esm/contrib/backo2.js
-function Q(e) {
+function Y(e) {
 	e ||= {}, this.ms = e.min || 100, this.max = e.max || 1e4, this.factor = e.factor || 2, this.jitter = e.jitter > 0 && e.jitter <= 1 ? e.jitter : 0, this.attempts = 0;
 }
-Q.prototype.duration = function() {
+Y.prototype.duration = function() {
 	var e = this.ms * this.factor ** + this.attempts++;
 	if (this.jitter) {
 		var t = Math.random(), n = Math.floor(t * this.jitter * e);
 		e = Math.floor(t * 10) & 1 ? e + n : e - n;
 	}
 	return Math.min(e, this.max) | 0;
-}, Q.prototype.reset = function() {
+}, Y.prototype.reset = function() {
 	this.attempts = 0;
-}, Q.prototype.setMin = function(e) {
+}, Y.prototype.setMin = function(e) {
 	this.ms = e;
-}, Q.prototype.setMax = function(e) {
+}, Y.prototype.setMax = function(e) {
 	this.max = e;
-}, Q.prototype.setJitter = function(e) {
+}, Y.prototype.setJitter = function(e) {
 	this.jitter = e;
 };
 //#endregion
 //#region node_modules/socket.io-client/build/esm/manager.js
-var ct = class extends I {
+var qe = class extends T {
 	constructor(e, t) {
-		super(), this.nsps = {}, this.subs = [], e && typeof e == "object" && (t = e, e = void 0), t ||= {}, t.path = t.path || "/socket.io", this.opts = t, H(this, t), this.reconnection(t.reconnection !== !1), this.reconnectionAttempts(t.reconnectionAttempts || Infinity), this.reconnectionDelay(t.reconnectionDelay || 1e3), this.reconnectionDelayMax(t.reconnectionDelayMax || 5e3), this.randomizationFactor(t.randomizationFactor ?? .5), this.backoff = new Q({
+		super(), this.nsps = {}, this.subs = [], e && typeof e == "object" && (t = e, e = void 0), t ||= {}, t.path = t.path || "/socket.io", this.opts = t, N(this, t), this.reconnection(t.reconnection !== !1), this.reconnectionAttempts(t.reconnectionAttempts || Infinity), this.reconnectionDelay(t.reconnectionDelay || 1e3), this.reconnectionDelayMax(t.reconnectionDelayMax || 5e3), this.randomizationFactor(t.randomizationFactor ?? .5), this.backoff = new Y({
 			min: this.reconnectionDelay(),
 			max: this.reconnectionDelayMax(),
 			jitter: this.randomizationFactor()
 		}), this.timeout(t.timeout == null ? 2e4 : t.timeout), this._readyState = "closed", this.uri = e;
-		let n = t.parser || Ye;
+		let n = t.parser || Fe;
 		this.encoder = new n.Encoder(), this.decoder = new n.Decoder(), this._autoConnect = t.autoConnect !== !1, this._autoConnect && this.open();
 	}
 	reconnection(e) {
@@ -1407,14 +1323,14 @@ var ct = class extends I {
 	}
 	open(e) {
 		if (~this._readyState.indexOf("open")) return this;
-		this.engine = new Ie(this.uri, this.opts);
+		this.engine = new Ce(this.uri, this.opts);
 		let t = this.engine, n = this;
 		this._readyState = "opening", this.skipReconnect = !1;
-		let r = Z(t, "open", function() {
+		let r = J(t, "open", function() {
 			n.onopen(), e && e();
 		}), i = (t) => {
 			this.cleanup(), this._readyState = "closed", this.emitReserved("error", t), e ? e(t) : this.maybeReconnectOnOpen();
-		}, a = Z(t, "error", i);
+		}, a = J(t, "error", i);
 		if (!1 !== this._timeout) {
 			let e = this._timeout, n = this.setTimeoutFn(() => {
 				r(), i(/* @__PURE__ */ Error("timeout")), t.close();
@@ -1431,7 +1347,7 @@ var ct = class extends I {
 	onopen() {
 		this.cleanup(), this._readyState = "open", this.emitReserved("open");
 		let e = this.engine;
-		this.subs.push(Z(e, "ping", this.onping.bind(this)), Z(e, "data", this.ondata.bind(this)), Z(e, "error", this.onerror.bind(this)), Z(e, "close", this.onclose.bind(this)), Z(this.decoder, "decoded", this.ondecoded.bind(this)));
+		this.subs.push(J(e, "ping", this.onping.bind(this)), J(e, "data", this.ondata.bind(this)), J(e, "error", this.onerror.bind(this)), J(e, "close", this.onclose.bind(this)), J(this.decoder, "decoded", this.ondecoded.bind(this)));
 	}
 	onping() {
 		this.emitReserved("ping");
@@ -1444,7 +1360,7 @@ var ct = class extends I {
 		}
 	}
 	ondecoded(e) {
-		L(() => {
+		D(() => {
 			this.emitReserved("packet", e);
 		}, this.setTimeoutFn);
 	}
@@ -1453,7 +1369,7 @@ var ct = class extends I {
 	}
 	socket(e, t) {
 		let n = this.nsps[e];
-		return n ? this._autoConnect && !n.active && n.connect() : (n = new st(this, e, t), this.nsps[e] = n), n;
+		return n ? this._autoConnect && !n.active && n.connect() : (n = new Ke(this, e, t), this.nsps[e] = n), n;
 	}
 	_destroy(e) {
 		let t = Object.keys(this.nsps);
@@ -1498,21 +1414,21 @@ var ct = class extends I {
 		let e = this.backoff.attempts;
 		this._reconnecting = !1, this.backoff.reset(), this.emitReserved("reconnect", e);
 	}
-}, lt = {};
-function ut(e, t) {
+}, X = {};
+function Z(e, t) {
 	typeof e == "object" && (t = e, e = void 0), t ||= {};
-	let n = Le(e, t.path || "/socket.io"), r = n.source, i = n.id, a = n.path, o = lt[i] && a in lt[i].nsps, s = t.forceNew || t["force new connection"] || !1 === t.multiplex || o, c;
-	return s ? c = new ct(r, t) : (lt[i] || (lt[i] = new ct(r, t)), c = lt[i]), n.query && !t.query && (t.query = n.queryKey), c.socket(n.path, t);
+	let n = we(e, t.path || "/socket.io"), r = n.source, i = n.id, a = n.path, o = X[i] && a in X[i].nsps, s = t.forceNew || t["force new connection"] || !1 === t.multiplex || o, c;
+	return s ? c = new qe(r, t) : (X[i] || (X[i] = new qe(r, t)), c = X[i]), n.query && !t.query && (t.query = n.queryKey), c.socket(n.path, t);
 }
-Object.assign(ut, {
-	Manager: ct,
-	Socket: st,
-	io: ut,
-	connect: ut
+Object.assign(Z, {
+	Manager: qe,
+	Socket: Ke,
+	io: Z,
+	connect: Z
 });
 //#endregion
-//#region src/chatbotWidget.ts
-var dt = "chatbot-package-styles", ft = {
+//#region src/widget/constants.ts
+var Je = "chatbot-package-styles", Ye = {
 	botName: "Support Assistant",
 	title: "Support Assistant",
 	subtitle: "Online",
@@ -1521,34 +1437,254 @@ var dt = "chatbot-package-styles", ft = {
 	primaryColor: "#2563eb",
 	position: "bottom-right",
 	zIndex: 9999
-}, pt = "\n.chatbot-widget-root {\n  position: fixed;\n  bottom: 16px;\n  font-family: \"Segoe UI\", -apple-system, BlinkMacSystemFont, sans-serif;\n}\n\n.chatbot-widget-root.right {\n  right: 16px;\n}\n\n.chatbot-widget-root.left {\n  left: 16px;\n}\n\n.chatbot-launcher {\n  width: 56px;\n  height: 56px;\n  border-radius: 9999px;\n  border: 0;\n  background: linear-gradient(135deg, var(--chatbot-primary), #1d4ed8);\n  color: #ffffff;\n  box-shadow: 0 16px 30px rgba(37, 99, 235, 0.35);\n  cursor: pointer;\n  display: grid;\n  place-items: center;\n  font-size: 12px;\n  font-weight: 700;\n  letter-spacing: 0.2px;\n  transition: transform 0.18s ease, box-shadow 0.18s ease;\n}\n\n.chatbot-launcher svg {\n  width: 20px;\n  height: 20px;\n}\n\n.chatbot-launcher:hover {\n  transform: translateY(-2px);\n  box-shadow: 0 20px 34px rgba(37, 99, 235, 0.42);\n}\n\n.chatbot-panel {\n  position: absolute;\n  bottom: 66px;\n  width: min(378px, calc(100vw - 24px));\n  height: min(610px, calc(100vh - 88px));\n  border-radius: 16px;\n  border: 1px solid #dbe4f5;\n  overflow: hidden;\n  box-shadow: 0 28px 56px rgba(15, 23, 42, 0.24);\n  background: #f8fbff;\n  display: flex;\n  flex-direction: column;\n  opacity: 0;\n  visibility: hidden;\n  pointer-events: none;\n  transform: translateY(10px) scale(0.98);\n  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;\n}\n\n.chatbot-widget-root.right .chatbot-panel {\n  right: 0;\n  transform-origin: bottom right;\n}\n\n.chatbot-widget-root.left .chatbot-panel {\n  left: 0;\n  transform-origin: bottom left;\n}\n\n.chatbot-widget-root.open .chatbot-panel {\n  opacity: 1;\n  visibility: visible;\n  pointer-events: auto;\n  transform: translateY(0) scale(1);\n}\n\n.chatbot-header {\n  background: linear-gradient(135deg, var(--chatbot-primary), #1d4ed8);\n  color: #ffffff;\n  padding: 12px;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 10px;\n}\n\n.chatbot-header-left {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n}\n\n.chatbot-avatar {\n  width: 38px;\n  height: 38px;\n  border-radius: 9999px;\n  background: #ffffff;\n  color: var(--chatbot-primary);\n  border: 1px solid rgba(255, 255, 255, 0.84);\n  display: grid;\n  place-items: center;\n  font-size: 14px;\n  font-weight: 700;\n}\n\n.chatbot-avatar svg {\n  width: 18px;\n  height: 18px;\n}\n\n.chatbot-header-info h2 {\n  margin: 0;\n  font-size: 15px;\n  line-height: 1.15;\n  font-weight: 700;\n}\n\n.chatbot-status {\n  margin-top: 3px;\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  font-size: 12px;\n  font-weight: 500;\n  opacity: 0.95;\n}\n\n.chatbot-status-dot {\n  width: 8px;\n  height: 8px;\n  border-radius: 9999px;\n  background: #22c55e;\n}\n\n.chatbot-controls {\n  display: flex;\n  align-items: center;\n  margin-left: auto;\n}\n\n.chatbot-controls button {\n  width: 34px;\n  height: 34px;\n  border-radius: 8px;\n  border: 1px solid rgba(255, 255, 255, 0.42);\n  background: rgba(255, 255, 255, 0.24);\n  color: #ffffff;\n  cursor: pointer;\n  line-height: 0;\n  display: grid;\n  place-items: center;\n  transition: background 0.2s ease, transform 0.2s ease;\n}\n\n.chatbot-controls button svg {\n  width: 16px;\n  height: 16px;\n  stroke-width: 2.25;\n}\n\n.chatbot-controls button:hover {\n  background: rgba(255, 255, 255, 0.36);\n  transform: translateY(-1px);\n}\n\n.chatbot-body {\n  flex: 1;\n  overflow-y: auto;\n  padding: 14px 12px 10px;\n  background: linear-gradient(180deg, #f8fbff 0%, #f1f6ff 100%);\n}\n\n.chatbot-body::-webkit-scrollbar {\n  width: 8px;\n}\n\n.chatbot-body::-webkit-scrollbar-thumb {\n  background: #bfdbfe;\n  border-radius: 999px;\n}\n\n.chatbot-intro {\n  text-align: center;\n  color: #334155;\n  border: 1px solid #dbe4f5;\n  background: rgba(255, 255, 255, 0.72);\n  border-radius: 14px;\n  padding: 16px 12px;\n}\n\n.chatbot-intro-icon {\n  width: 44px;\n  height: 44px;\n  border-radius: 9999px;\n  background: #dbeafe;\n  color: #1d4ed8;\n  display: grid;\n  place-items: center;\n  font-size: 22px;\n  font-weight: 700;\n  margin: 0 auto 12px;\n}\n\n.chatbot-intro h3 {\n  margin: 0;\n  font-size: 25px;\n  color: #0f172a;\n}\n\n.chatbot-intro p {\n  margin: 10px auto 0;\n  max-width: 290px;\n  font-size: 13px;\n  line-height: 1.45;\n  color: #475569;\n}\n\n.chatbot-intro .chatbot-human-note {\n  margin-top: 12px;\n  font-style: italic;\n  font-size: 12px;\n  color: #6b7a92;\n}\n\n.chatbot-messages {\n  display: none;\n  flex-direction: column;\n  gap: 8px;\n}\n\n.chatbot-body.has-messages .chatbot-intro {\n  display: none;\n}\n\n.chatbot-body.has-messages .chatbot-messages {\n  display: flex;\n}\n.chatbot-body.human-mode .chatbot-intro {\n  display: none;\n}\n.chatbot-human-hero {\n  display: none;\n  text-align: center;\n  color: #0f172a;\n  border: 1px solid #dbe4f5;\n  background: rgba(255, 255, 255, 0.88);\n  border-radius: 14px;\n  padding: 18px 14px;\n}\n.chatbot-body.human-mode .chatbot-human-hero {\n  display: block;\n}\n.chatbot-human-hero h3 {\n  margin: 0;\n  font-size: 22px;\n  font-weight: 700;\n}\n.chatbot-human-hero p {\n  margin: 8px 0 0;\n  font-size: 13px;\n  color: #475569;\n}\n.chatbot-history-label {\n  margin-top: 14px;\n  font-size: 11px;\n  font-weight: 700;\n  letter-spacing: 0.12em;\n  text-transform: uppercase;\n  color: #94a3b8;\n  text-align: center;\n}\n.chatbot-divider {\n  display: none;\n  align-items: center;\n  gap: 10px;\n  margin: 16px 0 10px;\n  color: #94a3b8;\n  font-size: 11px;\n  font-weight: 700;\n  letter-spacing: 0.14em;\n  text-transform: uppercase;\n}\n.chatbot-divider::before,\n.chatbot-divider::after {\n  content: \"\";\n  flex: 1;\n  height: 1px;\n  background: #e2e8f0;\n}\n.chatbot-body.human-mode .chatbot-divider {\n  display: flex;\n}\n\n.chatbot-bubble {\n  max-width: 86%;\n  border-radius: 12px;\n  padding: 8px 10px;\n  line-height: 1.45;\n  font-size: 13px;\n  white-space: pre-wrap;\n}\n\n.chatbot-bubble.user {\n  align-self: flex-end;\n  background: linear-gradient(135deg, var(--chatbot-primary), #1d4ed8);\n  color: #ffffff;\n}\n\n.chatbot-bubble.bot {\n  align-self: flex-start;\n  background: #e2e8f0;\n  color: #1e293b;\n}\n.chatbot-bubble.bot a {\n  color: #1d4ed8;\n  text-decoration: underline;\n  text-underline-offset: 2px;\n}\n.chatbot-bubble.bot code {\n  background: #e2e8f0;\n  border-radius: 6px;\n  padding: 1px 4px;\n  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\",\n    \"Courier New\", monospace;\n  font-size: 12px;\n}\n.chatbot-bubble.bot pre {\n  margin: 8px 0 0;\n  padding: 10px 12px;\n  border-radius: 10px;\n  background: #0f172a;\n  color: #e2e8f0;\n  overflow-x: auto;\n  font-size: 12px;\n  line-height: 1.5;\n}\n.chatbot-bubble.bot pre code {\n  background: transparent;\n  padding: 0;\n  color: inherit;\n}\n.chatbot-md-h1,\n.chatbot-md-h2,\n.chatbot-md-h3 {\n  font-weight: 700;\n  color: #0f172a;\n  margin: 6px 0 4px;\n}\n.chatbot-md-h1 {\n  font-size: 15px;\n}\n.chatbot-md-h2 {\n  font-size: 14px;\n}\n.chatbot-md-h3 {\n  font-size: 13px;\n  text-transform: uppercase;\n  letter-spacing: 0.08em;\n}\n.chatbot-bubble.system {\n  align-self: center;\n  background: transparent;\n  color: #2563eb;\n  font-size: 11px;\n  font-weight: 700;\n  letter-spacing: 0.12em;\n  text-transform: uppercase;\n  padding: 4px 6px;\n  box-shadow: none;\n}\n\n.chatbot-footer {\n  border-top: 1px solid #dbe4f5;\n  background: #f8fbff;\n  padding: 10px;\n}\n\n.chatbot-input-row {\n  display: grid;\n  grid-template-columns: 1fr auto;\n  gap: 8px;\n  margin-bottom: 8px;\n  align-items: center;\n}\n\n.chatbot-input-row input {\n  border: 1px solid #bfdbfe;\n  border-radius: 10px;\n  min-height: 44px;\n  padding: 0 12px;\n  outline: none;\n  font-size: 13px;\n  background: #ffffff;\n  color: #1e293b;\n}\n.chatbot-input-row textarea {\n  border: 1px solid #bfdbfe;\n  border-radius: 12px;\n  min-height: 46px;\n  padding: 10px 12px;\n  outline: none;\n  font-size: 13px;\n  background: #ffffff;\n  color: #1e293b;\n  resize: none;\n  line-height: 1.4;\n  font-family: inherit;\n}\n\n.chatbot-input-row input:focus {\n  border-color: var(--chatbot-primary);\n  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);\n}\n.chatbot-input-row textarea:focus {\n  border-color: var(--chatbot-primary);\n  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);\n}\n\n.chatbot-input-row button {\n  width: 46px;\n  height: 44px;\n  border: 0;\n  border-radius: 12px;\n  background: linear-gradient(135deg, var(--chatbot-primary), #1d4ed8);\n  color: #ffffff;\n  font-size: 14px;\n  font-weight: 700;\n  cursor: pointer;\n  padding: 0;\n  display: grid;\n  place-items: center;\n  box-shadow: 0 10px 18px rgba(37, 99, 235, 0.28);\n  transition: transform 0.2s ease, box-shadow 0.2s ease;\n}\n\n.chatbot-input-row button svg {\n  width: 17px;\n  height: 17px;\n  stroke-width: 2.2;\n}\n\n.chatbot-input-row button:hover {\n  transform: translateY(-1px);\n  box-shadow: 0 14px 24px rgba(37, 99, 235, 0.34);\n}\n\n.chatbot-human-button {\n  width: 100%;\n  border: 1px solid #cbd5e1;\n  border-radius: 12px;\n  background: #ffffff;\n  color: #334155;\n  min-height: 44px;\n  padding: 0 12px;\n  font-size: 14px;\n  font-weight: 600;\n  cursor: pointer;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  gap: 8px;\n  transition: border-color 0.2s ease, background 0.2s ease;\n}\n\n.chatbot-human-button:hover {\n  background: #f8fafc;\n  border-color: #94a3b8;\n}\n\n.chatbot-human-button svg {\n  width: 16px;\n  height: 16px;\n  stroke-width: 2.1;\n}\n\n.chatbot-powered {\n  margin: 8px 0 0;\n  text-align: center;\n  font-size: 11px;\n  color: #94a3b8;\n}\n\n.chatbot-powered strong {\n  color: #64748b;\n}\n\n/* --- Human Form Styles --- */\n.chatbot-widget-root.show-human-form .chatbot-body,\n.chatbot-widget-root.show-human-form .chatbot-footer {\n  display: none !important;\n}\n\n.chatbot-human-container {\n  display: none;\n  flex: 1;\n  flex-direction: column;\n  background: #f8fbff;\n  overflow-y: auto;\n}\n\n.chatbot-widget-root.show-human-form .chatbot-human-container {\n  display: flex;\n}\n\n.chatbot-human-container::-webkit-scrollbar {\n  width: 8px;\n}\n\n.chatbot-human-container::-webkit-scrollbar-thumb {\n  background: #bfdbfe;\n  border-radius: 999px;\n}\n\n.chatbot-human-header {\n  padding: 20px 16px 12px;\n  text-align: center;\n}\n\n.chatbot-human-header h3 {\n  margin: 0 0 6px;\n  color: #0f172a;\n  font-size: 18px;\n}\n\n.chatbot-human-header p {\n  margin: 0;\n  color: #64748b;\n  font-size: 13px;\n  line-height: 1.45;\n}\n\n.chatbot-human-form {\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n  padding: 0 16px 20px;\n}\n\n.chatbot-form-group {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n}\n\n.chatbot-form-group label {\n  font-size: 13px;\n  font-weight: 600;\n  color: #334155;\n}\n\n.chatbot-form-group input,\n.chatbot-form-group textarea {\n  border: 1px solid #bfdbfe;\n  border-radius: 8px;\n  padding: 10px;\n  font-size: 13px;\n  outline: none;\n  background: #ffffff;\n  color: #1e293b;\n  font-family: inherit;\n  transition: border-color 0.2s, box-shadow 0.2s;\n}\n\n.chatbot-form-group input:focus,\n.chatbot-form-group textarea:focus {\n  border-color: var(--chatbot-primary);\n  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);\n}\n\n.chatbot-form-group textarea {\n  resize: vertical;\n  min-height: 80px;\n}\n\n.chatbot-form-actions {\n  display: flex;\n  gap: 12px;\n  margin-top: 8px;\n}\n\n.chatbot-btn-primary {\n  flex: 1;\n  background: linear-gradient(135deg, var(--chatbot-primary), #1d4ed8);\n  color: white;\n  border: none;\n  padding: 10px;\n  border-radius: 8px;\n  font-weight: 600;\n  cursor: pointer;\n  transition: transform 0.2s, box-shadow 0.2s;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  gap: 6px;\n}\n\n.chatbot-btn-primary:hover {\n  transform: translateY(-1px);\n  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);\n}\n\n.chatbot-btn-secondary {\n  flex: 1;\n  background: #e2e8f0;\n  color: #334155;\n  border: none;\n  padding: 10px;\n  border-radius: 8px;\n  font-weight: 600;\n  cursor: pointer;\n  transition: background 0.2s;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  gap: 6px;\n}\n\n.chatbot-btn-secondary:hover {\n  background: #cbd5e1;\n}\n\n.chatbot-human-success {\n  display: none;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  text-align: center;\n  padding: 32px 24px;\n  height: 100%;\n}\n\n.chatbot-widget-root.show-human-success .chatbot-human-success {\n  display: flex;\n}\n.chatbot-widget-root.show-human-success .chatbot-human-form,\n.chatbot-widget-root.show-human-success .chatbot-human-header {\n  display: none !important;\n}\n\n.chatbot-success-icon {\n  width: 56px;\n  height: 56px;\n  background: #dcfce7;\n  color: #16a34a;\n  border-radius: 50%;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  margin-bottom: 20px;\n}\n\n.chatbot-success-icon svg {\n  width: 28px;\n  height: 28px;\n}\n\n.chatbot-human-success h3 {\n  margin: 0 0 8px;\n  color: #0f172a;\n  font-size: 20px;\n}\n\n.chatbot-human-success p {\n  margin: 0 0 24px;\n  color: #475569;\n  font-size: 14px;\n  line-height: 1.5;\n}\n\n@media (max-width: 640px) {\n  .chatbot-widget-root.right,\n  .chatbot-widget-root.left {\n    right: 10px;\n    left: 10px;\n  }\n\n  .chatbot-widget-root {\n    bottom: 10px;\n  }\n\n  .chatbot-panel {\n    width: min(360px, calc(100vw - 20px));\n    height: min(520px, calc(100vh - 70px));\n  }\n\n  .chatbot-intro h3 {\n    font-size: 22px;\n  }\n}\n", mt = () => {
-	if (document.getElementById(dt)) return;
+}, Xe = "\n.chatbot-widget-root {\n  position: fixed;\n  bottom: 16px;\n  font-family: \"Segoe UI\", -apple-system, BlinkMacSystemFont, sans-serif;\n}\n\n.chatbot-widget-root.right {\n  right: 16px;\n}\n\n.chatbot-widget-root.left {\n  left: 16px;\n}\n\n.chatbot-launcher {\n  width: 56px;\n  height: 56px;\n  border-radius: 9999px;\n  border: 0;\n  background: linear-gradient(135deg, var(--chatbot-primary), #1d4ed8);\n  color: #ffffff;\n  box-shadow: 0 16px 30px rgba(37, 99, 235, 0.35);\n  cursor: pointer;\n  display: grid;\n  place-items: center;\n  font-size: 12px;\n  font-weight: 700;\n  letter-spacing: 0.2px;\n  transition: transform 0.18s ease, box-shadow 0.18s ease;\n}\n\n.chatbot-launcher svg {\n  width: 20px;\n  height: 20px;\n}\n\n.chatbot-launcher:hover {\n  transform: translateY(-2px);\n  box-shadow: 0 20px 34px rgba(37, 99, 235, 0.42);\n}\n\n.chatbot-panel {\n  position: absolute;\n  bottom: 66px;\n  width: min(378px, calc(100vw - 24px));\n  height: min(610px, calc(100vh - 88px));\n  border-radius: 16px;\n  border: 1px solid #dbe4f5;\n  overflow: hidden;\n  box-shadow: 0 28px 56px rgba(15, 23, 42, 0.24);\n  background: #f8fbff;\n  display: flex;\n  flex-direction: column;\n  opacity: 0;\n  visibility: hidden;\n  pointer-events: none;\n  transform: translateY(10px) scale(0.98);\n  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;\n}\n\n.chatbot-widget-root.right .chatbot-panel {\n  right: 0;\n  transform-origin: bottom right;\n}\n\n.chatbot-widget-root.left .chatbot-panel {\n  left: 0;\n  transform-origin: bottom left;\n}\n\n.chatbot-widget-root.open .chatbot-panel {\n  opacity: 1;\n  visibility: visible;\n  pointer-events: auto;\n  transform: translateY(0) scale(1);\n}\n\n.chatbot-header {\n  background: linear-gradient(135deg, var(--chatbot-primary), #1d4ed8);\n  color: #ffffff;\n  padding: 12px;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 10px;\n}\n\n.chatbot-header-left {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n}\n\n.chatbot-avatar {\n  width: 38px;\n  height: 38px;\n  border-radius: 9999px;\n  background: #ffffff;\n  color: var(--chatbot-primary);\n  border: 1px solid rgba(255, 255, 255, 0.84);\n  display: grid;\n  place-items: center;\n  font-size: 14px;\n  font-weight: 700;\n}\n\n.chatbot-avatar svg {\n  width: 18px;\n  height: 18px;\n}\n\n.chatbot-header-info h2 {\n  margin: 0;\n  font-size: 15px;\n  line-height: 1.15;\n  font-weight: 700;\n}\n\n.chatbot-status {\n  margin-top: 3px;\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  font-size: 12px;\n  font-weight: 500;\n  opacity: 0.95;\n}\n\n.chatbot-status-dot {\n  width: 8px;\n  height: 8px;\n  border-radius: 9999px;\n  background: #22c55e;\n}\n\n.chatbot-controls {\n  display: flex;\n  align-items: center;\n  margin-left: auto;\n}\n\n.chatbot-controls button {\n  width: 34px;\n  height: 34px;\n  border-radius: 8px;\n  border: 1px solid rgba(255, 255, 255, 0.42);\n  background: rgba(255, 255, 255, 0.24);\n  color: #ffffff;\n  cursor: pointer;\n  line-height: 0;\n  display: grid;\n  place-items: center;\n  transition: background 0.2s ease, transform 0.2s ease;\n}\n\n.chatbot-controls button svg {\n  width: 16px;\n  height: 16px;\n  stroke-width: 2.25;\n}\n\n.chatbot-controls button:hover {\n  background: rgba(255, 255, 255, 0.36);\n  transform: translateY(-1px);\n}\n\n.chatbot-body {\n  flex: 1;\n  overflow-y: auto;\n  padding: 14px 12px 10px;\n  background: linear-gradient(180deg, #f8fbff 0%, #f1f6ff 100%);\n}\n\n.chatbot-body::-webkit-scrollbar {\n  width: 8px;\n}\n\n.chatbot-body::-webkit-scrollbar-thumb {\n  background: #bfdbfe;\n  border-radius: 999px;\n}\n\n.chatbot-body-content {\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n}\n\n.chatbot-intro {\n  text-align: center;\n  color: #334155;\n  border: 1px solid #dbe4f5;\n  background: rgba(255, 255, 255, 0.72);\n  border-radius: 14px;\n  padding: 16px 12px;\n}\n\n.chatbot-intro-icon {\n  width: 44px;\n  height: 44px;\n  border-radius: 9999px;\n  background: #dbeafe;\n  color: #1d4ed8;\n  display: grid;\n  place-items: center;\n  font-size: 22px;\n  font-weight: 700;\n  margin: 0 auto 12px;\n}\n\n.chatbot-intro h3 {\n  margin: 0;\n  font-size: 25px;\n  color: #0f172a;\n}\n\n.chatbot-intro p {\n  margin: 10px auto 0;\n  max-width: 290px;\n  font-size: 13px;\n  line-height: 1.45;\n  color: #475569;\n}\n\n.chatbot-intro .chatbot-human-note {\n  margin-top: 12px;\n  font-style: italic;\n  font-size: 12px;\n  color: #6b7a92;\n}\n\n.chatbot-messages {\n  display: none;\n  flex-direction: column;\n  gap: 8px;\n}\n\n.chatbot-body.has-messages .chatbot-intro {\n  display: none;\n}\n\n.chatbot-body.has-messages .chatbot-messages {\n  display: flex;\n}\n.chatbot-body.human-mode .chatbot-intro {\n  display: none;\n}\n.chatbot-human-hero {\n  display: none;\n  text-align: center;\n  color: #0f172a;\n  border: 1px solid #dbe4f5;\n  background: rgba(255, 255, 255, 0.88);\n  border-radius: 14px;\n  padding: 18px 14px;\n}\n.chatbot-body.human-mode .chatbot-human-hero {\n  display: block;\n}\n.chatbot-human-hero h3 {\n  margin: 0;\n  font-size: 22px;\n  font-weight: 700;\n}\n.chatbot-human-hero p {\n  margin: 8px 0 0;\n  font-size: 13px;\n  color: #475569;\n}\n.chatbot-history-label {\n  margin-top: 14px;\n  font-size: 11px;\n  font-weight: 700;\n  letter-spacing: 0.12em;\n  text-transform: uppercase;\n  color: #94a3b8;\n  text-align: center;\n}\n.chatbot-divider {\n  display: none;\n  align-items: center;\n  gap: 10px;\n  margin: 16px 0 10px;\n  color: #94a3b8;\n  font-size: 11px;\n  font-weight: 700;\n  letter-spacing: 0.14em;\n  text-transform: uppercase;\n}\n.chatbot-divider::before,\n.chatbot-divider::after {\n  content: \"\";\n  flex: 1;\n  height: 1px;\n  background: #e2e8f0;\n}\n.chatbot-body.human-mode .chatbot-divider {\n  display: flex;\n}\n\n.chatbot-bubble {\n  max-width: 86%;\n  border-radius: 12px;\n  padding: 8px 10px;\n  line-height: 1.45;\n  font-size: 13px;\n  white-space: pre-wrap;\n}\n\n.chatbot-bubble.user {\n  align-self: flex-end;\n  background: linear-gradient(135deg, var(--chatbot-primary), #1d4ed8);\n  color: #ffffff;\n  border-bottom-right-radius: 4px;\n}\n\n.chatbot-bubble.bot {\n  align-self: flex-start;\n  background: #ffffff;\n  color: #0f172a;\n  border: 1px solid #dbe4f5;\n  border-bottom-left-radius: 4px;\n  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);\n}\n\n.chatbot-bubble.system {\n  align-self: center;\n  text-transform: uppercase;\n  letter-spacing: 0.18em;\n  font-weight: 700;\n  font-size: 10px;\n  padding: 6px 12px;\n  border-radius: 999px;\n  background: #dbeafe;\n  color: #1e3a8a;\n}\n\n.chatbot-md-h1 {\n  font-size: 16px;\n  font-weight: 700;\n  margin: 0 0 6px;\n}\n.chatbot-md-h2 {\n  font-size: 15px;\n  font-weight: 700;\n  margin: 0 0 6px;\n}\n.chatbot-md-h3 {\n  font-size: 14px;\n  font-weight: 700;\n  margin: 0 0 6px;\n}\n.chatbot-bubble a {\n  color: #2563eb;\n  text-decoration: underline;\n}\n.chatbot-bubble code {\n  font-family: \"SFMono-Regular\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,\n    \"Liberation Mono\", \"Courier New\", monospace;\n  font-size: 12px;\n  background: #eff6ff;\n  padding: 2px 4px;\n  border-radius: 6px;\n}\n.chatbot-bubble pre {\n  background: #eff6ff;\n  border-radius: 10px;\n  padding: 8px;\n  overflow-x: auto;\n}\n\n.chatbot-footer {\n  border-top: 1px solid #dbe4f5;\n  padding: 12px;\n  background: #ffffff;\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n}\n\n.chatbot-input-row {\n  display: flex;\n  gap: 8px;\n}\n\n.chatbot-input {\n  flex: 1;\n  border-radius: 12px;\n  border: 1px solid #dbe4f5;\n  padding: 10px 12px;\n  font-size: 13px;\n  resize: none;\n  min-height: 44px;\n  max-height: 110px;\n  font-family: \"Segoe UI\", -apple-system, BlinkMacSystemFont, sans-serif;\n  line-height: 1.4;\n  color: #0f172a;\n  transition: border 0.2s ease;\n}\n\n.chatbot-input:focus {\n  outline: none;\n  border-color: var(--chatbot-primary);\n  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);\n}\n\n.chatbot-input::placeholder {\n  color: #94a3b8;\n}\n\n.chatbot-send {\n  width: 44px;\n  height: 44px;\n  border-radius: 12px;\n  border: 0;\n  background: var(--chatbot-primary);\n  color: #ffffff;\n  display: grid;\n  place-items: center;\n  cursor: pointer;\n  transition: transform 0.18s ease, box-shadow 0.18s ease;\n}\n\n.chatbot-send svg {\n  width: 18px;\n  height: 18px;\n}\n\n.chatbot-send:hover {\n  transform: translateY(-1px);\n  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.32);\n}\n\n.chatbot-footer .chatbot-human-button {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  gap: 10px;\n  background: #eff6ff;\n  border: 1px solid #dbeafe;\n  color: #1d4ed8;\n  font-weight: 600;\n  border-radius: 12px;\n  padding: 10px 12px;\n  cursor: pointer;\n  transition: background 0.2s ease, border 0.2s ease;\n}\n\n.chatbot-footer .chatbot-human-button:hover {\n  background: #dbeafe;\n}\n\n.chatbot-footer .chatbot-human-button svg {\n  width: 16px;\n  height: 16px;\n}\n\n.chatbot-widget-root.show-human-form .chatbot-body,\n.chatbot-widget-root.show-human-form .chatbot-footer {\n  display: none;\n}\n\n.chatbot-widget-root.show-human-form .chatbot-human-container {\n  display: flex;\n}\n\n.chatbot-human-container {\n  flex: 1;\n  display: none;\n  flex-direction: column;\n  padding: 18px 14px;\n  gap: 16px;\n  overflow: auto;\n  background: #f8fbff;\n}\n\n.chatbot-human-header {\n  background: #ffffff;\n  border: 1px solid #dbe4f5;\n  border-radius: 14px;\n  padding: 14px;\n  text-align: center;\n}\n\n.chatbot-human-header h3 {\n  margin: 0;\n  font-size: 18px;\n  font-weight: 700;\n  color: #0f172a;\n}\n\n.chatbot-human-header p {\n  margin: 6px 0 0;\n  font-size: 13px;\n  color: #64748b;\n}\n\n.chatbot-human-form {\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n}\n\n.chatbot-form-group {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  font-size: 12px;\n  font-weight: 600;\n  color: #334155;\n}\n\n.chatbot-form-group input,\n.chatbot-form-group textarea {\n  border-radius: 10px;\n  border: 1px solid #dbe4f5;\n  padding: 10px 12px;\n  font-size: 13px;\n  font-family: \"Segoe UI\", -apple-system, BlinkMacSystemFont, sans-serif;\n  color: #0f172a;\n  background: #ffffff;\n}\n\n.chatbot-form-group input:focus,\n.chatbot-form-group textarea:focus {\n  outline: none;\n  border-color: var(--chatbot-primary);\n  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);\n}\n\n.chatbot-form-group textarea {\n  min-height: 110px;\n  resize: vertical;\n}\n\n.chatbot-form-actions {\n  display: flex;\n  gap: 10px;\n  justify-content: space-between;\n}\n\n.chatbot-btn-primary {\n  flex: 1;\n  border-radius: 12px;\n  border: 0;\n  background: var(--chatbot-primary);\n  color: #ffffff;\n  font-weight: 600;\n  padding: 10px 12px;\n  cursor: pointer;\n}\n\n.chatbot-btn-secondary {\n  flex: 1;\n  border-radius: 12px;\n  border: 1px solid #dbe4f5;\n  background: #ffffff;\n  color: #334155;\n  font-weight: 600;\n  padding: 10px 12px;\n  cursor: pointer;\n}\n\n.chatbot-human-success {\n  display: none;\n  flex-direction: column;\n  align-items: center;\n  text-align: center;\n  gap: 12px;\n  padding: 24px 16px;\n  border-radius: 14px;\n  border: 1px solid #dbe4f5;\n  background: #ffffff;\n}\n\n.chatbot-widget-root.show-human-success .chatbot-body,\n.chatbot-widget-root.show-human-success .chatbot-footer {\n  display: none;\n}\n\n.chatbot-widget-root.show-human-success .chatbot-human-container {\n  display: flex;\n}\n\n.chatbot-widget-root.show-human-success .chatbot-human-form {\n  display: none;\n}\n\n.chatbot-widget-root.show-human-success .chatbot-human-success {\n  display: flex;\n}\n\n.chatbot-success-icon {\n  width: 54px;\n  height: 54px;\n  border-radius: 999px;\n  background: #dcfce7;\n  color: #16a34a;\n  display: grid;\n  place-items: center;\n  font-size: 26px;\n}\n\n.chatbot-human-success h3 {\n  margin: 0;\n  font-size: 18px;\n  font-weight: 700;\n  color: #0f172a;\n}\n\n.chatbot-human-success p {\n  margin: 0;\n  font-size: 13px;\n  color: #64748b;\n}\n\n.chatbot-widget-root.show-human-form .chatbot-footer,\n.chatbot-widget-root.show-human-success .chatbot-footer {\n  display: none;\n}\n\n.chatbot-typing {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  font-size: 12px;\n  color: #475569;\n  font-weight: 500;\n}\n\n.chatbot-typing span {\n  width: 6px;\n  height: 6px;\n  border-radius: 999px;\n  background: #94a3b8;\n  animation: typing-bounce 1.2s infinite ease-in-out;\n}\n\n.chatbot-typing span:nth-child(2) {\n  animation-delay: 0.2s;\n}\n\n.chatbot-typing span:nth-child(3) {\n  animation-delay: 0.4s;\n}\n\n.chatbot-error {\n  color: #dc2626;\n  font-size: 12px;\n  text-align: center;\n}\n\n.chatbot-loading {\n  text-align: center;\n  font-size: 12px;\n  color: #64748b;\n}\n\n.chatbot-human-note {\n  font-size: 12px;\n  color: #475569;\n  text-align: center;\n}\n\n.chatbot-human-note span {\n  font-weight: 600;\n}\n\n@keyframes typing-bounce {\n  0%,\n  100% {\n    transform: translateY(0);\n  }\n  50% {\n    transform: translateY(-5px);\n  }\n}\n\n@media (max-width: 520px) {\n  .chatbot-panel {\n    height: min(560px, calc(100vh - 80px));\n    width: min(360px, calc(100vw - 20px));\n  }\n\n  .chatbot-widget-root.right,\n  .chatbot-widget-root.left {\n    right: 10px;\n    left: 10px;\n  }\n\n  .chatbot-widget-root {\n    bottom: 10px;\n  }\n\n  .chatbot-panel {\n    width: min(360px, calc(100vw - 20px));\n    height: min(520px, calc(100vh - 70px));\n  }\n\n  .chatbot-intro h3 {\n    font-size: 22px;\n  }\n}\n", Ze = () => {
+	if (document.getElementById("chatbot-package-styles")) return;
 	let e = document.createElement("style");
-	e.id = dt, e.textContent = pt, document.head.appendChild(e);
-}, ht = (e) => e.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"), gt = (e) => e.replace(/^###\s+(.+)$/gm, "<div class=\"chatbot-md-h3\">$1</div>").replace(/^##\s+(.+)$/gm, "<div class=\"chatbot-md-h2\">$1</div>").replace(/^#\s+(.+)$/gm, "<div class=\"chatbot-md-h1\">$1</div>").replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, (e, t, n) => `<a href="${n}" target="_blank" rel="noopener noreferrer">${t}</a>`).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>").replace(/\*([^*]+)\*/g, "<em>$1</em>").replace(/`([^`]+)`/g, "<code>$1</code>").replace(/^\s*-\s+/gm, "• ").replace(/\n/g, "<br>"), _t = (e) => String(e || "").split(/```/).map((e, t) => t % 2 == 1 ? `<pre><code>${ht(e.trim())}</code></pre>` : gt(ht(e))).join(""), $ = (e, t, n = !1) => {
-	let r = document.createElement("div");
-	return r.className = `chatbot-bubble ${t}`, n ? r.innerHTML = _t(e) : r.textContent = e, r;
-}, vt = (e, t, n) => {
-	let r = document.createElement("button");
-	return r.type = "button", r.innerHTML = `<i data-lucide="${e}" aria-hidden="true"></i>`, r.setAttribute("aria-label", t), n && r.addEventListener("click", n), r;
-}, yt = () => {
-	_({ icons: {
-		Bot: p,
-		MessageCircle: m,
-		SendHorizontal: te,
-		UserRound: h,
-		X: g,
-		CheckCircle: ee,
-		ArrowLeft: f
+	e.id = Je, e.textContent = Xe, document.head.appendChild(e);
+}, Qe = {
+	xmlns: "http://www.w3.org/2000/svg",
+	width: 24,
+	height: 24,
+	viewBox: "0 0 24 24",
+	fill: "none",
+	stroke: "currentColor",
+	"stroke-width": 2,
+	"stroke-linecap": "round",
+	"stroke-linejoin": "round"
+}, $e = ([e, t, n]) => {
+	let r = document.createElementNS("http://www.w3.org/2000/svg", e);
+	return Object.keys(t).forEach((e) => {
+		r.setAttribute(e, String(t[e]));
+	}), n?.length && n.forEach((e) => {
+		let t = $e(e);
+		r.appendChild(t);
+	}), r;
+}, et = (e, t = {}) => $e([
+	"svg",
+	{
+		...Qe,
+		...t
+	},
+	e
+]), tt = (e) => {
+	for (let t in e) if (t.startsWith("aria-") || t === "role" || t === "title") return !0;
+	return !1;
+}, nt = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) === t).join(" ").trim(), rt = (e) => e.replace(/^([A-Z])|[\s-_]+(\w)/g, (e, t, n) => n ? n.toUpperCase() : t.toLowerCase()), it = (e) => {
+	let t = rt(e);
+	return t.charAt(0).toUpperCase() + t.slice(1);
+}, at = (e) => Array.from(e.attributes).reduce((e, t) => (e[t.name] = t.value, e), {}), ot = (e) => typeof e == "string" ? e : !e || !e.class ? "" : e.class && typeof e.class == "string" ? e.class.split(" ") : e.class && Array.isArray(e.class) ? e.class : "", st = (e, { nameAttr: t, icons: n, attrs: r }) => {
+	let i = e.getAttribute(t);
+	if (i == null) return;
+	let a = n[it(i)];
+	if (!a) return console.warn(`${e.outerHTML} icon name was not found in the provided icons object.`);
+	let o = at(e), s = tt(o) ? {} : { "aria-hidden": "true" }, c = {
+		...Qe,
+		"data-lucide": i,
+		...s,
+		...r,
+		...o
+	}, l = ot(o), u = ot(r), d = nt("lucide", `lucide-${i}`, ...l, ...u);
+	d && Object.assign(c, { class: d });
+	let f = et(a, c);
+	return e.parentNode?.replaceChild(f, e);
+}, ct = [["path", { d: "m12 19-7-7 7-7" }], ["path", { d: "M19 12H5" }]], lt = [
+	["path", { d: "M12 8V4H8" }],
+	["rect", {
+		width: "16",
+		height: "12",
+		x: "4",
+		y: "8",
+		rx: "2"
+	}],
+	["path", { d: "M2 14h2" }],
+	["path", { d: "M20 14h2" }],
+	["path", { d: "M15 13v2" }],
+	["path", { d: "M9 13v2" }]
+], ut = [["path", { d: "M21.801 10A10 10 0 1 1 17 3.335" }], ["path", { d: "m9 11 3 3L22 4" }]], dt = [["path", { d: "M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719" }]], ft = [["path", { d: "M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z" }], ["path", { d: "M6 12h16" }]], pt = [["circle", {
+	cx: "12",
+	cy: "8",
+	r: "5"
+}], ["path", { d: "M20 21a8 8 0 0 0-16 0" }]], mt = [["path", { d: "M18 6 6 18" }], ["path", { d: "m6 6 12 12" }]], ht = ({ icons: e = {}, nameAttr: t = "data-lucide", attrs: n = {}, root: r = document, inTemplates: i } = {}) => {
+	if (!Object.values(e).length) throw Error("Please provide an icons object.\nIf you want to use all the icons you can import it like:\n `import { createIcons, icons } from 'lucide';\nlucide.createIcons({icons});`");
+	if (r === void 0) throw Error("`createIcons()` only works in a browser environment.");
+	if (Array.from(r.querySelectorAll(`[${t}]`)).forEach((r) => st(r, {
+		nameAttr: t,
+		icons: e,
+		attrs: n
+	})), i && Array.from(r.querySelectorAll("template")).forEach((r) => ht({
+		icons: e,
+		nameAttr: t,
+		attrs: n,
+		root: r.content,
+		inTemplates: i
+	})), t === "data-lucide") {
+		let t = r.querySelectorAll("[icon-name]");
+		t.length > 0 && (console.warn("[Lucide] Some icons were found with the now deprecated icon-name attribute. These will still be replaced for backwards compatibility, but will no longer be supported in v1.0 and you should switch to data-lucide"), Array.from(t).forEach((t) => st(t, {
+			nameAttr: "icon-name",
+			icons: e,
+			attrs: n
+		})));
+	}
+}, Q = () => {
+	ht({ icons: {
+		Bot: lt,
+		MessageCircle: dt,
+		SendHorizontal: ft,
+		UserRound: pt,
+		X: mt,
+		CheckCircle: ut,
+		ArrowLeft: ct
 	} });
-}, bt = (e) => {
+}, gt = (e) => {
 	let t = String(e || "").trim().replace(/\/+$/, "");
 	return !t || /^https?:\/\//i.test(t) ? t : t.startsWith("/") ? `${window.location.origin}${t}` : t;
-}, xt = (e) => e.startsWith("/") ? e : `/${e}`, St = (e) => e.replace(/\/api\/?$/i, ""), Ct = (e) => e && typeof e == "object" && "data" in e ? e.data : e, wt = (e = {}) => {
+}, _t = (e) => e.startsWith("/") ? e : `/${e}`, vt = (e) => e.replace(/\/api\/?$/i, ""), yt = (e) => e && typeof e == "object" && "data" in e ? e.data : e, bt = (e) => {
+	let t = "chatbot_ai_history", n = e?.aiSupport?.apiKey || e?.humanSupport?.widgetKey || "";
+	return n ? `${t}:${n}` : typeof window < "u" ? `${t}:${window.location.origin}` : t;
+}, xt = (e) => {
+	if (typeof localStorage > "u") return [];
+	try {
+		let t = localStorage.getItem(e);
+		if (!t) return [];
+		let n = JSON.parse(t);
+		return Array.isArray(n) ? n.filter((e) => e && (e.role === "user" || e.role === "bot")).map((e) => ({
+			role: e.role,
+			text: String(e.text || "")
+		})) : [];
+	} catch {
+		return [];
+	}
+}, St = (e, t) => {
+	if (!(typeof localStorage > "u")) try {
+		localStorage.setItem(e, JSON.stringify(t));
+	} catch {}
+}, Ct = (e, t, n) => {
+	t.push(n), St(e, t);
+}, wt = (e) => e.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"), Tt = (e) => e.replace(/^###\s+(.+)$/gm, "<div class=\"chatbot-md-h3\">$1</div>").replace(/^##\s+(.+)$/gm, "<div class=\"chatbot-md-h2\">$1</div>").replace(/^#\s+(.+)$/gm, "<div class=\"chatbot-md-h1\">$1</div>").replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, (e, t, n) => `<a href="${n}" target="_blank" rel="noopener noreferrer">${t}</a>`).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>").replace(/\*([^*]+)\*/g, "<em>$1</em>").replace(/`([^`]+)`/g, "<code>$1</code>").replace(/^\s*-\s+/gm, "• ").replace(/\n/g, "<br>"), Et = (e) => String(e || "").split(/```/).map((e, t) => t % 2 == 1 ? `<pre><code>${wt(e.trim())}</code></pre>` : Tt(wt(e))).join(""), $ = (e, t, n = !1) => {
+	let r = document.createElement("div");
+	return r.className = `chatbot-bubble ${t}`, n ? r.innerHTML = Et(e) : r.textContent = e, r;
+}, Dt = (e, t, n) => {
+	let r = document.createElement("button");
+	return r.type = "button", r.innerHTML = `<i data-lucide="${e}" aria-hidden="true"></i>`, r.setAttribute("aria-label", t), n && r.addEventListener("click", n), r;
+}, Ot = (e, t) => {
+	let n = document.createElement("header");
+	n.className = "chatbot-header";
+	let r = document.createElement("div");
+	r.className = "chatbot-header-left";
+	let i = document.createElement("div");
+	i.className = "chatbot-avatar", i.innerHTML = "<i data-lucide=\"bot\" aria-hidden=\"true\"></i>";
+	let a = document.createElement("div");
+	a.className = "chatbot-header-info";
+	let o = document.createElement("h2");
+	o.textContent = e.title;
+	let s = document.createElement("div");
+	s.className = "chatbot-status";
+	let c = document.createElement("span");
+	c.className = "chatbot-status-dot";
+	let l = document.createElement("span");
+	l.textContent = e.subtitle, s.append(c, l), a.append(o, s), r.append(i, a);
+	let u = document.createElement("div");
+	u.className = "chatbot-controls";
+	let d = Dt("x", "Close chat", t);
+	return u.append(d), n.append(r, u), {
+		header: n,
+		statusText: l
+	};
+}, kt = (e) => {
+	let t = document.createElement("div");
+	t.className = "chatbot-body";
+	let n = document.createElement("section");
+	n.className = "chatbot-intro";
+	let r = document.createElement("div");
+	r.className = "chatbot-intro-icon", r.textContent = "?";
+	let i = document.createElement("h3");
+	i.textContent = "Hi there!";
+	let a = document.createElement("p");
+	a.textContent = "I am your AI support assistant. Ask me anything.";
+	let o = document.createElement("p");
+	o.className = "chatbot-human-note", o.textContent = "If I cannot help, you can connect with our human support team.", n.append(r, i, a, o);
+	let s = document.createElement("section");
+	s.className = "chatbot-human-hero";
+	let c = document.createElement("h3");
+	c.textContent = "Talk to Support";
+	let l = document.createElement("p");
+	l.textContent = "Our team typically replies in a few minutes.";
+	let u = document.createElement("div");
+	u.className = "chatbot-history-label", u.textContent = "Previous Messages", s.append(c, l, u);
+	let d = document.createElement("div");
+	d.className = "chatbot-divider", d.textContent = "Previous AI Interaction";
+	let f = document.createElement("div");
+	return f.className = "chatbot-messages", f.setAttribute("aria-live", "polite"), f.appendChild($(e.welcomeMessage, "bot", !0)), t.append(n, s, f), {
+		body: t,
+		humanDivider: d,
+		messages: f
+	};
+}, At = (e) => {
+	let t = document.createElement("div");
+	t.className = "chatbot-footer";
+	let n = document.createElement("form");
+	n.className = "chatbot-input-row";
+	let r = document.createElement("textarea");
+	r.rows = 1, r.placeholder = e.placeholder;
+	let i = document.createElement("button");
+	i.type = "submit", i.setAttribute("aria-label", "Send message"), i.innerHTML = "<i data-lucide=\"send-horizontal\" aria-hidden=\"true\"></i>", n.append(r, i);
+	let a = document.createElement("button");
+	a.type = "button", a.className = "chatbot-human-button";
+	let o = document.createElement("p");
+	return o.className = "chatbot-powered", o.innerHTML = "Powered by <strong>AI assistant</strong>", t.append(n, a, o), {
+		footer: t,
+		inputRow: n,
+		input: r,
+		humanButton: a
+	};
+}, jt = () => {
+	let e = document.createElement("div");
+	e.className = "chatbot-human-container";
+	let t = document.createElement("div");
+	t.className = "chatbot-human-header";
+	let n = document.createElement("h3");
+	n.textContent = "Contact Support";
+	let r = document.createElement("p");
+	r.textContent = "Please provide your details and we will get back to you shortly.", t.append(n, r);
+	let i = document.createElement("form");
+	i.className = "chatbot-human-form";
+	let a = (e, t) => {
+		let n = document.createElement("div");
+		n.className = "chatbot-form-group";
+		let r = document.createElement("label");
+		return r.textContent = e, n.append(r, t), n;
+	}, o = document.createElement("input");
+	o.type = "text", o.placeholder = "John Doe", o.required = !0;
+	let s = document.createElement("input");
+	s.type = "email", s.placeholder = "john@example.com", s.required = !0;
+	let c = document.createElement("textarea");
+	c.placeholder = "How can we help you?", c.required = !0;
+	let l = document.createElement("div");
+	l.className = "chatbot-form-actions";
+	let u = document.createElement("button");
+	u.type = "button", u.className = "chatbot-btn-secondary", u.innerHTML = "<i data-lucide=\"arrow-left\" aria-hidden=\"true\" style=\"width: 16px; height: 16px;\"></i> Back";
+	let d = document.createElement("button");
+	d.type = "submit", d.className = "chatbot-btn-primary", d.textContent = "Send Message", l.append(u, d), i.append(a("Name", o), a("Email", s), a("Description", c), l);
+	let f = document.createElement("div");
+	f.className = "chatbot-human-success";
+	let p = document.createElement("div");
+	p.className = "chatbot-success-icon", p.innerHTML = "<i data-lucide=\"check-circle\" aria-hidden=\"true\"></i>";
+	let m = document.createElement("h3");
+	m.textContent = "Message Sent!";
+	let h = document.createElement("p");
+	h.textContent = "Our support team will reach out to you via email shortly.";
+	let g = document.createElement("button");
+	return g.type = "button", g.className = "chatbot-btn-primary", g.textContent = "Back to Chat", f.append(p, m, h, g), e.append(t, i, f), {
+		humanContainer: e,
+		humanForm: i,
+		cancelBtn: u,
+		successBackBtn: g
+	};
+}, Mt = (e = {}) => {
 	if (typeof window > "u" || typeof document > "u") throw Error("chatbot-package can only run in a browser environment.");
-	mt();
+	Ze();
 	let t = {
-		...ft,
+		...Ye,
 		...e
 	}, n = document.createElement("div");
 	n.className = `chatbot-widget-root ${t.position === "bottom-left" ? "left" : "right"}`, n.style.setProperty("--chatbot-primary", t.primaryColor), n.style.zIndex = String(t.zIndex);
@@ -1556,122 +1692,54 @@ var dt = "chatbot-package-styles", ft = {
 	r.type = "button", r.className = "chatbot-launcher", r.setAttribute("aria-label", "Open chatbot"), r.setAttribute("aria-expanded", "false"), r.innerHTML = "<i data-lucide=\"message-circle\" aria-hidden=\"true\"></i>";
 	let i = document.createElement("section");
 	i.className = "chatbot-panel", i.setAttribute("role", "dialog"), i.setAttribute("aria-label", t.title);
-	let a = document.createElement("header");
-	a.className = "chatbot-header";
-	let o = document.createElement("div");
-	o.className = "chatbot-header-left";
-	let s = document.createElement("div");
-	s.className = "chatbot-avatar", s.innerHTML = "<i data-lucide=\"bot\" aria-hidden=\"true\"></i>";
-	let c = document.createElement("div");
-	c.className = "chatbot-header-info";
-	let l = document.createElement("h2");
-	l.textContent = t.title;
-	let u = document.createElement("div");
-	u.className = "chatbot-status";
-	let d = document.createElement("span");
-	d.className = "chatbot-status-dot";
-	let f = document.createElement("span");
-	f.textContent = t.subtitle, u.append(d, f), c.append(l, u), o.append(s, c);
-	let p = document.createElement("div");
-	p.className = "chatbot-controls";
-	let ee = vt("x", "Close chat", () => {
+	let { header: a, statusText: o } = Ot(t, () => {
 		n.classList.remove("open"), r.setAttribute("aria-expanded", "false");
-	});
-	p.append(ee), a.append(o, p);
-	let m = document.createElement("div");
-	m.className = "chatbot-body";
-	let te = document.createElement("section");
-	te.className = "chatbot-intro";
-	let h = document.createElement("div");
-	h.className = "chatbot-intro-icon", h.textContent = "?";
-	let g = document.createElement("h3");
-	g.textContent = "Hi there!";
-	let _ = document.createElement("p");
-	_.textContent = "I am your AI support assistant. Ask me anything.";
-	let v = document.createElement("p");
-	v.className = "chatbot-human-note", v.textContent = "If I cannot help, you can connect with our human support team.", te.append(h, g, _, v);
-	let y = document.createElement("section");
-	y.className = "chatbot-human-hero";
-	let b = document.createElement("h3");
-	b.textContent = "Talk to Support";
-	let ne = document.createElement("p");
-	ne.textContent = "Our team typically replies in a few minutes.";
-	let x = document.createElement("div");
-	x.className = "chatbot-history-label", x.textContent = "Previous Messages", y.append(b, ne, x);
-	let S = document.createElement("div");
-	S.className = "chatbot-divider", S.textContent = "Previous AI Interaction";
-	let C = document.createElement("div");
-	C.className = "chatbot-messages", C.setAttribute("aria-live", "polite"), C.appendChild($(t.welcomeMessage, "bot", !0)), m.append(te, y, C);
-	let w = document.createElement("div");
-	w.className = "chatbot-footer";
-	let T = document.createElement("form");
-	T.className = "chatbot-input-row";
-	let E = document.createElement("textarea");
-	E.rows = 1, E.placeholder = t.placeholder;
-	let re = document.createElement("button");
-	re.type = "submit", re.setAttribute("aria-label", "Send message"), re.innerHTML = "<i data-lucide=\"send-horizontal\" aria-hidden=\"true\"></i>", T.append(E, re);
-	let D = document.createElement("button");
-	D.type = "button", D.className = "chatbot-human-button";
-	let O = "<i data-lucide=\"user-round\" aria-hidden=\"true\"></i><span>Talk to a real human</span>", ie = "<i data-lucide=\"bot\" aria-hidden=\"true\"></i><span>Talk to AI</span>";
-	D.innerHTML = O;
-	let ae = document.createElement("p");
-	ae.className = "chatbot-powered", ae.innerHTML = "Powered by <strong>AI assistant</strong>", w.append(T, D, ae);
-	let k = document.createElement("div");
-	k.className = "chatbot-human-container";
-	let oe = document.createElement("div");
-	oe.className = "chatbot-human-header";
-	let se = document.createElement("h3");
-	se.textContent = "Contact Support";
-	let ce = document.createElement("p");
-	ce.textContent = "Please provide your details and we will get back to you shortly.", oe.append(se, ce);
-	let A = document.createElement("form");
-	A.className = "chatbot-human-form";
-	let le = (e, t) => {
-		let n = document.createElement("div");
-		n.className = "chatbot-form-group";
-		let r = document.createElement("label");
-		return r.textContent = e, n.append(r, t), n;
-	}, j = document.createElement("input");
-	j.type = "text", j.placeholder = "John Doe", j.required = !0;
-	let M = document.createElement("input");
-	M.type = "email", M.placeholder = "john@example.com", M.required = !0;
-	let N = document.createElement("textarea");
-	N.placeholder = "How can we help you?", N.required = !0;
-	let P = document.createElement("div");
-	P.className = "chatbot-form-actions";
-	let F = document.createElement("button");
-	F.type = "button", F.className = "chatbot-btn-secondary", F.innerHTML = "<i data-lucide=\"arrow-left\" aria-hidden=\"true\" style=\"width: 16px; height: 16px;\"></i> Back";
-	let I = document.createElement("button");
-	I.type = "submit", I.className = "chatbot-btn-primary", I.textContent = "Send Message", P.append(F, I), A.append(le("Name", j), le("Email", M), le("Description", N), P);
-	let ue = document.createElement("div");
-	ue.className = "chatbot-human-success";
-	let L = document.createElement("div");
-	L.className = "chatbot-success-icon", L.innerHTML = "<i data-lucide=\"check-circle\" aria-hidden=\"true\"></i>";
-	let R = document.createElement("h3");
-	R.textContent = "Message Sent!";
-	let de = document.createElement("p");
-	de.textContent = "Our support team will reach out to you via email shortly.";
-	let z = document.createElement("button");
-	z.type = "button", z.className = "chatbot-btn-primary", z.textContent = "Back to Chat", ue.append(L, R, de, z), k.append(oe, A, ue), i.append(a, m, w, k), n.append(i, r), document.body.appendChild(n), yt();
-	let B = !1, V = !1, H = !1, U = !1, fe = !1, pe = !1, W = !1, G = null, me = null, K = null, he = /* @__PURE__ */ new Set(), q = (e, t) => {
-		e.trim() && (m.classList.add("has-messages"), C.appendChild($(e.trim(), "bot", t?.markdown ?? !1)), m.scrollTop = m.scrollHeight);
-	}, J = (e) => {
-		m.classList.toggle("human-mode", e), e ? (C.contains(S) || C.insertBefore(S, C.firstChild), D.innerHTML = ie) : (C.contains(S) && S.remove(), D.innerHTML = O), yt();
-	}, ge = (e) => {
-		V || (B = e, n.classList.toggle("open", B), r.setAttribute("aria-expanded", String(B)), B && window.setTimeout(() => E.focus(), 0));
-	}, _e = async (n) => {
-		if (H && G) {
-			G.emit("widget:message", { text: n });
+	}), { body: s, humanDivider: c, messages: l } = kt(t), { footer: u, inputRow: d, input: f, humanButton: p } = At(t), m = "<i data-lucide=\"user-round\" aria-hidden=\"true\"></i><span>Talk to a real human</span>", h = "<i data-lucide=\"bot\" aria-hidden=\"true\"></i><span>Talk to AI</span>";
+	p.innerHTML = m;
+	let { humanContainer: g, humanForm: _, cancelBtn: ee, successBackBtn: te } = jt(), v = bt(e), y = xt(v), b = Math.max(y.length - 30, 0), x = !1, S = () => l.contains(c) ? c.nextSibling : l.firstChild, C = () => {
+		l.innerHTML = "";
+		let e = y.slice(b);
+		e.length !== 0 && (s.classList.add("has-messages"), e.forEach((e) => {
+			l.appendChild($(e.text, e.role, e.role === "bot"));
+		}), s.scrollTop = s.scrollHeight);
+	}, w = () => {
+		if (x || b === 0) return;
+		x = !0;
+		let e = Math.max(b - 30, 0), t = y.slice(e, b);
+		if (t.length === 0) {
+			x = !1;
+			return;
+		}
+		let n = s.scrollHeight, r = s.scrollTop, i = S();
+		t.forEach((e) => {
+			l.insertBefore($(e.text, e.role, e.role === "bot"), i);
+		}), b = e, s.scrollTop = r + (s.scrollHeight - n), x = !1;
+	}, ne = () => {
+		b !== 0 && s.scrollTop <= 12 && w();
+	};
+	y.length > 0 && C(), s.addEventListener("scroll", ne), i.append(a, s, u, g), n.append(i, r), document.body.appendChild(n), Q();
+	let T = !1, E = !1, D = !1, O = !1, k = !1, A = !1, j = !1, M = null, N = null, P = null, F = /* @__PURE__ */ new Set(), I = (e, t) => {
+		e.trim() && (s.classList.add("has-messages"), l.appendChild($(e.trim(), "bot", t?.markdown ?? !1)), s.scrollTop = s.scrollHeight, t?.store && !D && Ct(v, y, {
+			role: "bot",
+			text: e.trim()
+		}));
+	}, L = (e) => {
+		s.classList.toggle("human-mode", e), e ? (l.contains(c) || l.insertBefore(c, l.firstChild), p.innerHTML = h) : (l.contains(c) && c.remove(), p.innerHTML = m), Q();
+	}, R = (e) => {
+		E || (T = e, n.classList.toggle("open", T), r.setAttribute("aria-expanded", String(T)), T && window.setTimeout(() => f.focus(), 0));
+	}, re = async (n) => {
+		if (D && M) {
+			M.emit("widget:message", { text: n });
 			return;
 		}
 		if (e.onUserMessage) {
 			let t = await e.onUserMessage(n);
-			typeof t == "string" && t.trim() && q(t);
+			typeof t == "string" && t.trim() && I(t, { store: !0 });
 			return;
 		}
 		if (e.aiSupport) {
 			try {
-				let t = bt(e.aiSupport.apiBaseUrl), r = xt(e.aiSupport.chatPath || "/rag/chat"), i = await fetch(`${t}${r}`, {
+				let t = gt(e.aiSupport.apiBaseUrl), r = _t(e.aiSupport.chatPath || "/rag/chat"), i = await fetch(`${t}${r}`, {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
@@ -1680,128 +1748,141 @@ var dt = "chatbot-package-styles", ft = {
 					body: JSON.stringify({ query: n })
 				});
 				if (!i.ok) throw Error("Unable to fetch chatbot response right now.");
-				let a = Ct(await i.json());
-				if (q(typeof a?.answer == "string" && a.answer || typeof a?.response == "string" && a.response || typeof a?.message == "string" && a.message || "I processed your question, but no answer text was returned.", { markdown: !0 }), a?.raise_ticket && a?.ticket_payload) {
+				let a = yt(await i.json());
+				if (I(typeof a?.answer == "string" && a.answer || typeof a?.response == "string" && a.response || typeof a?.message == "string" && a.message || "I processed your question, but no answer text was returned.", {
+					markdown: !0,
+					store: !0
+				}), a?.raise_ticket && a?.ticket_payload) {
 					let e = a.ticket_payload, t = a?.ticket?._id || a?.ticketId || a?.ticket_id;
-					q([
+					I([
 						"### Ticket Details",
 						e?.summary ? `- Summary: ${e.summary}` : null,
 						e?.priority ? `- Priority: ${String(e.priority).toUpperCase()}` : null,
 						e?.urgency ? `- Urgency: ${String(e.urgency).toUpperCase()}` : null,
 						t ? `- Ticket ID: ${t}` : null,
 						"- Status: Pending"
-					].filter(Boolean).join("\n"), { markdown: !0 });
+					].filter(Boolean).join("\n"), {
+						markdown: !0,
+						store: !0
+					});
 				}
 			} catch (e) {
 				let t = e instanceof Error ? e.message : "Sorry, I am having trouble connecting right now.";
-				q(t.includes("Failed to fetch") ? "Unable to reach the AI server. Please try again." : t);
+				I(t.includes("Failed to fetch") ? "Unable to reach the AI server. Please try again." : t);
 			}
 			return;
 		}
-		q(`Thanks! ${t.botName} received: "${n}"`);
-	}, ve = async (n) => {
+		I(`Thanks! ${t.botName} received: "${n}"`, { store: !0 });
+	}, ie = async (n) => {
 		if (!t.humanSupport) {
-			q("Human support is not configured for this widget yet.");
+			I("Human support is not configured for this widget yet.");
 			return;
 		}
 		let r = t.humanSupport.widgetKey || e.aiSupport?.apiKey;
 		if (!r) throw Error("Human support requires a widget key or aiSupport.apiKey.");
-		let i = bt(t.humanSupport.apiBaseUrl), a = await fetch(`${i}/widget/session`, {
+		let i = gt(t.humanSupport.apiBaseUrl), a = await fetch(`${i}/widget/session`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
 				widgetKey: r,
 				visitorName: n.name,
 				visitorEmail: n.email,
-				issue: n.issue
+				issue: n.issue,
+				chatHistory: y
 			})
 		});
 		if (!a.ok) {
 			let e = await a.json().catch(() => null), t = e?.message || e?.error || "Unable to connect to human support right now.";
 			throw Error(t);
 		}
-		let o = Ct(await a.json());
-		me = o.sessionId, K = o.ticketId, H = !0, J(!0);
-		let s = ut(St(i), {
+		let s = yt(await a.json());
+		N = s.sessionId, P = s.ticketId, D = !0, L(!0);
+		let c = Z(vt(i), {
 			path: "/socket.io",
 			transports: ["websocket"],
-			auth: { token: o.chatToken }
+			auth: { token: s.chatToken }
 		});
-		G = s, s.on("connect", () => {
-			f.textContent = "Connecting to a human agent...";
-		}), s.on("disconnect", () => {
-			H && (f.textContent = "Reconnecting to human support...");
-		}), s.on("chat:message", (e) => {
-			e.sessionId === me && (e._id && he.has(e._id) || (e._id && he.add(e._id), e.sender === "agent" && typeof e.text == "string" && (U || (q("You are now connected to a human agent."), C.appendChild($("AGENT JOINED THE SESSION", "system")), pe = !0), q(e.text), U = !0)));
-		}), s.on("chat:ticket_status", (e) => {
-			if (e.sessionId && e.sessionId === me || e.ticketId && e.ticketId === K) {
+		M = c, c.on("connect", () => {
+			o.textContent = "Connecting to a human agent...";
+		}), c.on("disconnect", () => {
+			D && (o.textContent = "Reconnecting to human support...");
+		}), c.on("chat:message", (e) => {
+			e.sessionId === N && (e._id && F.has(e._id) || (e._id && F.add(e._id), e.sender === "agent" && typeof e.text == "string" && (O || (I("You are now connected to a human agent."), l.appendChild($("AGENT JOINED THE SESSION", "system")), A = !0), I(e.text), O = !0)));
+		}), c.on("chat:ticket_status", (e) => {
+			if (e.sessionId && e.sessionId === N || e.ticketId && e.ticketId === P) {
 				if (e.status === "assigned") {
-					U || q("A human agent has accepted your chat. You are now connected."), U = !0, pe ||= (C.appendChild($("AGENT JOINED THE SESSION", "system")), !0), f.textContent = "Connected with human support";
+					O || I("A human agent has accepted your chat. You are now connected."), O = !0, A ||= (l.appendChild($("AGENT JOINED THE SESSION", "system")), !0), o.textContent = "Connected with human support";
 					return;
 				}
-				e.status === "pending" && (f.textContent = "Connecting to a human agent...");
+				e.status === "pending" && (o.textContent = "Connecting to a human agent...");
 			}
-		}), s.on("chat:error", (e) => {
-			q(e.message || "Support connection error. Please try again.");
-		}), s.emit("widget:request_human", {
+		}), c.on("chat:error", (e) => {
+			I(e.message || "Support connection error. Please try again.");
+		}), c.emit("widget:request_human", {
 			name: n.name,
 			email: n.email,
 			issue: n.issue
-		}), f.textContent = "Connecting to a human agent...";
-	}, Y = async (e) => {
+		}), o.textContent = "Connecting to a human agent...";
+	}, z = async (e) => {
 		let t = e.trim();
-		if (!(!t || V)) {
-			if (W) {
-				m.classList.add("has-messages"), J(!0), C.appendChild($(t, "user")), E.value = "", m.scrollTop = m.scrollHeight, W = !1;
+		if (!(!t || E)) {
+			if (j) {
+				s.classList.add("has-messages"), L(!0), l.appendChild($(t, "user")), D || Ct(v, y, {
+					role: "user",
+					text: t
+				}), f.value = "", s.scrollTop = s.scrollHeight, j = !1;
 				try {
-					await ve({
+					await ie({
 						name: "Website Visitor",
 						email: "",
 						issue: t
-					}), q("You're now connected to a support agent. Please wait..."), D.innerHTML = ie, yt();
+					}), I("You're now connected to a support agent. Please wait..."), p.innerHTML = h, Q();
 				} catch (e) {
-					q(e instanceof Error ? e.message : "Unable to connect to support right now."), W = !0;
+					I(e instanceof Error ? e.message : "Unable to connect to support right now."), j = !0;
 				}
 				return;
 			}
-			m.classList.add("has-messages"), J(H), C.appendChild($(t, "user")), E.value = "", m.scrollTop = m.scrollHeight, await _e(t);
+			s.classList.add("has-messages"), L(D), l.appendChild($(t, "user")), D || Ct(v, y, {
+				role: "user",
+				text: t
+			}), f.value = "", s.scrollTop = s.scrollHeight, await re(t);
 		}
 	};
 	return r.addEventListener("click", () => {
-		ge(!B);
-	}), T.addEventListener("submit", async (e) => {
-		e.preventDefault(), await Y(E.value);
-	}), E.addEventListener("keydown", async (e) => {
-		e.key === "Enter" && !e.shiftKey && (e.preventDefault(), await Y(E.value));
-	}), D.addEventListener("click", async () => {
-		if (H) {
-			H = !1, U = !1, W = !1, J(!1), q("You are now chatting with AI again.");
+		R(!T);
+	}), d.addEventListener("submit", async (e) => {
+		e.preventDefault(), await z(f.value);
+	}), f.addEventListener("keydown", async (e) => {
+		e.key === "Enter" && !e.shiftKey && (e.preventDefault(), await z(f.value));
+	}), p.addEventListener("click", async () => {
+		if (D) {
+			D = !1, O = !1, j = !1, L(!1), I("You are now chatting with AI again.");
 			return;
 		}
-		if (!fe) {
-			fe = !0, J(!0), q("Please describe the issue you are facing."), W = !0;
+		if (!k) {
+			k = !0, L(!0), I("Please describe the issue you are facing."), j = !0;
 			try {
-				D.innerHTML = ie, yt();
+				p.innerHTML = h, Q();
 			} catch (e) {
 				let t = e instanceof Error ? e.message : "Unable to connect to support right now.";
-				q(t.includes("Failed to fetch") ? "Unable to reach support server. Please try again." : t), H = !1, U = !1, W = !1, J(!1), D.innerHTML = O, yt();
+				I(t.includes("Failed to fetch") ? "Unable to reach support server. Please try again." : t), D = !1, O = !1, j = !1, L(!1), p.innerHTML = m, Q();
 			} finally {
-				fe = !1;
+				k = !1;
 			}
 		}
-	}), F.addEventListener("click", () => {}), A.addEventListener("submit", async (e) => {
+	}), ee.addEventListener("click", () => {}), _.addEventListener("submit", async (e) => {
 		e.preventDefault();
-	}), z.addEventListener("click", () => {
-		n.classList.remove("show-human-form"), n.classList.remove("show-human-success"), A.reset(), m.classList.add("has-messages"), C.appendChild($(H && K ? U ? `You are now connected with our support team (ticket ${K.slice(-6)}).` : `Your ticket ${K.slice(-6)} is waiting for an available human agent.` : "Your issue has been submitted. A human agent will contact you soon.", "bot")), m.scrollTop = m.scrollHeight;
+	}), te.addEventListener("click", () => {
+		n.classList.remove("show-human-form"), n.classList.remove("show-human-success"), _.reset(), s.classList.add("has-messages"), l.appendChild($(D && P ? O ? `You are now connected with our support team (ticket ${P.slice(-6)}).` : `Your ticket ${P.slice(-6)} is waiting for an available human agent.` : "Your issue has been submitted. A human agent will contact you soon.", "bot")), s.scrollTop = s.scrollHeight;
 	}), {
-		open: () => ge(!0),
-		close: () => ge(!1),
-		toggle: () => ge(!B),
-		sendMessage: Y,
+		open: () => R(!0),
+		close: () => R(!1),
+		toggle: () => R(!T),
+		sendMessage: z,
 		destroy: () => {
-			V || (V = !0, G &&= (G.close(), null), n.remove());
+			E || (E = !0, s.removeEventListener("scroll", ne), M &&= (M.close(), null), n.remove());
 		}
 	};
 };
 //#endregion
-export { wt as createChatbotWidget };
+export { Mt as createChatbotWidget };

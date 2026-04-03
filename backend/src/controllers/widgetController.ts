@@ -112,6 +112,15 @@ export async function createWidgetSession(req: Request, res: Response): Promise<
       "website-chat",
       initialIssue,
     );
+    const chatHistory = Array.isArray(req.body?.chatHistory)
+      ? req.body.chatHistory
+          .filter((entry: any) => entry && (entry.role === "user" || entry.role === "bot"))
+          .map((entry: any) => ({
+            role: entry.role as "user" | "bot",
+            text: String(entry.text ?? "").trim(),
+          }))
+          .filter((entry: { text: string }) => entry.text.length > 0)
+      : [];
     const ticketDoc = {
       companyId: keyDoc.companyId,
       message: triage.summary || initialIssue,
@@ -145,22 +154,38 @@ export async function createWidgetSession(req: Request, res: Response): Promise<
     await db.collection("chat_sessions").insertOne(sessionDoc);
 
     if (initialIssue) {
-      await db.collection("messages").insertOne({
-        ticketId: ticketObjectId,
-        companyId: keyDoc.companyId,
-        sessionId,
-        sender: "user",
-        text: initialIssue,
-        createdAt: now,
-        updatedAt: now,
-      });
+      if (chatHistory.length > 0) {
+        const seeded = chatHistory.map((entry, index) => {
+          const createdAt = new Date(now.getTime() + index);
+          return {
+            ticketId: ticketObjectId,
+            companyId: keyDoc.companyId,
+            sessionId,
+            sender: entry.role,
+            text: entry.text,
+            createdAt,
+            updatedAt: createdAt,
+          };
+        });
+        await db.collection("messages").insertMany(seeded);
+      } else {
+        await db.collection("messages").insertOne({
+          ticketId: ticketObjectId,
+          companyId: keyDoc.companyId,
+          sessionId,
+          sender: "user",
+          text: initialIssue,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
     }
 
     try {
       await ticketVectorService.upsertTicket({
         ticketId: ticketObjectId.toString(),
         companyId: keyDoc.companyId,
-        message: ticketDoc.message,
+        message: initialIssue,
         category: ticketDoc.category,
         priority: ticketDoc.priority,
         customerName: ticketDoc.customerName,

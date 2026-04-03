@@ -27,7 +27,12 @@ export class RAGEngine {
 
 
 
-    async answerTicket(query: string, _sessionId: string = "default", companyId?: number) {
+    async answerTicket(
+        query: string,
+        _sessionId: string = "default",
+        companyId?: number,
+        websiteId?: number | null,
+    ) {
         const historyKey = Number(companyId ?? 1);
         // 1. Q&A Mapping (Fast track)
         if (companyId) {
@@ -53,7 +58,10 @@ export class RAGEngine {
 
 
         // 2. Retrieve relevant context
-        const contextDocs: LangChainDocument[] = await indexerService.similaritySearch(query, 8);
+        const contextDocs: LangChainDocument[] = await indexerService.similaritySearch(query, 8, {
+            companyId: companyId ?? 1,
+            websiteId: websiteId ?? null,
+        });
         const rankedDocs = this.rankDocsForQuery(query, contextDocs);
 
         // simple relevance grading (threshold check)
@@ -68,7 +76,10 @@ export class RAGEngine {
         if (companyId) {
             try {
                 const { sitemaps } = await getCollections();
-                const sitemapDoc = await sitemaps.findOne({ companyId });
+                const sitemapDoc = await sitemaps.findOne({
+                    companyId,
+                    websiteId: websiteId ?? null,
+                });
                 if (sitemapDoc) {
                     sitemapPages = Array.isArray(sitemapDoc.pages) ? sitemapDoc.pages : [];
                     sitemapText = sitemapDoc.pages.map(p => `- ${p.title}: ${p.url}`).join('\n');

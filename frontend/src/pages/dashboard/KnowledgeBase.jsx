@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import ragService from '../../services/ragService';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -7,6 +7,7 @@ import {
     Loader2, FileText, Settings2, ChevronDown, ChevronUp, KeyRound, Lock, Shield,
     Code, Copy, Plus, Trash2, MessageSquare, Send, RotateCcw
 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 /* ─── tiny helpers ─── */
 const StatusBadge = ({ type }) => {
@@ -30,32 +31,15 @@ const SectionToggle = ({ open, onToggle, label, icon }) => (
     </button>
 );
 
-const panelClass =
-    'rounded-3xl border border-slate-200/80 bg-white/95 shadow-[0_24px_48px_-36px_rgba(15,23,42,0.65)] ring-1 ring-white/70 overflow-hidden';
-
-const panelHeadClass =
-    'flex items-center gap-3 border-b border-slate-100 bg-[linear-gradient(180deg,_rgba(248,250,252,0.95),_rgba(255,255,255,0.95))] px-6 py-4';
-
-const fieldClass =
-    'w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition-all focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10';
-
-const primaryBtnClass =
-    'inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 px-6 py-3 text-sm font-bold text-white transition-all hover:from-indigo-700 hover:to-blue-700 disabled:opacity-50';
-
-const subtleBtnClass =
-    'rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50';
-
 /* ─── main component ─── */
 const KnowledgeBase = () => {
+    const { role } = useAuth();
+    const isAdmin = String(role || '').toLowerCase() === 'admin';
     /* crawl state */
-    const [crawlUrl, setCrawlUrl] = useState('');
     const [maxPages, setMaxPages] = useState(20);
     const [depthLimit, setDepthLimit] = useState(2);
     const [useAdvanced, setUseAdvanced] = useState(false);
     const [useAI, setUseAI] = useState(false);
-    const [crawlStatus, setCrawlStatus] = useState(null);
-    const [crawlResult, setCrawlResult] = useState(null);
-    const [crawlError, setCrawlError] = useState('');
 
     /* auth state */
     const [authMode, setAuthMode] = useState('none');
@@ -67,10 +51,14 @@ const KnowledgeBase = () => {
     const [waitSelector, setWaitSelector] = useState('');
 
     /* upload state */
-    const [uploadFile, setUploadFile] = useState(null);
-    const [uploadStatus, setUploadStatus] = useState(null);
-    const [uploadResult, setUploadResult] = useState(null);
-    const [uploadError, setUploadError] = useState('');
+    const [crawlUrlBySite, setCrawlUrlBySite] = useState({});
+    const [crawlStatusBySite, setCrawlStatusBySite] = useState({});
+    const [crawlResultBySite, setCrawlResultBySite] = useState({});
+    const [crawlErrorBySite, setCrawlErrorBySite] = useState({});
+    const [uploadFileBySite, setUploadFileBySite] = useState({});
+    const [uploadStatusBySite, setUploadStatusBySite] = useState({});
+    const [uploadResultBySite, setUploadResultBySite] = useState({});
+    const [uploadErrorBySite, setUploadErrorBySite] = useState({});
 
     const [deleteStatus, setDeleteStatus] = useState(null);
     const [deleteError, setDeleteError] = useState('');
@@ -84,6 +72,11 @@ const KnowledgeBase = () => {
     const [apiKeys, setApiKeys] = useState([]);
     const [widgetConfig, setWidgetConfig] = useState(null);
     const [newKeyLabel, setNewKeyLabel] = useState('');
+    const [newKeyWebsiteId, setNewKeyWebsiteId] = useState('');
+    const [websiteName, setWebsiteName] = useState('');
+    const [websiteUrl, setWebsiteUrl] = useState('');
+    const [websiteStatus, setWebsiteStatus] = useState(null);
+    const [websiteError, setWebsiteError] = useState('');
     const [isCreatingKey, setIsCreatingKey] = useState(false);
     const [activeTab, setActiveTab] = useState('crawl');
     const [knowledgeData, setKnowledgeData] = useState(null);
@@ -108,6 +101,28 @@ const KnowledgeBase = () => {
         fetchWidgetConfig();
         fetchKnowledgeBase();
     }, []);
+
+    React.useEffect(() => {
+        if (!knowledgeData) return;
+        if (newKeyWebsiteId) return;
+        const firstSite = (knowledgeData?.sites || [])[0];
+        if (firstSite?.id) {
+            setNewKeyWebsiteId(firstSite.id);
+        }
+    }, [knowledgeData, newKeyWebsiteId]);
+
+    React.useEffect(() => {
+        if (!knowledgeData) return;
+        const nextMap = { ...crawlUrlBySite };
+        (knowledgeData?.sites || []).forEach((site) => {
+            const key = String(site.id ?? 'default');
+            if (!nextMap[key]) {
+                nextMap[key] = site.baseUrl || '';
+            }
+        });
+        setCrawlUrlBySite(nextMap);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [knowledgeData]);
 
     const fetchApiKeys = async () => {
         try {
@@ -158,13 +173,17 @@ const KnowledgeBase = () => {
         return {};
     };
 
-    const handleCrawl = async (e) => {
-        e.preventDefault();
-        if (!crawlUrl) return;
-        setCrawlStatus('loading'); setCrawlResult(null); setCrawlError('');
+
+    const handleCrawlForSite = async (site) => {
+        const key = String(site.id ?? 'default');
+        const url = crawlUrlBySite[key] || site.baseUrl || '';
+        if (!url) return;
+        setCrawlStatusBySite((prev) => ({ ...prev, [key]: 'loading' }));
+        setCrawlResultBySite((prev) => ({ ...prev, [key]: null }));
+        setCrawlErrorBySite((prev) => ({ ...prev, [key]: '' }));
         try {
             const body = {
-                url: crawlUrl,
+                url,
                 maxPages,
                 depthLimit,
                 useAdvanced,
@@ -181,39 +200,49 @@ const KnowledgeBase = () => {
                 body.useAI,
                 body.auth,
                 {
-                excludePatterns: body.excludePatterns,
-                privacyPatterns: body.privacyPatterns
-            });
-            setCrawlResult(result); setCrawlStatus('success');
+                    excludePatterns: body.excludePatterns,
+                    privacyPatterns: body.privacyPatterns,
+                    websiteId: site.id ?? undefined,
+                    websiteLabel: site.label || undefined,
+                });
+            setCrawlResultBySite((prev) => ({ ...prev, [key]: result }));
+            setCrawlStatusBySite((prev) => ({ ...prev, [key]: 'success' }));
             fetchKnowledgeBase();
         } catch (err) {
             const isTimeout = err?.code === 'ECONNABORTED' || String(err?.message || '').toLowerCase().includes('timeout');
-            if (isTimeout) {
-                setCrawlError('Crawl is taking longer than usual. Please wait; the backend may still be processing.');
-            } else {
-                setCrawlError(err?.response?.data?.details || err?.message || 'Unknown error');
-            }
-            setCrawlStatus('error');
+            const msg = isTimeout
+                ? 'Crawl is taking longer than usual. Please wait; the backend may still be processing.'
+                : (err?.response?.data?.details || err?.message || 'Unknown error');
+            setCrawlErrorBySite((prev) => ({ ...prev, [key]: msg }));
+            setCrawlStatusBySite((prev) => ({ ...prev, [key]: 'error' }));
         }
     };
 
-    const handleUpload = async (e) => {
-        e.preventDefault();
-        if (!uploadFile) return;
-        setUploadStatus('loading'); setUploadResult(null); setUploadError('');
+
+    const handleUploadForSite = async (site) => {
+        const key = String(site.id ?? 'default');
+        const file = uploadFileBySite[key];
+        if (!file) return;
+        setUploadStatusBySite((prev) => ({ ...prev, [key]: 'loading' }));
+        setUploadResultBySite((prev) => ({ ...prev, [key]: null }));
+        setUploadErrorBySite((prev) => ({ ...prev, [key]: '' }));
         const reader = new FileReader();
         reader.onload = async (ev) => {
             try {
                 const base64 = ev.target.result.split(',')[1];
-                const res = await ragService.uploadDocument(uploadFile, base64);
-                setUploadResult(res); setUploadStatus('success');
+                const res = await ragService.uploadDocument(file, base64);
+                setUploadResultBySite((prev) => ({ ...prev, [key]: res }));
+                setUploadStatusBySite((prev) => ({ ...prev, [key]: 'success' }));
                 fetchKnowledgeBase();
             } catch (err) {
-                setUploadError(err?.response?.data?.details || err?.message || 'Unknown error');
-                setUploadStatus('error');
+                setUploadErrorBySite((prev) => ({
+                    ...prev,
+                    [key]: err?.response?.data?.details || err?.message || 'Unknown error',
+                }));
+                setUploadStatusBySite((prev) => ({ ...prev, [key]: 'error' }));
             }
         };
-        reader.readAsDataURL(uploadFile);
+        reader.readAsDataURL(file);
     };
 
     const handleCreateKey = async (e) => {
@@ -221,11 +250,36 @@ const KnowledgeBase = () => {
         if (!newKeyLabel) return;
         setIsCreatingKey(true);
         try {
-            await ragService.createApiKey(newKeyLabel);
+            const fallbackSiteId = (knowledgeData?.sites || [])[0]?.id;
+            const websiteId = newKeyWebsiteId || fallbackSiteId;
+            await ragService.createApiKey(newKeyLabel, websiteId || undefined);
             setNewKeyLabel('');
+            setNewKeyWebsiteId(websiteId || '');
             fetchApiKeys();
         } catch (err) { console.error('Failed to create key', err); }
         finally { setIsCreatingKey(false); }
+    };
+
+    const handleAddWebsite = async (e) => {
+        e.preventDefault();
+        if (!isAdmin) return;
+        if (!websiteName || !websiteUrl) return;
+        setWebsiteStatus('loading');
+        setWebsiteError('');
+        try {
+            const res = await ragService.createKnowledgeSite(websiteName, websiteUrl);
+            const created = res?.data || res;
+            await fetchKnowledgeBase();
+            if (created?.id) {
+                setWebsiteName(created.label || websiteName);
+                setWebsiteUrl(created.baseUrl || websiteUrl);
+                setCrawlUrlBySite((prev) => ({ ...prev, [String(created.id)]: created.baseUrl || websiteUrl }));
+            }
+            setWebsiteStatus('success');
+        } catch (err) {
+            setWebsiteError(err?.response?.data?.error || err?.message || 'Failed to add website.');
+            setWebsiteStatus('error');
+        }
     };
 
     const handleDeleteKey = async (id) => {
@@ -336,245 +390,282 @@ createChatbotWidget({
     };
 
     return (
-        <div className="relative mx-auto max-w-6xl space-y-8 px-4 pb-8 pt-6 sm:px-6 lg:px-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div aria-hidden className="pointer-events-none absolute -top-16 left-0 h-48 w-48 rounded-full bg-blue-200/40 blur-3xl" />
-            <div aria-hidden className="pointer-events-none absolute right-10 top-24 h-56 w-56 rounded-full bg-indigo-200/35 blur-3xl" />
-
+        <div className="p-8 max-w-6xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Header */}
-            <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-[linear-gradient(130deg,_rgba(15,23,42,1)_0%,_rgba(30,64,175,1)_52%,_rgba(56,189,248,0.95)_100%)] px-6 py-7 text-white shadow-[0_26px_45px_-34px_rgba(15,23,42,0.95)]">
-                <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-                    <div>
-                        <h1 className="flex items-center gap-3 text-3xl font-black tracking-tight md:text-4xl">
-                            <BrainCircuit className="text-cyan-200" size={36} /> Support Chatbot
-                        </h1>
-                        <p className="mt-2 text-base text-blue-100 md:text-lg">
-                            Teach, test, and deploy your AI assistant from one workspace.
-                        </p>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 text-xs font-semibold text-blue-100">
-                        <div className="rounded-xl border border-white/25 bg-white/10 px-3 py-2">
-                            <p>Pages</p>
-                            <p className="mt-0.5 text-base text-white">{knowledgeData?.totalPages ?? 0}</p>
-                        </div>
-                        <div className="rounded-xl border border-white/25 bg-white/10 px-3 py-2">
-                            <p>Chunks</p>
-                            <p className="mt-0.5 text-base text-white">{knowledgeData?.vectorCount ?? 0}</p>
-                        </div>
-                        <div className="rounded-xl border border-white/25 bg-white/10 px-3 py-2">
-                            <p>Keys</p>
-                            <p className="mt-0.5 text-base text-white">{apiKeys.length}</p>
-                        </div>
-                    </div>
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div>
+                    <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                        <BrainCircuit className="text-indigo-600" size={36} /> Support Chatbot
+                    </h1>
+                    <p className="text-slate-500 mt-2 text-lg">Teach and deploy your AI assistant anywhere.</p>
                 </div>
-            </div>
 
-            <div className="inline-flex flex-wrap gap-1.5 rounded-2xl border border-slate-200 bg-white/90 p-1.5 shadow-sm backdrop-blur">
-                <button
-                    onClick={() => setActiveTab('crawl')}
-                    className={`rounded-xl px-5 py-2.5 text-sm font-bold transition-all duration-200 inline-flex items-center gap-2 ${activeTab === 'crawl' ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}
-                >
-                    <Globe size={16} /> Knowledge
-                </button>
-                <button
-                    onClick={() => setActiveTab('developer')}
-                    className={`rounded-xl px-5 py-2.5 text-sm font-bold transition-all duration-200 inline-flex items-center gap-2 ${activeTab === 'developer' ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}
-                >
-                    <Code size={16} /> Deployment
-                </button>
-                <button
-                    onClick={() => setActiveTab('demo')}
-                    className={`rounded-xl px-5 py-2.5 text-sm font-bold transition-all duration-200 inline-flex items-center gap-2 ${activeTab === 'demo' ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}
-                >
-                    <MessageSquare size={16} /> Demo
-                </button>
+                <div className="flex p-1 bg-slate-100 rounded-2xl">
+                    <button
+                        onClick={() => setActiveTab('crawl')}
+                        className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 ${activeTab === 'crawl' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                    >
+                        <Globe size={16} /> Knowledge
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('developer')}
+                        className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 ${activeTab === 'developer' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                    >
+                        <Code size={16} /> Deployment
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('demo')}
+                        className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 ${activeTab === 'demo' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                    >
+                        <MessageSquare size={16} /> Demo
+                    </button>
+                </div>
             </div>
 
             {activeTab === 'crawl' ? (
                 /* --- KNOWLEDGE TAB --- */
-                <div className="grid grid-cols-1 gap-6">
-                    {/* Crawler Card */}
-                    <div className={panelClass}>
-                        <div className={panelHeadClass}>
-                            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white"><Globe size={18} /></span>
+                <div className="grid grid-cols-1 gap-10">
+                    {/* Website Setup */}
+                    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                        <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-6 py-4">
+                            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-white"><Globe size={18} /></span>
                             <div>
-                                <p className="font-semibold text-slate-900">Website Crawler</p>
-                                <p className="text-xs text-slate-500">Auto-map and index your entire site</p>
+                                <p className="font-semibold text-slate-900">Websites</p>
+                                <p className="text-xs text-slate-500">Name and register each website before crawling</p>
                             </div>
                         </div>
                         <div className="p-6">
-                            <form onSubmit={handleCrawl} className="space-y-6">
-                                <div className="flex flex-col md:flex-row gap-4">
-                                    <div className="flex-1 relative">
-                                        <input
-                                            type="url"
-                                            className={`${fieldClass} pl-10`}
-                                            placeholder="https://example.com"
-                                            value={crawlUrl}
-                                            onChange={(e) => setCrawlUrl(e.target.value)}
-                                            required
-                                        />
-                                        <Globe className="absolute left-3.5 top-3.5 text-slate-400" size={16} />
-                                    </div>
-                                    <button
-                                        type="submit"
-                                        disabled={crawlStatus === 'loading'}
-                                        className={primaryBtnClass}
-                                    >
-                                        {crawlStatus === 'loading' ? <><Loader2 size={16} className="animate-spin" /> Crawling...</> : <><Zap size={16} /> Start Crawl</>}
-                                    </button>
-                                </div>
-
-                                <div className="flex flex-wrap items-center gap-6 pt-2">
-                                    <label className="flex items-center gap-2 cursor-pointer group">
-                                        <input type="checkbox" checked={useAdvanced} onChange={(e) => setUseAdvanced(e.target.checked)} className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
-                                        <span className="text-sm font-semibold text-slate-600 group-hover:text-slate-900 transition-colors">Playwright Mode (Best for JS sites)</span>
-                                    </label>
-                                    <label className="flex items-center gap-2 cursor-pointer group">
-                                        <input type="checkbox" checked={useAI} onChange={(e) => setUseAI(e.target.checked)} className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
-                                        <span className="text-sm font-semibold text-slate-600 group-hover:text-slate-900 transition-colors">AI Content Cleaning</span>
-                                    </label>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-sm font-semibold text-slate-600">Max Pages:</span>
-                                        <input
-                                            type="number"
-                                            min={1}
-                                            value={maxPages}
-                                            onChange={(e) => setMaxPages(parseInt(e.target.value, 10) || 1)}
-                                            className="w-20 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs outline-none transition focus:border-indigo-500"
-                                        />
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-sm font-semibold text-slate-600">Depth Limit:</span>
-                                        <input
-                                            type="number"
-                                            min={0}
-                                            max={10}
-                                            value={depthLimit}
-                                            onChange={(e) => setDepthLimit(parseInt(e.target.value, 10) || 0)}
-                                            className="w-16 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs outline-none transition focus:border-indigo-500"
-                                        />
-                                    </div>
-                                    <SectionToggle open={showAdvOpts} onToggle={() => setShowAdvOpts(!showAdvOpts)} label="Advanced & Privacy" icon={<Settings2 size={13} />} />
-                                </div>
-
-                                {showAdvOpts && (
-                                    <div className="mt-4 grid grid-cols-1 gap-6 rounded-xl border border-slate-100 bg-[linear-gradient(180deg,_rgba(248,250,252,0.95),_rgba(255,255,255,0.95))] p-5 animate-in fade-in zoom-in-95 duration-200">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Exclusions (Skip patterns)</label>
-                                            <input type="text" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs outline-none transition focus:border-indigo-500" value={excludePatterns} onChange={(e) => setExcludePatterns(e.target.value)} />
-                                            <p className="mt-1 text-[10px] text-slate-400">Comma-separated keywords (e.g. login, logout)</p>
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Privacy Patterns (AI Glimpse only)</label>
-                                            <input type="text" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs outline-none transition focus:border-indigo-500" value={privacyPatterns} onChange={(e) => setPrivacyPatterns(e.target.value)} />
-                                            <p className="mt-1 text-[10px] text-slate-400">Sensitive routes to be summarized instead of indexed</p>
-                                        </div>
-                                    </div>
-                                )}
-                            </form>
-
-                            {crawlStatus && (
-                                <div className={`mt-6 rounded-xl border p-4 ${crawlStatus === 'success' ? 'border-emerald-200 bg-emerald-50' : crawlStatus === 'error' ? 'border-red-200 bg-red-50' : 'border-blue-200 bg-blue-50'}`}>
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <StatusBadge type={crawlStatus} />
-                                        <span className="font-bold text-slate-800">{crawlStatus === 'success' ? 'Crawl Complete!' : crawlStatus === 'error' ? 'Crawl Failed' : 'Scanning Website...'}</span>
-                                    </div>
-                                    {crawlResult && <p className="text-sm text-slate-600">Found and indexed <b>{crawlResult.pagesCrawl}</b> pages ({crawlResult.chunksCreated} knowledge chunks).</p>}
-                                    {crawlError && <p className="text-sm text-red-600">{crawlError}</p>}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Document Upload */}
-                    <div className={panelClass}>
-                        <div className={panelHeadClass}>
-                            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-purple-600 text-white"><Upload size={18} /></span>
-                            <div>
-                                <p className="font-semibold text-slate-900">Document Upload</p>
-                                <p className="text-xs text-slate-500">Train with PDFs, Docs, or Text files</p>
-                            </div>
-                        </div>
-                        <div className="p-6">
-                            <form onSubmit={handleUpload} className="flex flex-col md:flex-row gap-4">
-                                <input type="file" onChange={(e) => setUploadFile(e.target.files[0])} className="flex-1 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-2.5 text-sm transition-colors file:mr-4 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-1 file:text-xs file:font-bold file:text-indigo-600 hover:bg-slate-100" />
-                                <button type="submit" disabled={uploadStatus === 'loading' || !uploadFile} className={primaryBtnClass}>
-                                    {uploadStatus === 'loading' ? <><Loader2 size={16} className="animate-spin" /> Uploading...</> : <><FileText size={16} /> Upload Doc</>}
+                            <form onSubmit={handleAddWebsite} className="flex flex-col lg:flex-row gap-3">
+                                <input
+                                    type="text"
+                                    placeholder="Website Name (e.g. Marketing Site)"
+                                    value={websiteName}
+                                    onChange={(e) => setWebsiteName(e.target.value)}
+                                    disabled={!isAdmin}
+                                    className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-emerald-500 disabled:bg-slate-50 disabled:text-slate-400"
+                                />
+                                <input
+                                    type="url"
+                                    placeholder="https://example.com"
+                                    value={websiteUrl}
+                                    onChange={(e) => setWebsiteUrl(e.target.value)}
+                                    disabled={!isAdmin}
+                                    className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-emerald-500 disabled:bg-slate-50 disabled:text-slate-400"
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={websiteStatus === 'loading' || !isAdmin}
+                                    className="bg-emerald-600 text-white rounded-xl px-6 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-emerald-700 disabled:opacity-50"
+                                >
+                                    {websiteStatus === 'loading' ? <><Loader2 size={16} className="animate-spin" /> Adding...</> : <><Plus size={16} /> Add Website</>}
                                 </button>
                             </form>
-                            {uploadStatus && (
-                                <div className={`mt-4 rounded-xl border p-4 ${uploadStatus === 'success' ? 'border-emerald-200 bg-emerald-50' : 'border-red-200 bg-red-50'}`}>
-                                    <StatusBadge type={uploadStatus} />
-                                    {uploadResult && <p className="mt-2 text-sm text-slate-600">Successfully indexed <b>{uploadResult.filename}</b>.</p>}
-                                    {uploadError && <p className="mt-2 text-sm text-red-600">{uploadError}</p>}
+                            {!isAdmin && (
+                                <p className="mt-3 text-xs text-slate-500">
+                                    Only admins can add or edit websites.
+                                </p>
+                            )}
+                            {websiteStatus && (
+                                <div className={`mt-4 rounded-xl border p-4 ${websiteStatus === 'success' ? 'border-emerald-200 bg-emerald-50' : websiteStatus === 'error' ? 'border-red-200 bg-red-50' : 'border-blue-200 bg-blue-50'}`}>
+                                    <StatusBadge type={websiteStatus} />
+                                    {websiteError && <p className="mt-2 text-sm text-red-600">{websiteError}</p>}
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    {/* Knowledge Base (Dynamic) */}
-                    <div className={panelClass}>
-                        <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-[linear-gradient(180deg,_rgba(248,250,252,0.95),_rgba(255,255,255,0.95))] px-6 py-4">
-                            <div className="flex items-center gap-3">
-                                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white"><BrainCircuit size={18} /></span>
-                                <div>
-                                    <p className="font-semibold text-slate-900">Knowledge Base</p>
-                                    <p className="text-xs text-slate-500">Live indexed pages from your crawls/uploads</p>
-                                </div>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={fetchKnowledgeBase}
-                                className={subtleBtnClass}
-                            >
-                                Refresh
-                            </button>
+                    {(knowledgeData?.sites || []).length === 0 ? (
+                        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 text-sm text-slate-500">
+                            No websites yet. Add a website above to start crawling.
                         </div>
-                        <div className="p-6 space-y-4">
-                            {knowledgeLoading ? (
-                                <p className="text-sm text-slate-500">Loading knowledge base…</p>
-                            ) : knowledgeError ? (
-                                <p className="text-sm text-red-600">{knowledgeError}</p>
-                            ) : (
-                                <>
-                                    <div className="grid grid-cols-2 gap-3 text-xs">
-                                        <div className="rounded-lg border border-slate-200 p-3">
-                                            <p className="text-slate-400">Indexed Pages</p>
-                                            <p className="mt-1 text-lg font-semibold text-slate-900">
-                                                {knowledgeData?.totalPages ?? 0}
-                                            </p>
+                    ) : (
+                        (knowledgeData?.sites || []).map((site) => {
+                            const key = String(site.id ?? 'default');
+                            const siteCrawlStatus = crawlStatusBySite[key];
+                            const siteCrawlResult = crawlResultBySite[key];
+                            const siteCrawlError = crawlErrorBySite[key];
+                            const siteUploadStatus = uploadStatusBySite[key];
+                            const siteUploadResult = uploadResultBySite[key];
+                            const siteUploadError = uploadErrorBySite[key];
+                            return (
+                                <div key={site.id} className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                                    <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/60 px-6 py-4">
+                                        <div className="flex items-center gap-3">
+                                            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white"><Globe size={18} /></span>
+                                            <div>
+                                                <p className="font-semibold text-slate-900">{site.label || site.baseUrl}</p>
+                                                <p className="text-xs text-slate-500">{site.baseUrl}</p>
+                                            </div>
                                         </div>
-                                        <div className="rounded-lg border border-slate-200 p-3">
-                                            <p className="text-slate-400">Vector Chunks</p>
-                                            <p className="mt-1 text-lg font-semibold text-slate-900">
-                                                {knowledgeData?.vectorCount ?? 0}
-                                            </p>
-                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={fetchKnowledgeBase}
+                                            className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                                        >
+                                            Refresh
+                                        </button>
                                     </div>
-
-                                    <div className="max-h-[260px] space-y-2 overflow-y-auto rounded-xl border border-slate-100 bg-slate-50 p-3">
-                                        {(knowledgeData?.pages || []).length === 0 ? (
-                                            <p className="text-sm text-slate-500">No indexed pages yet.</p>
-                                        ) : (
-                                            knowledgeData.pages.map((page, idx) => (
-                                                <div key={`${page.url}-${idx}`} className="rounded-lg bg-white p-3 shadow-sm">
-                                                    <p className="text-xs font-semibold text-slate-800">
-                                                        {page.title || page.url}
-                                                    </p>
-                                                    <p className="mt-1 text-[11px] text-slate-500 break-all">
-                                                        {page.url}
-                                                    </p>
+                                    <div className="p-6 space-y-6">
+                                        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                                            <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-6 py-4">
+                                                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white"><Globe size={18} /></span>
+                                                <div>
+                                                    <p className="font-semibold text-slate-900">Website Crawler</p>
+                                                    <p className="text-xs text-slate-500">Auto-map and index this site</p>
                                                 </div>
-                                            ))
-                                        )}
+                                            </div>
+                                            <div className="p-6">
+                                                <div className="flex flex-col md:flex-row gap-4">
+                                                    <div className="flex-1 relative">
+                                                        <input
+                                                            type="url"
+                                                            className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
+                                                            placeholder="https://example.com"
+                                                            value={crawlUrlBySite[key] || ''}
+                                                            onChange={(e) => setCrawlUrlBySite((prev) => ({ ...prev, [key]: e.target.value }))}
+                                                            required
+                                                        />
+                                                        <Globe className="absolute left-3.5 top-3.5 text-slate-400" size={16} />
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleCrawlForSite(site)}
+                                                        disabled={siteCrawlStatus === 'loading'}
+                                                        className="bg-indigo-600 text-white rounded-xl px-8 py-3 text-sm font-bold hover:bg-indigo-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                                                    >
+                                                        {siteCrawlStatus === 'loading' ? <><Loader2 size={16} className="animate-spin" /> Crawling...</> : <><Zap size={16} /> Start Crawl</>}
+                                                    </button>
+                                                </div>
+
+                                                <div className="flex flex-wrap items-center gap-6 pt-4">
+                                                    <label className="flex items-center gap-2 cursor-pointer group">
+                                                        <input type="checkbox" checked={useAdvanced} onChange={(e) => setUseAdvanced(e.target.checked)} className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
+                                                        <span className="text-sm font-semibold text-slate-600 group-hover:text-slate-900 transition-colors">Playwright Mode (Best for JS sites)</span>
+                                                    </label>
+                                                    <label className="flex items-center gap-2 cursor-pointer group">
+                                                        <input type="checkbox" checked={useAI} onChange={(e) => setUseAI(e.target.checked)} className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
+                                                        <span className="text-sm font-semibold text-slate-600 group-hover:text-slate-900 transition-colors">AI Content Cleaning</span>
+                                                    </label>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-sm font-semibold text-slate-600">Max Pages:</span>
+                                                        <input
+                                                            type="number"
+                                                            min={1}
+                                                            value={maxPages}
+                                                            onChange={(e) => setMaxPages(parseInt(e.target.value, 10) || 1)}
+                                                            className="w-20 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs outline-none focus:border-indigo-500"
+                                                        />
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-sm font-semibold text-slate-600">Depth Limit:</span>
+                                                        <input
+                                                            type="number"
+                                                            min={0}
+                                                            max={10}
+                                                            value={depthLimit}
+                                                            onChange={(e) => setDepthLimit(parseInt(e.target.value, 10) || 0)}
+                                                            className="w-16 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs outline-none focus:border-indigo-500"
+                                                        />
+                                                    </div>
+                                                    <SectionToggle open={showAdvOpts} onToggle={() => setShowAdvOpts(!showAdvOpts)} label="Advanced & Privacy" icon={<Settings2 size={13} />} />
+                                                </div>
+
+                                                {showAdvOpts && (
+                                                    <div className="mt-4 p-5 bg-slate-50 rounded-xl border border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in zoom-in-95 duration-200">
+                                                        <div>
+                                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Exclusions (Skip patterns)</label>
+                                                            <input type="text" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs" value={excludePatterns} onChange={(e) => setExcludePatterns(e.target.value)} />
+                                                            <p className="mt-1 text-[10px] text-slate-400">Comma-separated keywords (e.g. login, logout)</p>
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Privacy Patterns (AI Glimpse only)</label>
+                                                            <input type="text" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs" value={privacyPatterns} onChange={(e) => setPrivacyPatterns(e.target.value)} />
+                                                            <p className="mt-1 text-[10px] text-slate-400">Sensitive routes to be summarized instead of indexed</p>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {siteCrawlStatus && (
+                                                    <div className={`mt-6 rounded-xl border p-4 ${siteCrawlStatus === 'success' ? 'border-emerald-200 bg-emerald-50' : siteCrawlStatus === 'error' ? 'border-red-200 bg-red-50' : 'border-blue-200 bg-blue-50'}`}>
+                                                        <div className="flex items-center gap-2 mb-2">
+                                                            <StatusBadge type={siteCrawlStatus} />
+                                                            <span className="font-bold text-slate-800">{siteCrawlStatus === 'success' ? 'Crawl Complete!' : siteCrawlStatus === 'error' ? 'Crawl Failed' : 'Scanning Website...'}</span>
+                                                        </div>
+                                                        {siteCrawlResult && <p className="text-sm text-slate-600">Found and indexed <b>{siteCrawlResult.pagesCrawl}</b> pages ({siteCrawlResult.chunksCreated} knowledge chunks).</p>}
+                                                        {siteCrawlError && <p className="text-sm text-red-600">{siteCrawlError}</p>}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                                            <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-6 py-4">
+                                                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-purple-600 text-white"><Upload size={18} /></span>
+                                                <div>
+                                                    <p className="font-semibold text-slate-900">Document Upload</p>
+                                                    <p className="text-xs text-slate-500">Train with PDFs, Docs, or Text files</p>
+                                                </div>
+                                            </div>
+                                            <div className="p-6">
+                                                <div className="flex flex-col md:flex-row gap-4">
+                                                    <input type="file" onChange={(e) => setUploadFileBySite((prev) => ({ ...prev, [key]: e.target.files[0] }))} className="flex-1 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-2.5 text-sm file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-600 hover:bg-slate-100 transition-colors" />
+                                                    <button type="button" onClick={() => handleUploadForSite(site)} disabled={siteUploadStatus === 'loading' || !uploadFileBySite[key]} className="bg-slate-900 text-white rounded-xl px-8 py-3 text-sm font-bold hover:bg-slate-800 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
+                                                        {siteUploadStatus === 'loading' ? <><Loader2 size={16} className="animate-spin" /> Uploading...</> : <><FileText size={16} /> Upload Doc</>}
+                                                    </button>
+                                                </div>
+                                                {siteUploadStatus && (
+                                                    <div className={`mt-4 rounded-xl border p-4 ${siteUploadStatus === 'success' ? 'border-emerald-200 bg-emerald-50' : 'border-red-200 bg-red-50'}`}>
+                                                        <StatusBadge type={siteUploadStatus} />
+                                                        {siteUploadResult && <p className="mt-2 text-sm text-slate-600">Successfully indexed <b>{siteUploadResult.filename}</b>.</p>}
+                                                        {siteUploadError && <p className="mt-2 text-sm text-red-600">{siteUploadError}</p>}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                                            <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/60 px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white"><BrainCircuit size={18} /></span>
+                                                    <div>
+                                                        <p className="font-semibold text-slate-900">Knowledge Base</p>
+                                                        <p className="text-xs text-slate-500">Live indexed pages for this website</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="p-6 space-y-4">
+                                                <div className="grid grid-cols-2 gap-3 text-xs">
+                                                    <div className="rounded-lg border border-slate-200 p-3">
+                                                        <p className="text-slate-400">Indexed Pages</p>
+                                                        <p className="text-lg font-bold text-slate-900">{site.totalPages || 0}</p>
+                                                    </div>
+                                                    <div className="rounded-lg border border-slate-200 p-3">
+                                                        <p className="text-slate-400">Vector Chunks</p>
+                                                        <p className="text-lg font-bold text-slate-900">{knowledgeData?.vectorCount ?? 0}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+                                                    {(site.pages || []).length === 0 ? (
+                                                        <p className="text-xs text-slate-400">No pages indexed yet.</p>
+                                                    ) : (
+                                                        site.pages.map((page, idx) => (
+                                                            <div key={`${site.id}-${idx}`} className="rounded-lg border border-slate-100 bg-white px-3 py-2">
+                                                                <p className="text-xs font-semibold text-slate-700">{page.title || page.url}</p>
+                                                                <p className="text-[11px] text-slate-400">{page.url}</p>
+                                                            </div>
+                                                        ))
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                </>
-                            )}
-                        </div>
-                    </div>
+                                </div>
+                            );
+                        })
+                    )}
 
                     {/* Danger Zone */}
-                    <div className="rounded-3xl border border-red-200 bg-white shadow-[0_24px_48px_-36px_rgba(15,23,42,0.65)] ring-1 ring-white/70 overflow-hidden">
+                    <div className="rounded-2xl border border-red-200 bg-white shadow-sm overflow-hidden">
                         <div className="flex items-center gap-3 border-b border-red-100 bg-red-50/50 px-6 py-4">
                             <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-red-600 text-white"><AlertCircle size={18} /></span>
                             <div>
@@ -595,10 +686,10 @@ createChatbotWidget({
                 </div>
             ) : activeTab === 'developer' ? (
                 /* --- DEVELOPER TOOLS TAB --- */
-                <div className="grid grid-cols-1 gap-6">
+                <div className="grid grid-cols-1 gap-10">
                     {/* API Keys */}
-                    <div className={panelClass}>
-                        <div className={panelHeadClass}>
+                    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                        <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-6 py-4">
                             <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white"><KeyRound size={18} /></span>
                             <div>
                                 <p className="font-semibold text-slate-900">API Access Keys</p>
@@ -606,19 +697,48 @@ createChatbotWidget({
                             </div>
                         </div>
                         <div className="p-6">
-                            <form onSubmit={handleCreateKey} className="flex gap-3 mb-8">
-                                <input type="text" placeholder="Key Label (e.g. My Portfolio Site)" value={newKeyLabel} onChange={(e) => setNewKeyLabel(e.target.value)} className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
-                                <button type="submit" disabled={isCreatingKey} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 px-6 py-2.5 text-sm font-bold text-white transition hover:from-indigo-700 hover:to-blue-700 disabled:opacity-50">
+                            <form onSubmit={handleCreateKey} className="flex flex-col gap-3 mb-8 lg:flex-row">
+                                <input
+                                    type="text"
+                                    placeholder="Key Label (e.g. My Portfolio Site)"
+                                    value={newKeyLabel}
+                                    onChange={(e) => setNewKeyLabel(e.target.value)}
+                                    className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-indigo-500"
+                                />
+                                <select
+                                    value={newKeyWebsiteId}
+                                    onChange={(e) => setNewKeyWebsiteId(e.target.value)}
+                                    className="min-w-[200px] rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-indigo-500"
+                                >
+                                    {(knowledgeData?.sites || []).length === 0 && (
+                                        <option value="">No websites yet</option>
+                                    )}
+                                    {(knowledgeData?.sites || []).map((site) => (
+                                        <option key={site.id} value={site.id}>
+                                            {site.label || site.baseUrl}
+                                        </option>
+                                    ))}
+                                </select>
+                                <button
+                                    type="submit"
+                                    disabled={isCreatingKey}
+                                    className="bg-indigo-600 text-white rounded-xl px-6 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-indigo-700"
+                                >
                                     <Plus size={16} /> Create Key
                                 </button>
                             </form>
 
                             <div className="space-y-3">
-                                {apiKeys.map(key => (
+                                {apiKeys.map(key => {
+                                    const site = (knowledgeData?.sites || []).find((s) => s.id === key.websiteId);
+                                    return (
                                     <div key={key.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100 group">
                                         <div>
                                             <p className="text-sm font-bold text-slate-900">{key.label}</p>
                                             <p className="text-xs font-mono text-slate-500 mt-1">{key.key.substring(0, 10)}********************</p>
+                                            <p className="text-[11px] text-slate-400 mt-1">
+                                                {site ? `Website: ${site.label || site.baseUrl}` : 'Website: All'}
+                                            </p>
                                         </div>
                                         <div className="flex gap-2">
                                             <button onClick={() => copyToClipboard(key.key)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-lg transition-all shadow-sm">
@@ -629,15 +749,15 @@ createChatbotWidget({
                                             </button>
                                         </div>
                                     </div>
-                                ))}
+                                )})}
                                 {apiKeys.length === 0 && <p className="text-center py-8 text-sm text-slate-400 font-medium">No API keys yet. Create one to start embedding.</p>}
                             </div>
                         </div>
                     </div>
 
                     {/* Embedding Snippet */}
-                    <div className={panelClass}>
-                        <div className={panelHeadClass}>
+                    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                        <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-6 py-4">
                             <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-white"><Code size={18} /></span>
                             <div>
                                 <p className="font-semibold text-slate-900">Embeddable Widget</p>
@@ -668,9 +788,9 @@ createChatbotWidget({
                 </div>
             ) : (
                 /* --- DEMO CHAT TAB --- */
-                <div className="grid grid-cols-1 gap-6">
-                    <div className={panelClass}>
-                        <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-[linear-gradient(180deg,_rgba(248,250,252,0.95),_rgba(255,255,255,0.95))] px-6 py-4">
+                <div className="grid grid-cols-1 gap-10">
+                    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                        <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/60 px-6 py-4">
                             <div className="flex items-center gap-3">
                                 <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-fuchsia-600 text-white"><MessageSquare size={18} /></span>
                                 <div>
@@ -680,7 +800,7 @@ createChatbotWidget({
                             </div>
                             <button
                                 onClick={handleResetChat}
-                                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                             >
                                 <RotateCcw size={14} /> New Session
                             </button>
@@ -774,12 +894,12 @@ createChatbotWidget({
                                     value={chatInput}
                                     onChange={(e) => setChatInput(e.target.value)}
                                     placeholder="Ask: Where is billing? How can I update profile? What is pricing?"
-                                    className={fieldClass}
+                                    className="flex-1 rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
                                 />
                                 <button
                                     type="submit"
                                     disabled={chatLoading || !chatInput.trim()}
-                                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 px-5 py-3 text-sm font-bold text-white transition hover:from-indigo-700 hover:to-blue-700 disabled:opacity-50"
+                                    className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-50"
                                 >
                                     {chatLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                                     Send

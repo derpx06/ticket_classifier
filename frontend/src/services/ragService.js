@@ -51,6 +51,8 @@ const ragService = {
                 auth,
                 excludePatterns: options.excludePatterns || [],
                 privacyPatterns: options.privacyPatterns || [],
+                websiteId: options.websiteId,
+                websiteLabel: options.websiteLabel,
             },
             {
                 // Crawls can take several minutes for JS-heavy sites.
@@ -88,6 +90,10 @@ const ragService = {
         const response = await apiClient.get('/rag/knowledge-base');
         return response.data;
     },
+    async createKnowledgeSite(label, baseUrl) {
+        const response = await apiClient.post('/rag/knowledge-sites', { label, baseUrl });
+        return response.data;
+    },
 
     /**
      * --- API Keys ---
@@ -96,8 +102,8 @@ const ragService = {
         const response = await apiClient.get('/rag/api-keys');
         return response.data;
     },
-    async createApiKey(label) {
-        const response = await apiClient.post('/rag/api-keys', { label });
+    async createApiKey(label, websiteId) {
+        const response = await apiClient.post('/rag/api-keys', { label, websiteId });
         return response.data;
     },
     async deleteApiKey(id) {

@@ -55,12 +55,24 @@ export type ApiKeyDoc = {
   companyId: number;
   key: string;
   label: string;
+  websiteId?: number | null;
   isActive: boolean;
   createdAt: Date;
 };
 
+export type KnowledgeSiteDoc = {
+  id: number;
+  companyId: number;
+  baseUrl: string;
+  label: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 export type SitemapDoc = {
   companyId: number;
+  websiteId?: number | null;
+  baseUrl?: string | null;
   pages: Array<{ url: string; title: string }>;
   updatedAt: Date;
 };
@@ -84,6 +96,7 @@ function collections(database: Db): {
   questions: Collection<QuestionDoc>;
   counters: Collection<CounterDoc>;
   apiKeys: Collection<ApiKeyDoc>;
+  knowledgeSites: Collection<KnowledgeSiteDoc>;
   sitemaps: Collection<SitemapDoc>;
 } {
   return {
@@ -93,6 +106,7 @@ function collections(database: Db): {
     questions: database.collection<QuestionDoc>("questions"),
     counters: database.collection<CounterDoc>("counters"),
     apiKeys: database.collection<ApiKeyDoc>("api_keys"),
+    knowledgeSites: database.collection<KnowledgeSiteDoc>("knowledge_sites"),
     sitemaps: database.collection<SitemapDoc>("sitemaps"),
   };
 }
@@ -104,7 +118,7 @@ async function ensureIndexes(database: Db): Promise<void> {
     return;
   }
 
-  const { companies, users, companyRoles, apiKeys, sitemaps } = collections(database);
+  const { companies, users, companyRoles, apiKeys, knowledgeSites, sitemaps } = collections(database);
   const tickets = database.collection("tickets");
   const messages = database.collection("messages");
   const chatSessions = database.collection("chat_sessions");
@@ -126,7 +140,10 @@ async function ensureIndexes(database: Db): Promise<void> {
     apiKeys.createIndex({ id: 1 }, { unique: true }),
     apiKeys.createIndex({ key: 1 }, { unique: true }),
     apiKeys.createIndex({ companyId: 1 }),
-    sitemaps.createIndex({ companyId: 1 }, { unique: true }),
+    knowledgeSites.createIndex({ id: 1 }, { unique: true }),
+    knowledgeSites.createIndex({ companyId: 1, baseUrl: 1 }, { unique: true }),
+    knowledgeSites.createIndex({ companyId: 1 }),
+    sitemaps.createIndex({ companyId: 1, websiteId: 1 }, { unique: true }),
     tickets.createIndex({ companyId: 1, createdAt: -1 }),
     tickets.createIndex({ companyId: 1, status: 1, updatedAt: -1 }),
     messages.createIndex({ companyId: 1, ticketId: 1, createdAt: 1 }),
@@ -199,6 +216,7 @@ export async function getCollections(): Promise<{
   questions: Collection<QuestionDoc>;
   counters: Collection<CounterDoc>;
   apiKeys: Collection<ApiKeyDoc>;
+  knowledgeSites: Collection<KnowledgeSiteDoc>;
   sitemaps: Collection<SitemapDoc>;
 }> {
 
