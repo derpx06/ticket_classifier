@@ -48,10 +48,10 @@ var e = Object.defineProperty, t = (t, n) => {
 		...ee,
 		...s,
 		...p
-	}, h = u(p), g = u(s), _ = o("lucide", `lucide-${d}`, ...h, ...g);
-	_ && Object.assign(m, { class: _ });
-	let v = i(f, m);
-	return e.parentNode?.replaceChild(v, e);
+	}, te = u(p), h = u(s), g = o("lucide", `lucide-${d}`, ...te, ...h);
+	g && Object.assign(m, { class: g });
+	let _ = i(f, m);
+	return e.parentNode?.replaceChild(_, e);
 }, f = [["path", { d: "m12 19-7-7 7-7" }], ["path", { d: "M19 12H5" }]], p = [
 	["path", { d: "M12 8V4H8" }],
 	["rect", {
@@ -65,18 +65,18 @@ var e = Object.defineProperty, t = (t, n) => {
 	["path", { d: "M20 14h2" }],
 	["path", { d: "M15 13v2" }],
 	["path", { d: "M9 13v2" }]
-], ee = [["path", { d: "M21.801 10A10 10 0 1 1 17 3.335" }], ["path", { d: "m9 11 3 3L22 4" }]], m = [["path", { d: "M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719" }]], h = [["path", { d: "M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z" }], ["path", { d: "M6 12h16" }]], g = [["circle", {
+], ee = [["path", { d: "M21.801 10A10 10 0 1 1 17 3.335" }], ["path", { d: "m9 11 3 3L22 4" }]], m = [["path", { d: "M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719" }]], te = [["path", { d: "M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z" }], ["path", { d: "M6 12h16" }]], h = [["circle", {
 	cx: "12",
 	cy: "8",
 	r: "5"
-}], ["path", { d: "M20 21a8 8 0 0 0-16 0" }]], _ = [["path", { d: "M18 6 6 18" }], ["path", { d: "m6 6 12 12" }]], v = ({ icons: e = {}, nameAttr: t = "data-lucide", attrs: n = {}, root: r = document, inTemplates: i } = {}) => {
+}], ["path", { d: "M20 21a8 8 0 0 0-16 0" }]], g = [["path", { d: "M18 6 6 18" }], ["path", { d: "m6 6 12 12" }]], _ = ({ icons: e = {}, nameAttr: t = "data-lucide", attrs: n = {}, root: r = document, inTemplates: i } = {}) => {
 	if (!Object.values(e).length) throw Error("Please provide an icons object.\nIf you want to use all the icons you can import it like:\n `import { createIcons, icons } from 'lucide';\nlucide.createIcons({icons});`");
 	if (r === void 0) throw Error("`createIcons()` only works in a browser environment.");
 	if (Array.from(r.querySelectorAll(`[${t}]`)).forEach((r) => d(r, {
 		nameAttr: t,
 		icons: e,
 		attrs: n
-	})), i && Array.from(r.querySelectorAll("template")).forEach((r) => v({
+	})), i && Array.from(r.querySelectorAll("template")).forEach((r) => _({
 		icons: e,
 		nameAttr: t,
 		attrs: n,
@@ -90,82 +90,82 @@ var e = Object.defineProperty, t = (t, n) => {
 			attrs: n
 		})));
 	}
-}, y = Object.create(null);
-y.open = "0", y.close = "1", y.ping = "2", y.pong = "3", y.message = "4", y.upgrade = "5", y.noop = "6";
-var b = Object.create(null);
-Object.keys(y).forEach((e) => {
-	b[y[e]] = e;
+}, v = Object.create(null);
+v.open = "0", v.close = "1", v.ping = "2", v.pong = "3", v.message = "4", v.upgrade = "5", v.noop = "6";
+var y = Object.create(null);
+Object.keys(v).forEach((e) => {
+	y[v[e]] = e;
 });
-var x = {
+var b = {
 	type: "error",
 	data: "parser error"
-}, S = typeof Blob == "function" || typeof Blob < "u" && Object.prototype.toString.call(Blob) === "[object BlobConstructor]", C = typeof ArrayBuffer == "function", w = (e) => typeof ArrayBuffer.isView == "function" ? ArrayBuffer.isView(e) : e && e.buffer instanceof ArrayBuffer, T = ({ type: e, data: t }, n, r) => S && t instanceof Blob ? n ? r(t) : te(t, r) : C && (t instanceof ArrayBuffer || w(t)) ? n ? r(t) : te(new Blob([t]), r) : r(y[e] + (t || "")), te = (e, t) => {
+}, ne = typeof Blob == "function" || typeof Blob < "u" && Object.prototype.toString.call(Blob) === "[object BlobConstructor]", x = typeof ArrayBuffer == "function", S = (e) => typeof ArrayBuffer.isView == "function" ? ArrayBuffer.isView(e) : e && e.buffer instanceof ArrayBuffer, C = ({ type: e, data: t }, n, r) => ne && t instanceof Blob ? n ? r(t) : w(t, r) : x && (t instanceof ArrayBuffer || S(t)) ? n ? r(t) : w(new Blob([t]), r) : r(v[e] + (t || "")), w = (e, t) => {
 	let n = new FileReader();
 	return n.onload = function() {
 		let e = n.result.split(",")[1];
 		t("b" + (e || ""));
 	}, n.readAsDataURL(e);
 };
-function E(e) {
+function T(e) {
 	return e instanceof Uint8Array ? e : e instanceof ArrayBuffer ? new Uint8Array(e) : new Uint8Array(e.buffer, e.byteOffset, e.byteLength);
 }
-var D;
-function ne(e, t) {
-	if (S && e.data instanceof Blob) return e.data.arrayBuffer().then(E).then(t);
-	if (C && (e.data instanceof ArrayBuffer || w(e.data))) return t(E(e.data));
-	T(e, !1, (e) => {
-		D ||= new TextEncoder(), t(D.encode(e));
+var E;
+function re(e, t) {
+	if (ne && e.data instanceof Blob) return e.data.arrayBuffer().then(T).then(t);
+	if (x && (e.data instanceof ArrayBuffer || S(e.data))) return t(T(e.data));
+	C(e, !1, (e) => {
+		E ||= new TextEncoder(), t(E.encode(e));
 	});
 }
 //#endregion
 //#region node_modules/engine.io-parser/build/esm/contrib/base64-arraybuffer.js
-var re = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/", O = typeof Uint8Array > "u" ? [] : new Uint8Array(256);
-for (let e = 0; e < 64; e++) O[re.charCodeAt(e)] = e;
-var k = (e) => {
+var D = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/", O = typeof Uint8Array > "u" ? [] : new Uint8Array(256);
+for (let e = 0; e < 64; e++) O[D.charCodeAt(e)] = e;
+var ie = (e) => {
 	let t = e.length * .75, n = e.length, r, i = 0, a, o, s, c;
 	e[e.length - 1] === "=" && (t--, e[e.length - 2] === "=" && t--);
 	let l = new ArrayBuffer(t), u = new Uint8Array(l);
 	for (r = 0; r < n; r += 4) a = O[e.charCodeAt(r)], o = O[e.charCodeAt(r + 1)], s = O[e.charCodeAt(r + 2)], c = O[e.charCodeAt(r + 3)], u[i++] = a << 2 | o >> 4, u[i++] = (o & 15) << 4 | s >> 2, u[i++] = (s & 3) << 6 | c & 63;
 	return l;
-}, ie = typeof ArrayBuffer == "function", A = (e, t) => {
+}, ae = typeof ArrayBuffer == "function", k = (e, t) => {
 	if (typeof e != "string") return {
 		type: "message",
-		data: M(e, t)
+		data: se(e, t)
 	};
 	let n = e.charAt(0);
 	return n === "b" ? {
 		type: "message",
-		data: j(e.substring(1), t)
-	} : b[n] ? e.length > 1 ? {
-		type: b[n],
+		data: oe(e.substring(1), t)
+	} : y[n] ? e.length > 1 ? {
+		type: y[n],
 		data: e.substring(1)
-	} : { type: b[n] } : x;
-}, j = (e, t) => ie ? M(k(e), t) : {
+	} : { type: y[n] } : b;
+}, oe = (e, t) => ae ? se(ie(e), t) : {
 	base64: !0,
 	data: e
-}, M = (e, t) => {
+}, se = (e, t) => {
 	switch (t) {
 		case "blob": return e instanceof Blob ? e : new Blob([e]);
 		default: return e instanceof ArrayBuffer ? e : e.buffer;
 	}
-}, N = "", P = (e, t) => {
+}, ce = "", A = (e, t) => {
 	let n = e.length, r = Array(n), i = 0;
 	e.forEach((e, a) => {
-		T(e, !1, (e) => {
-			r[a] = e, ++i === n && t(r.join(N));
+		C(e, !1, (e) => {
+			r[a] = e, ++i === n && t(r.join(ce));
 		});
 	});
-}, F = (e, t) => {
-	let n = e.split(N), r = [];
+}, le = (e, t) => {
+	let n = e.split(ce), r = [];
 	for (let e = 0; e < n.length; e++) {
-		let i = A(n[e], t);
+		let i = k(n[e], t);
 		if (r.push(i), i.type === "error") break;
 	}
 	return r;
 };
-function ae() {
+function j() {
 	return new TransformStream({ transform(e, t) {
-		ne(e, (n) => {
+		re(e, (n) => {
 			let r = n.length, i;
 			if (r < 126) i = new Uint8Array(1), new DataView(i.buffer).setUint8(0, r);
 			else if (r < 65536) {
@@ -181,44 +181,44 @@ function ae() {
 		});
 	} });
 }
-var I;
-function L(e) {
+var M;
+function N(e) {
 	return e.reduce((e, t) => e + t.length, 0);
 }
-function R(e, t) {
+function P(e, t) {
 	if (e[0].length === t) return e.shift();
 	let n = new Uint8Array(t), r = 0;
 	for (let i = 0; i < t; i++) n[i] = e[0][r++], r === e[0].length && (e.shift(), r = 0);
 	return e.length && r < e[0].length && (e[0] = e[0].slice(r)), n;
 }
-function z(e, t) {
-	I ||= new TextDecoder();
+function F(e, t) {
+	M ||= new TextDecoder();
 	let n = [], r = 0, i = -1, a = !1;
 	return new TransformStream({ transform(o, s) {
 		for (n.push(o);;) {
 			if (r === 0) {
-				if (L(n) < 1) break;
-				let e = R(n, 1);
+				if (N(n) < 1) break;
+				let e = P(n, 1);
 				a = (e[0] & 128) == 128, i = e[0] & 127, r = i < 126 ? 3 : i === 126 ? 1 : 2;
 			} else if (r === 1) {
-				if (L(n) < 2) break;
-				let e = R(n, 2);
+				if (N(n) < 2) break;
+				let e = P(n, 2);
 				i = new DataView(e.buffer, e.byteOffset, e.length).getUint16(0), r = 3;
 			} else if (r === 2) {
-				if (L(n) < 8) break;
-				let e = R(n, 8), t = new DataView(e.buffer, e.byteOffset, e.length), a = t.getUint32(0);
+				if (N(n) < 8) break;
+				let e = P(n, 8), t = new DataView(e.buffer, e.byteOffset, e.length), a = t.getUint32(0);
 				if (a > 2 ** 21 - 1) {
-					s.enqueue(x);
+					s.enqueue(b);
 					break;
 				}
 				i = a * 2 ** 32 + t.getUint32(4), r = 3;
 			} else {
-				if (L(n) < i) break;
-				let e = R(n, i);
-				s.enqueue(A(a ? e : I.decode(e), t)), r = 0;
+				if (N(n) < i) break;
+				let e = P(n, i);
+				s.enqueue(k(a ? e : M.decode(e), t)), r = 0;
 			}
 			if (i === 0 || i > e) {
-				s.enqueue(x);
+				s.enqueue(b);
 				break;
 			}
 		}
@@ -226,21 +226,21 @@ function z(e, t) {
 }
 //#endregion
 //#region node_modules/@socket.io/component-emitter/lib/esm/index.js
-function B(e) {
-	if (e) return V(e);
+function I(e) {
+	if (e) return ue(e);
 }
-function V(e) {
-	for (var t in B.prototype) e[t] = B.prototype[t];
+function ue(e) {
+	for (var t in I.prototype) e[t] = I.prototype[t];
 	return e;
 }
-B.prototype.on = B.prototype.addEventListener = function(e, t) {
+I.prototype.on = I.prototype.addEventListener = function(e, t) {
 	return this._callbacks = this._callbacks || {}, (this._callbacks["$" + e] = this._callbacks["$" + e] || []).push(t), this;
-}, B.prototype.once = function(e, t) {
+}, I.prototype.once = function(e, t) {
 	function n() {
 		this.off(e, n), t.apply(this, arguments);
 	}
 	return n.fn = t, this.on(e, n), this;
-}, B.prototype.off = B.prototype.removeListener = B.prototype.removeAllListeners = B.prototype.removeEventListener = function(e, t) {
+}, I.prototype.off = I.prototype.removeListener = I.prototype.removeAllListeners = I.prototype.removeEventListener = function(e, t) {
 	if (this._callbacks = this._callbacks || {}, arguments.length == 0) return this._callbacks = {}, this;
 	var n = this._callbacks["$" + e];
 	if (!n) return this;
@@ -250,7 +250,7 @@ B.prototype.on = B.prototype.addEventListener = function(e, t) {
 		break;
 	}
 	return n.length === 0 && delete this._callbacks["$" + e], this;
-}, B.prototype.emit = function(e) {
+}, I.prototype.emit = function(e) {
 	this._callbacks = this._callbacks || {};
 	for (var t = Array(arguments.length - 1), n = this._callbacks["$" + e], r = 1; r < arguments.length; r++) t[r - 1] = arguments[r];
 	if (n) {
@@ -258,43 +258,43 @@ B.prototype.on = B.prototype.addEventListener = function(e, t) {
 		for (var r = 0, i = n.length; r < i; ++r) n[r].apply(this, t);
 	}
 	return this;
-}, B.prototype.emitReserved = B.prototype.emit, B.prototype.listeners = function(e) {
+}, I.prototype.emitReserved = I.prototype.emit, I.prototype.listeners = function(e) {
 	return this._callbacks = this._callbacks || {}, this._callbacks["$" + e] || [];
-}, B.prototype.hasListeners = function(e) {
+}, I.prototype.hasListeners = function(e) {
 	return !!this.listeners(e).length;
 };
 //#endregion
 //#region node_modules/engine.io-client/build/esm/globals.js
-var H = typeof Promise == "function" && typeof Promise.resolve == "function" ? (e) => Promise.resolve().then(e) : (e, t) => t(e, 0), U = typeof self < "u" ? self : typeof window < "u" ? window : Function("return this")(), W = "arraybuffer";
+var L = typeof Promise == "function" && typeof Promise.resolve == "function" ? (e) => Promise.resolve().then(e) : (e, t) => t(e, 0), R = typeof self < "u" ? self : typeof window < "u" ? window : Function("return this")(), de = "arraybuffer";
 //#endregion
 //#region node_modules/engine.io-client/build/esm/util.js
-function G(e, ...t) {
+function z(e, ...t) {
 	return t.reduce((t, n) => (e.hasOwnProperty(n) && (t[n] = e[n]), t), {});
 }
-var K = U.setTimeout, oe = U.clearTimeout;
-function q(e, t) {
-	t.useNativeTimers ? (e.setTimeoutFn = K.bind(U), e.clearTimeoutFn = oe.bind(U)) : (e.setTimeoutFn = U.setTimeout.bind(U), e.clearTimeoutFn = U.clearTimeout.bind(U));
+var B = R.setTimeout, V = R.clearTimeout;
+function H(e, t) {
+	t.useNativeTimers ? (e.setTimeoutFn = B.bind(R), e.clearTimeoutFn = V.bind(R)) : (e.setTimeoutFn = R.setTimeout.bind(R), e.clearTimeoutFn = R.clearTimeout.bind(R));
 }
-var J = 1.33;
-function se(e) {
-	return typeof e == "string" ? ce(e) : Math.ceil((e.byteLength || e.size) * J);
+var U = 1.33;
+function fe(e) {
+	return typeof e == "string" ? pe(e) : Math.ceil((e.byteLength || e.size) * U);
 }
-function ce(e) {
+function pe(e) {
 	let t = 0, n = 0;
 	for (let r = 0, i = e.length; r < i; r++) t = e.charCodeAt(r), t < 128 ? n += 1 : t < 2048 ? n += 2 : t < 55296 || t >= 57344 ? n += 3 : (r++, n += 4);
 	return n;
 }
-function le() {
+function W() {
 	return Date.now().toString(36).substring(3) + Math.random().toString(36).substring(2, 5);
 }
 //#endregion
 //#region node_modules/engine.io-client/build/esm/contrib/parseqs.js
-function ue(e) {
+function G(e) {
 	let t = "";
 	for (let n in e) e.hasOwnProperty(n) && (t.length && (t += "&"), t += encodeURIComponent(n) + "=" + encodeURIComponent(e[n]));
 	return t;
 }
-function de(e) {
+function me(e) {
 	let t = {}, n = e.split("&");
 	for (let e = 0, r = n.length; e < r; e++) {
 		let r = n[e].split("=");
@@ -304,16 +304,16 @@ function de(e) {
 }
 //#endregion
 //#region node_modules/engine.io-client/build/esm/transport.js
-var fe = class extends Error {
+var K = class extends Error {
 	constructor(e, t, n) {
 		super(e), this.description = t, this.context = n, this.type = "TransportError";
 	}
-}, pe = class extends B {
+}, he = class extends I {
 	constructor(e) {
-		super(), this.writable = !1, q(this, e), this.opts = e, this.query = e.query, this.socket = e.socket, this.supportsBinary = !e.forceBase64;
+		super(), this.writable = !1, H(this, e), this.opts = e, this.query = e.query, this.socket = e.socket, this.supportsBinary = !e.forceBase64;
 	}
 	onError(e, t, n) {
-		return super.emitReserved("error", new fe(e, t, n)), this;
+		return super.emitReserved("error", new K(e, t, n)), this;
 	}
 	open() {
 		return this.readyState = "opening", this.doOpen(), this;
@@ -328,7 +328,7 @@ var fe = class extends Error {
 		this.readyState = "open", this.writable = !0, super.emitReserved("open");
 	}
 	onData(e) {
-		let t = A(e, this.socket.binaryType);
+		let t = k(e, this.socket.binaryType);
 		this.onPacket(t);
 	}
 	onPacket(e) {
@@ -349,10 +349,10 @@ var fe = class extends Error {
 		return this.opts.port && (this.opts.secure && Number(this.opts.port) !== 443 || !this.opts.secure && Number(this.opts.port) !== 80) ? ":" + this.opts.port : "";
 	}
 	_query(e) {
-		let t = ue(e);
+		let t = G(e);
 		return t.length ? "?" + t : "";
 	}
-}, me = class extends pe {
+}, q = class extends he {
 	constructor() {
 		super(...arguments), this._polling = !1;
 	}
@@ -380,7 +380,7 @@ var fe = class extends Error {
 		this._polling = !0, this.doPoll(), this.emitReserved("poll");
 	}
 	onData(e) {
-		F(e, this.socket.binaryType).forEach((e) => {
+		le(e, this.socket.binaryType).forEach((e) => {
 			if (this.readyState === "opening" && e.type === "open" && this.onOpen(), e.type === "close") return this.onClose({ description: "transport closed by the server" }), !1;
 			this.onPacket(e);
 		}), this.readyState !== "closed" && (this._polling = !1, this.emitReserved("pollComplete"), this.readyState === "open" && this._poll());
@@ -392,7 +392,7 @@ var fe = class extends Error {
 		this.readyState === "open" ? e() : this.once("open", e);
 	}
 	write(e) {
-		this.writable = !1, P(e, (e) => {
+		this.writable = !1, A(e, (e) => {
 			this.doWrite(e, () => {
 				this.writable = !0, this.emitReserved("drain");
 			});
@@ -400,17 +400,17 @@ var fe = class extends Error {
 	}
 	uri() {
 		let e = this.opts.secure ? "https" : "http", t = this.query || {};
-		return !1 !== this.opts.timestampRequests && (t[this.opts.timestampParam] = le()), !this.supportsBinary && !t.sid && (t.b64 = 1), this.createUri(e, t);
+		return !1 !== this.opts.timestampRequests && (t[this.opts.timestampParam] = W()), !this.supportsBinary && !t.sid && (t.b64 = 1), this.createUri(e, t);
 	}
-}, he = !1;
+}, J = !1;
 try {
-	he = typeof XMLHttpRequest < "u" && "withCredentials" in new XMLHttpRequest();
+	J = typeof XMLHttpRequest < "u" && "withCredentials" in new XMLHttpRequest();
 } catch {}
-var ge = he;
+var ge = J;
 //#endregion
 //#region node_modules/engine.io-client/build/esm/transports/polling-xhr.js
 function _e() {}
-var ve = class extends me {
+var ve = class extends q {
 	constructor(e) {
 		if (super(e), typeof location < "u") {
 			let t = location.protocol === "https:", n = location.port;
@@ -432,13 +432,13 @@ var ve = class extends me {
 			this.onError("xhr poll error", e, t);
 		}), this.pollXhr = e;
 	}
-}, Y = class e extends B {
+}, Y = class e extends I {
 	constructor(e, t, n) {
-		super(), this.createRequest = e, q(this, n), this._opts = n, this._method = n.method || "GET", this._uri = t, this._data = n.data === void 0 ? null : n.data, this._create();
+		super(), this.createRequest = e, H(this, n), this._opts = n, this._method = n.method || "GET", this._uri = t, this._data = n.data === void 0 ? null : n.data, this._create();
 	}
 	_create() {
 		var t;
-		let n = G(this._opts, "agent", "pfx", "key", "passphrase", "cert", "ca", "ciphers", "rejectUnauthorized", "autoUnref");
+		let n = z(this._opts, "agent", "pfx", "key", "passphrase", "cert", "ca", "ciphers", "rejectUnauthorized", "autoUnref");
 		n.xdomain = !!this._opts.xd;
 		let r = this._xhr = this.createRequest(n);
 		try {
@@ -491,7 +491,7 @@ var ve = class extends me {
 if (Y.requestsCount = 0, Y.requests = {}, typeof document < "u") {
 	if (typeof attachEvent == "function") attachEvent("onunload", ye);
 	else if (typeof addEventListener == "function") {
-		let e = "onpagehide" in U ? "pagehide" : "unload";
+		let e = "onpagehide" in R ? "pagehide" : "unload";
 		addEventListener(e, ye, !1);
 	}
 }
@@ -517,17 +517,17 @@ function Se(e) {
 		if (typeof XMLHttpRequest < "u" && (!t || ge)) return new XMLHttpRequest();
 	} catch {}
 	if (!t) try {
-		return new U[["Active", "Object"].join("X")]("Microsoft.XMLHTTP");
+		return new R[["Active", "Object"].join("X")]("Microsoft.XMLHTTP");
 	} catch {}
 }
 //#endregion
 //#region node_modules/engine.io-client/build/esm/transports/websocket.js
-var Ce = typeof navigator < "u" && typeof navigator.product == "string" && navigator.product.toLowerCase() === "reactnative", we = class extends pe {
+var Ce = typeof navigator < "u" && typeof navigator.product == "string" && navigator.product.toLowerCase() === "reactnative", we = class extends he {
 	get name() {
 		return "websocket";
 	}
 	doOpen() {
-		let e = this.uri(), t = this.opts.protocols, n = Ce ? {} : G(this.opts, "agent", "perMessageDeflate", "pfx", "key", "passphrase", "cert", "ca", "ciphers", "rejectUnauthorized", "localAddress", "protocolVersion", "origin", "maxPayload", "family", "checkServerIdentity");
+		let e = this.uri(), t = this.opts.protocols, n = Ce ? {} : z(this.opts, "agent", "perMessageDeflate", "pfx", "key", "passphrase", "cert", "ca", "ciphers", "rejectUnauthorized", "localAddress", "protocolVersion", "origin", "maxPayload", "family", "checkServerIdentity");
 		this.opts.extraHeaders && (n.headers = this.opts.extraHeaders);
 		try {
 			this.ws = this.createSocket(e, t, n);
@@ -548,11 +548,11 @@ var Ce = typeof navigator < "u" && typeof navigator.product == "string" && navig
 		this.writable = !1;
 		for (let t = 0; t < e.length; t++) {
 			let n = e[t], r = t === e.length - 1;
-			T(n, this.supportsBinary, (e) => {
+			C(n, this.supportsBinary, (e) => {
 				try {
 					this.doWrite(n, e);
 				} catch {}
-				r && H(() => {
+				r && L(() => {
 					this.writable = !0, this.emitReserved("drain");
 				}, this.setTimeoutFn);
 			});
@@ -563,9 +563,9 @@ var Ce = typeof navigator < "u" && typeof navigator.product == "string" && navig
 	}
 	uri() {
 		let e = this.opts.secure ? "wss" : "ws", t = this.query || {};
-		return this.opts.timestampRequests && (t[this.opts.timestampParam] = le()), this.supportsBinary || (t.b64 = 1), this.createUri(e, t);
+		return this.opts.timestampRequests && (t[this.opts.timestampParam] = W()), this.supportsBinary || (t.b64 = 1), this.createUri(e, t);
 	}
-}, Te = U.WebSocket || U.MozWebSocket, Ee = {
+}, Te = R.WebSocket || R.MozWebSocket, Ee = {
 	websocket: class extends we {
 		createSocket(e, t, n) {
 			return Ce ? new Te(e, t, n) : t ? new Te(e, t) : new Te(e);
@@ -574,7 +574,7 @@ var Ce = typeof navigator < "u" && typeof navigator.product == "string" && navig
 			this.ws.send(t);
 		}
 	},
-	webtransport: class extends pe {
+	webtransport: class extends he {
 		get name() {
 			return "webtransport";
 		}
@@ -590,7 +590,7 @@ var Ce = typeof navigator < "u" && typeof navigator.product == "string" && navig
 				this.onError("webtransport error", e);
 			}), this._transport.ready.then(() => {
 				this._transport.createBidirectionalStream().then((e) => {
-					let t = z(2 ** 53 - 1, this.socket.binaryType), n = e.readable.pipeThrough(t).getReader(), r = ae();
+					let t = F(2 ** 53 - 1, this.socket.binaryType), n = e.readable.pipeThrough(t).getReader(), r = j();
 					r.readable.pipeTo(e.writable), this._writer = r.writable.getWriter();
 					let i = () => {
 						n.read().then(({ done: e, value: t }) => {
@@ -608,7 +608,7 @@ var Ce = typeof navigator < "u" && typeof navigator.product == "string" && navig
 			for (let t = 0; t < e.length; t++) {
 				let n = e[t], r = t === e.length - 1;
 				this._writer.write(n).then(() => {
-					r && H(() => {
+					r && L(() => {
 						this.writable = !0, this.emitReserved("drain");
 					}, this.setTimeoutFn);
 				});
@@ -660,13 +660,13 @@ var Me = typeof addEventListener == "function" && typeof removeEventListener == 
 Me && addEventListener("offline", () => {
 	Ne.forEach((e) => e());
 }, !1);
-var Pe = class e extends B {
+var Pe = class e extends I {
 	constructor(e, t) {
-		if (super(), this.binaryType = W, this.writeBuffer = [], this._prevBufferLen = 0, this._pingInterval = -1, this._pingTimeout = -1, this._maxPayload = -1, this._pingTimeoutTime = Infinity, e && typeof e == "object" && (t = e, e = null), e) {
+		if (super(), this.binaryType = de, this.writeBuffer = [], this._prevBufferLen = 0, this._pingInterval = -1, this._pingTimeout = -1, this._maxPayload = -1, this._pingTimeoutTime = Infinity, e && typeof e == "object" && (t = e, e = null), e) {
 			let n = ke(e);
 			t.hostname = n.host, t.secure = n.protocol === "https" || n.protocol === "wss", t.port = n.port, n.query && (t.query = n.query);
 		} else t.host && (t.hostname = ke(t.host).host);
-		q(this, t), this.secure = t.secure == null ? typeof location < "u" && location.protocol === "https:" : t.secure, t.hostname && !t.port && (t.port = this.secure ? "443" : "80"), this.hostname = t.hostname || (typeof location < "u" ? location.hostname : "localhost"), this.port = t.port || (typeof location < "u" && location.port ? location.port : this.secure ? "443" : "80"), this.transports = [], this._transportsByName = {}, t.transports.forEach((e) => {
+		H(this, t), this.secure = t.secure == null ? typeof location < "u" && location.protocol === "https:" : t.secure, t.hostname && !t.port && (t.port = this.secure ? "443" : "80"), this.hostname = t.hostname || (typeof location < "u" ? location.hostname : "localhost"), this.port = t.port || (typeof location < "u" && location.port ? location.port : this.secure ? "443" : "80"), this.transports = [], this._transportsByName = {}, t.transports.forEach((e) => {
 			let t = e.prototype.name;
 			this.transports.push(t), this._transportsByName[t] = e;
 		}), this.opts = Object.assign({
@@ -681,7 +681,7 @@ var Pe = class e extends B {
 			perMessageDeflate: { threshold: 1024 },
 			transportOptions: {},
 			closeOnBeforeunload: !1
-		}, t), this.opts.path = this.opts.path.replace(/\/$/, "") + (this.opts.addTrailingSlash ? "/" : ""), typeof this.opts.query == "string" && (this.opts.query = de(this.opts.query)), Me && (this.opts.closeOnBeforeunload && (this._beforeunloadEventListener = () => {
+		}, t), this.opts.path = this.opts.path.replace(/\/$/, "") + (this.opts.addTrailingSlash ? "/" : ""), typeof this.opts.query == "string" && (this.opts.query = me(this.opts.query)), Me && (this.opts.closeOnBeforeunload && (this._beforeunloadEventListener = () => {
 			this.transport && (this.transport.removeAllListeners(), this.transport.close());
 		}, addEventListener("beforeunload", this._beforeunloadEventListener, !1)), this.hostname !== "localhost" && (this._offlineEventListener = () => {
 			this._onClose("transport close", { description: "network connection lost" });
@@ -758,7 +758,7 @@ var Pe = class e extends B {
 		let e = 1;
 		for (let t = 0; t < this.writeBuffer.length; t++) {
 			let n = this.writeBuffer[t].data;
-			if (n && (e += se(n)), t > 0 && e > this._maxPayload) return this.writeBuffer.slice(0, t);
+			if (n && (e += fe(n)), t > 0 && e > this._maxPayload) return this.writeBuffer.slice(0, t);
 			e += 2;
 		}
 		return this.writeBuffer;
@@ -766,7 +766,7 @@ var Pe = class e extends B {
 	_hasPingExpired() {
 		if (!this._pingTimeoutTime) return !0;
 		let e = Date.now() > this._pingTimeoutTime;
-		return e && (this._pingTimeoutTime = 0, H(() => {
+		return e && (this._pingTimeoutTime = 0, L(() => {
 			this._onClose("ping timeout");
 		}, this.setTimeoutFn)), e;
 	}
@@ -985,7 +985,7 @@ var Ze = class {
 		let t = Ge(e), n = this.encodeAsString(t.packet), r = t.buffers;
 		return r.unshift(n), r;
 	}
-}, Qe = class e extends B {
+}, Qe = class e extends I {
 	constructor(e) {
 		super(), this.opts = Object.assign({
 			reviver: void 0,
@@ -1118,7 +1118,7 @@ var ot = Object.freeze({
 	disconnecting: 1,
 	newListener: 1,
 	removeListener: 1
-}), st = class extends B {
+}), st = class extends I {
 	constructor(e, t, n) {
 		super(), this.connected = !1, this.recovered = !1, this.receiveBuffer = [], this.sendBuffer = [], this._queue = [], this._queueSeq = 0, this.ids = 0, this.acks = {}, this.flags = {}, this.io = e, this.nsp = t, n && n.auth && (this.auth = n.auth), this._opts = Object.assign({}, n), this.io._autoConnect && this.open();
 	}
@@ -1371,9 +1371,9 @@ Q.prototype.duration = function() {
 };
 //#endregion
 //#region node_modules/socket.io-client/build/esm/manager.js
-var ct = class extends B {
+var ct = class extends I {
 	constructor(e, t) {
-		super(), this.nsps = {}, this.subs = [], e && typeof e == "object" && (t = e, e = void 0), t ||= {}, t.path = t.path || "/socket.io", this.opts = t, q(this, t), this.reconnection(t.reconnection !== !1), this.reconnectionAttempts(t.reconnectionAttempts || Infinity), this.reconnectionDelay(t.reconnectionDelay || 1e3), this.reconnectionDelayMax(t.reconnectionDelayMax || 5e3), this.randomizationFactor(t.randomizationFactor ?? .5), this.backoff = new Q({
+		super(), this.nsps = {}, this.subs = [], e && typeof e == "object" && (t = e, e = void 0), t ||= {}, t.path = t.path || "/socket.io", this.opts = t, H(this, t), this.reconnection(t.reconnection !== !1), this.reconnectionAttempts(t.reconnectionAttempts || Infinity), this.reconnectionDelay(t.reconnectionDelay || 1e3), this.reconnectionDelayMax(t.reconnectionDelayMax || 5e3), this.randomizationFactor(t.randomizationFactor ?? .5), this.backoff = new Q({
 			min: this.reconnectionDelay(),
 			max: this.reconnectionDelayMax(),
 			jitter: this.randomizationFactor()
@@ -1444,7 +1444,7 @@ var ct = class extends B {
 		}
 	}
 	ondecoded(e) {
-		H(() => {
+		L(() => {
 			this.emitReserved("packet", e);
 		}, this.setTimeoutFn);
 	}
@@ -1498,21 +1498,21 @@ var ct = class extends B {
 		let e = this.backoff.attempts;
 		this._reconnecting = !1, this.backoff.reset(), this.emitReserved("reconnect", e);
 	}
-}, $ = {};
-function lt(e, t) {
+}, lt = {};
+function ut(e, t) {
 	typeof e == "object" && (t = e, e = void 0), t ||= {};
-	let n = Le(e, t.path || "/socket.io"), r = n.source, i = n.id, a = n.path, o = $[i] && a in $[i].nsps, s = t.forceNew || t["force new connection"] || !1 === t.multiplex || o, c;
-	return s ? c = new ct(r, t) : ($[i] || ($[i] = new ct(r, t)), c = $[i]), n.query && !t.query && (t.query = n.queryKey), c.socket(n.path, t);
+	let n = Le(e, t.path || "/socket.io"), r = n.source, i = n.id, a = n.path, o = lt[i] && a in lt[i].nsps, s = t.forceNew || t["force new connection"] || !1 === t.multiplex || o, c;
+	return s ? c = new ct(r, t) : (lt[i] || (lt[i] = new ct(r, t)), c = lt[i]), n.query && !t.query && (t.query = n.queryKey), c.socket(n.path, t);
 }
-Object.assign(lt, {
+Object.assign(ut, {
 	Manager: ct,
 	Socket: st,
-	io: lt,
-	connect: lt
+	io: ut,
+	connect: ut
 });
 //#endregion
 //#region src/chatbotWidget.ts
-var ut = "chatbot-package-styles", dt = {
+var dt = "chatbot-package-styles", ft = {
 	botName: "Support Assistant",
 	title: "Support Assistant",
 	subtitle: "Online",
@@ -1521,31 +1521,34 @@ var ut = "chatbot-package-styles", dt = {
 	primaryColor: "#2563eb",
 	position: "bottom-right",
 	zIndex: 9999
-}, ft = "\n.chatbot-widget-root {\n  position: fixed;\n  bottom: 16px;\n  font-family: \"Segoe UI\", -apple-system, BlinkMacSystemFont, sans-serif;\n}\n\n.chatbot-widget-root.right {\n  right: 16px;\n}\n\n.chatbot-widget-root.left {\n  left: 16px;\n}\n\n.chatbot-launcher {\n  width: 56px;\n  height: 56px;\n  border-radius: 9999px;\n  border: 0;\n  background: linear-gradient(135deg, var(--chatbot-primary), #1d4ed8);\n  color: #ffffff;\n  box-shadow: 0 16px 30px rgba(37, 99, 235, 0.35);\n  cursor: pointer;\n  display: grid;\n  place-items: center;\n  font-size: 12px;\n  font-weight: 700;\n  letter-spacing: 0.2px;\n  transition: transform 0.18s ease, box-shadow 0.18s ease;\n}\n\n.chatbot-launcher svg {\n  width: 20px;\n  height: 20px;\n}\n\n.chatbot-launcher:hover {\n  transform: translateY(-2px);\n  box-shadow: 0 20px 34px rgba(37, 99, 235, 0.42);\n}\n\n.chatbot-panel {\n  position: absolute;\n  bottom: 66px;\n  width: min(378px, calc(100vw - 24px));\n  height: min(610px, calc(100vh - 88px));\n  border-radius: 16px;\n  border: 1px solid #dbe4f5;\n  overflow: hidden;\n  box-shadow: 0 28px 56px rgba(15, 23, 42, 0.24);\n  background: #f8fbff;\n  display: flex;\n  flex-direction: column;\n  opacity: 0;\n  visibility: hidden;\n  pointer-events: none;\n  transform: translateY(10px) scale(0.98);\n  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;\n}\n\n.chatbot-widget-root.right .chatbot-panel {\n  right: 0;\n  transform-origin: bottom right;\n}\n\n.chatbot-widget-root.left .chatbot-panel {\n  left: 0;\n  transform-origin: bottom left;\n}\n\n.chatbot-widget-root.open .chatbot-panel {\n  opacity: 1;\n  visibility: visible;\n  pointer-events: auto;\n  transform: translateY(0) scale(1);\n}\n\n.chatbot-header {\n  background: linear-gradient(135deg, var(--chatbot-primary), #1d4ed8);\n  color: #ffffff;\n  padding: 12px;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 10px;\n}\n\n.chatbot-header-left {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n}\n\n.chatbot-avatar {\n  width: 38px;\n  height: 38px;\n  border-radius: 9999px;\n  background: #ffffff;\n  color: var(--chatbot-primary);\n  border: 1px solid rgba(255, 255, 255, 0.84);\n  display: grid;\n  place-items: center;\n  font-size: 14px;\n  font-weight: 700;\n}\n\n.chatbot-avatar svg {\n  width: 18px;\n  height: 18px;\n}\n\n.chatbot-header-info h2 {\n  margin: 0;\n  font-size: 15px;\n  line-height: 1.15;\n  font-weight: 700;\n}\n\n.chatbot-status {\n  margin-top: 3px;\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  font-size: 12px;\n  font-weight: 500;\n  opacity: 0.95;\n}\n\n.chatbot-status-dot {\n  width: 8px;\n  height: 8px;\n  border-radius: 9999px;\n  background: #22c55e;\n}\n\n.chatbot-controls {\n  display: flex;\n  align-items: center;\n  margin-left: auto;\n}\n\n.chatbot-controls button {\n  width: 34px;\n  height: 34px;\n  border-radius: 8px;\n  border: 1px solid rgba(255, 255, 255, 0.42);\n  background: rgba(255, 255, 255, 0.24);\n  color: #ffffff;\n  cursor: pointer;\n  line-height: 0;\n  display: grid;\n  place-items: center;\n  transition: background 0.2s ease, transform 0.2s ease;\n}\n\n.chatbot-controls button svg {\n  width: 16px;\n  height: 16px;\n  stroke-width: 2.25;\n}\n\n.chatbot-controls button:hover {\n  background: rgba(255, 255, 255, 0.36);\n  transform: translateY(-1px);\n}\n\n.chatbot-body {\n  flex: 1;\n  overflow-y: auto;\n  padding: 14px 12px 10px;\n  background: linear-gradient(180deg, #f8fbff 0%, #f1f6ff 100%);\n}\n\n.chatbot-body::-webkit-scrollbar {\n  width: 8px;\n}\n\n.chatbot-body::-webkit-scrollbar-thumb {\n  background: #bfdbfe;\n  border-radius: 999px;\n}\n\n.chatbot-intro {\n  text-align: center;\n  color: #334155;\n  border: 1px solid #dbe4f5;\n  background: rgba(255, 255, 255, 0.72);\n  border-radius: 14px;\n  padding: 16px 12px;\n}\n\n.chatbot-intro-icon {\n  width: 44px;\n  height: 44px;\n  border-radius: 9999px;\n  background: #dbeafe;\n  color: #1d4ed8;\n  display: grid;\n  place-items: center;\n  font-size: 22px;\n  font-weight: 700;\n  margin: 0 auto 12px;\n}\n\n.chatbot-intro h3 {\n  margin: 0;\n  font-size: 25px;\n  color: #0f172a;\n}\n\n.chatbot-intro p {\n  margin: 10px auto 0;\n  max-width: 290px;\n  font-size: 13px;\n  line-height: 1.45;\n  color: #475569;\n}\n\n.chatbot-intro .chatbot-human-note {\n  margin-top: 12px;\n  font-style: italic;\n  font-size: 12px;\n  color: #6b7a92;\n}\n\n.chatbot-messages {\n  display: none;\n  flex-direction: column;\n  gap: 8px;\n}\n\n.chatbot-body.has-messages .chatbot-intro {\n  display: none;\n}\n\n.chatbot-body.has-messages .chatbot-messages {\n  display: flex;\n}\n\n.chatbot-bubble {\n  max-width: 86%;\n  border-radius: 12px;\n  padding: 8px 10px;\n  line-height: 1.45;\n  font-size: 13px;\n  white-space: pre-wrap;\n}\n\n.chatbot-bubble.user {\n  align-self: flex-end;\n  background: linear-gradient(135deg, var(--chatbot-primary), #1d4ed8);\n  color: #ffffff;\n}\n\n.chatbot-bubble.bot {\n  align-self: flex-start;\n  background: #e2e8f0;\n  color: #1e293b;\n}\n\n.chatbot-footer {\n  border-top: 1px solid #dbe4f5;\n  background: #f8fbff;\n  padding: 10px;\n}\n\n.chatbot-input-row {\n  display: grid;\n  grid-template-columns: 1fr auto;\n  gap: 8px;\n  margin-bottom: 8px;\n  align-items: center;\n}\n\n.chatbot-input-row input {\n  border: 1px solid #bfdbfe;\n  border-radius: 10px;\n  min-height: 44px;\n  padding: 0 12px;\n  outline: none;\n  font-size: 13px;\n  background: #ffffff;\n  color: #1e293b;\n}\n\n.chatbot-input-row input:focus {\n  border-color: var(--chatbot-primary);\n  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);\n}\n\n.chatbot-input-row button {\n  width: 46px;\n  height: 44px;\n  border: 0;\n  border-radius: 12px;\n  background: linear-gradient(135deg, var(--chatbot-primary), #1d4ed8);\n  color: #ffffff;\n  font-size: 14px;\n  font-weight: 700;\n  cursor: pointer;\n  padding: 0;\n  display: grid;\n  place-items: center;\n  box-shadow: 0 10px 18px rgba(37, 99, 235, 0.28);\n  transition: transform 0.2s ease, box-shadow 0.2s ease;\n}\n\n.chatbot-input-row button svg {\n  width: 17px;\n  height: 17px;\n  stroke-width: 2.2;\n}\n\n.chatbot-input-row button:hover {\n  transform: translateY(-1px);\n  box-shadow: 0 14px 24px rgba(37, 99, 235, 0.34);\n}\n\n.chatbot-human-button {\n  width: 100%;\n  border: 1px solid #cbd5e1;\n  border-radius: 12px;\n  background: #ffffff;\n  color: #334155;\n  min-height: 44px;\n  padding: 0 12px;\n  font-size: 14px;\n  font-weight: 600;\n  cursor: pointer;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  gap: 8px;\n  transition: border-color 0.2s ease, background 0.2s ease;\n}\n\n.chatbot-human-button:hover {\n  background: #f8fafc;\n  border-color: #94a3b8;\n}\n\n.chatbot-human-button svg {\n  width: 16px;\n  height: 16px;\n  stroke-width: 2.1;\n}\n\n.chatbot-powered {\n  margin: 8px 0 0;\n  text-align: center;\n  font-size: 11px;\n  color: #94a3b8;\n}\n\n.chatbot-powered strong {\n  color: #64748b;\n}\n\n/* --- Human Form Styles --- */\n.chatbot-widget-root.show-human-form .chatbot-body,\n.chatbot-widget-root.show-human-form .chatbot-footer {\n  display: none !important;\n}\n\n.chatbot-human-container {\n  display: none;\n  flex: 1;\n  flex-direction: column;\n  background: #f8fbff;\n  overflow-y: auto;\n}\n\n.chatbot-widget-root.show-human-form .chatbot-human-container {\n  display: flex;\n}\n\n.chatbot-human-container::-webkit-scrollbar {\n  width: 8px;\n}\n\n.chatbot-human-container::-webkit-scrollbar-thumb {\n  background: #bfdbfe;\n  border-radius: 999px;\n}\n\n.chatbot-human-header {\n  padding: 20px 16px 12px;\n  text-align: center;\n}\n\n.chatbot-human-header h3 {\n  margin: 0 0 6px;\n  color: #0f172a;\n  font-size: 18px;\n}\n\n.chatbot-human-header p {\n  margin: 0;\n  color: #64748b;\n  font-size: 13px;\n  line-height: 1.45;\n}\n\n.chatbot-human-form {\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n  padding: 0 16px 20px;\n}\n\n.chatbot-form-group {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n}\n\n.chatbot-form-group label {\n  font-size: 13px;\n  font-weight: 600;\n  color: #334155;\n}\n\n.chatbot-form-group input,\n.chatbot-form-group textarea {\n  border: 1px solid #bfdbfe;\n  border-radius: 8px;\n  padding: 10px;\n  font-size: 13px;\n  outline: none;\n  background: #ffffff;\n  color: #1e293b;\n  font-family: inherit;\n  transition: border-color 0.2s, box-shadow 0.2s;\n}\n\n.chatbot-form-group input:focus,\n.chatbot-form-group textarea:focus {\n  border-color: var(--chatbot-primary);\n  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);\n}\n\n.chatbot-form-group textarea {\n  resize: vertical;\n  min-height: 80px;\n}\n\n.chatbot-form-actions {\n  display: flex;\n  gap: 12px;\n  margin-top: 8px;\n}\n\n.chatbot-btn-primary {\n  flex: 1;\n  background: linear-gradient(135deg, var(--chatbot-primary), #1d4ed8);\n  color: white;\n  border: none;\n  padding: 10px;\n  border-radius: 8px;\n  font-weight: 600;\n  cursor: pointer;\n  transition: transform 0.2s, box-shadow 0.2s;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  gap: 6px;\n}\n\n.chatbot-btn-primary:hover {\n  transform: translateY(-1px);\n  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);\n}\n\n.chatbot-btn-secondary {\n  flex: 1;\n  background: #e2e8f0;\n  color: #334155;\n  border: none;\n  padding: 10px;\n  border-radius: 8px;\n  font-weight: 600;\n  cursor: pointer;\n  transition: background 0.2s;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  gap: 6px;\n}\n\n.chatbot-btn-secondary:hover {\n  background: #cbd5e1;\n}\n\n.chatbot-human-success {\n  display: none;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  text-align: center;\n  padding: 32px 24px;\n  height: 100%;\n}\n\n.chatbot-widget-root.show-human-success .chatbot-human-success {\n  display: flex;\n}\n.chatbot-widget-root.show-human-success .chatbot-human-form,\n.chatbot-widget-root.show-human-success .chatbot-human-header {\n  display: none !important;\n}\n\n.chatbot-success-icon {\n  width: 56px;\n  height: 56px;\n  background: #dcfce7;\n  color: #16a34a;\n  border-radius: 50%;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  margin-bottom: 20px;\n}\n\n.chatbot-success-icon svg {\n  width: 28px;\n  height: 28px;\n}\n\n.chatbot-human-success h3 {\n  margin: 0 0 8px;\n  color: #0f172a;\n  font-size: 20px;\n}\n\n.chatbot-human-success p {\n  margin: 0 0 24px;\n  color: #475569;\n  font-size: 14px;\n  line-height: 1.5;\n}\n\n@media (max-width: 640px) {\n  .chatbot-widget-root.right,\n  .chatbot-widget-root.left {\n    right: 10px;\n    left: 10px;\n  }\n\n  .chatbot-widget-root {\n    bottom: 10px;\n  }\n\n  .chatbot-panel {\n    width: min(360px, calc(100vw - 20px));\n    height: min(520px, calc(100vh - 70px));\n  }\n\n  .chatbot-intro h3 {\n    font-size: 22px;\n  }\n}\n", pt = () => {
-	if (document.getElementById(ut)) return;
+}, pt = "\n.chatbot-widget-root {\n  position: fixed;\n  bottom: 16px;\n  font-family: \"Segoe UI\", -apple-system, BlinkMacSystemFont, sans-serif;\n}\n\n.chatbot-widget-root.right {\n  right: 16px;\n}\n\n.chatbot-widget-root.left {\n  left: 16px;\n}\n\n.chatbot-launcher {\n  width: 56px;\n  height: 56px;\n  border-radius: 9999px;\n  border: 0;\n  background: linear-gradient(135deg, var(--chatbot-primary), #1d4ed8);\n  color: #ffffff;\n  box-shadow: 0 16px 30px rgba(37, 99, 235, 0.35);\n  cursor: pointer;\n  display: grid;\n  place-items: center;\n  font-size: 12px;\n  font-weight: 700;\n  letter-spacing: 0.2px;\n  transition: transform 0.18s ease, box-shadow 0.18s ease;\n}\n\n.chatbot-launcher svg {\n  width: 20px;\n  height: 20px;\n}\n\n.chatbot-launcher:hover {\n  transform: translateY(-2px);\n  box-shadow: 0 20px 34px rgba(37, 99, 235, 0.42);\n}\n\n.chatbot-panel {\n  position: absolute;\n  bottom: 66px;\n  width: min(378px, calc(100vw - 24px));\n  height: min(610px, calc(100vh - 88px));\n  border-radius: 16px;\n  border: 1px solid #dbe4f5;\n  overflow: hidden;\n  box-shadow: 0 28px 56px rgba(15, 23, 42, 0.24);\n  background: #f8fbff;\n  display: flex;\n  flex-direction: column;\n  opacity: 0;\n  visibility: hidden;\n  pointer-events: none;\n  transform: translateY(10px) scale(0.98);\n  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;\n}\n\n.chatbot-widget-root.right .chatbot-panel {\n  right: 0;\n  transform-origin: bottom right;\n}\n\n.chatbot-widget-root.left .chatbot-panel {\n  left: 0;\n  transform-origin: bottom left;\n}\n\n.chatbot-widget-root.open .chatbot-panel {\n  opacity: 1;\n  visibility: visible;\n  pointer-events: auto;\n  transform: translateY(0) scale(1);\n}\n\n.chatbot-header {\n  background: linear-gradient(135deg, var(--chatbot-primary), #1d4ed8);\n  color: #ffffff;\n  padding: 12px;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 10px;\n}\n\n.chatbot-header-left {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n}\n\n.chatbot-avatar {\n  width: 38px;\n  height: 38px;\n  border-radius: 9999px;\n  background: #ffffff;\n  color: var(--chatbot-primary);\n  border: 1px solid rgba(255, 255, 255, 0.84);\n  display: grid;\n  place-items: center;\n  font-size: 14px;\n  font-weight: 700;\n}\n\n.chatbot-avatar svg {\n  width: 18px;\n  height: 18px;\n}\n\n.chatbot-header-info h2 {\n  margin: 0;\n  font-size: 15px;\n  line-height: 1.15;\n  font-weight: 700;\n}\n\n.chatbot-status {\n  margin-top: 3px;\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  font-size: 12px;\n  font-weight: 500;\n  opacity: 0.95;\n}\n\n.chatbot-status-dot {\n  width: 8px;\n  height: 8px;\n  border-radius: 9999px;\n  background: #22c55e;\n}\n\n.chatbot-controls {\n  display: flex;\n  align-items: center;\n  margin-left: auto;\n}\n\n.chatbot-controls button {\n  width: 34px;\n  height: 34px;\n  border-radius: 8px;\n  border: 1px solid rgba(255, 255, 255, 0.42);\n  background: rgba(255, 255, 255, 0.24);\n  color: #ffffff;\n  cursor: pointer;\n  line-height: 0;\n  display: grid;\n  place-items: center;\n  transition: background 0.2s ease, transform 0.2s ease;\n}\n\n.chatbot-controls button svg {\n  width: 16px;\n  height: 16px;\n  stroke-width: 2.25;\n}\n\n.chatbot-controls button:hover {\n  background: rgba(255, 255, 255, 0.36);\n  transform: translateY(-1px);\n}\n\n.chatbot-body {\n  flex: 1;\n  overflow-y: auto;\n  padding: 14px 12px 10px;\n  background: linear-gradient(180deg, #f8fbff 0%, #f1f6ff 100%);\n}\n\n.chatbot-body::-webkit-scrollbar {\n  width: 8px;\n}\n\n.chatbot-body::-webkit-scrollbar-thumb {\n  background: #bfdbfe;\n  border-radius: 999px;\n}\n\n.chatbot-intro {\n  text-align: center;\n  color: #334155;\n  border: 1px solid #dbe4f5;\n  background: rgba(255, 255, 255, 0.72);\n  border-radius: 14px;\n  padding: 16px 12px;\n}\n\n.chatbot-intro-icon {\n  width: 44px;\n  height: 44px;\n  border-radius: 9999px;\n  background: #dbeafe;\n  color: #1d4ed8;\n  display: grid;\n  place-items: center;\n  font-size: 22px;\n  font-weight: 700;\n  margin: 0 auto 12px;\n}\n\n.chatbot-intro h3 {\n  margin: 0;\n  font-size: 25px;\n  color: #0f172a;\n}\n\n.chatbot-intro p {\n  margin: 10px auto 0;\n  max-width: 290px;\n  font-size: 13px;\n  line-height: 1.45;\n  color: #475569;\n}\n\n.chatbot-intro .chatbot-human-note {\n  margin-top: 12px;\n  font-style: italic;\n  font-size: 12px;\n  color: #6b7a92;\n}\n\n.chatbot-messages {\n  display: none;\n  flex-direction: column;\n  gap: 8px;\n}\n\n.chatbot-body.has-messages .chatbot-intro {\n  display: none;\n}\n\n.chatbot-body.has-messages .chatbot-messages {\n  display: flex;\n}\n.chatbot-body.human-mode .chatbot-intro {\n  display: none;\n}\n.chatbot-human-hero {\n  display: none;\n  text-align: center;\n  color: #0f172a;\n  border: 1px solid #dbe4f5;\n  background: rgba(255, 255, 255, 0.88);\n  border-radius: 14px;\n  padding: 18px 14px;\n}\n.chatbot-body.human-mode .chatbot-human-hero {\n  display: block;\n}\n.chatbot-human-hero h3 {\n  margin: 0;\n  font-size: 22px;\n  font-weight: 700;\n}\n.chatbot-human-hero p {\n  margin: 8px 0 0;\n  font-size: 13px;\n  color: #475569;\n}\n.chatbot-history-label {\n  margin-top: 14px;\n  font-size: 11px;\n  font-weight: 700;\n  letter-spacing: 0.12em;\n  text-transform: uppercase;\n  color: #94a3b8;\n  text-align: center;\n}\n.chatbot-divider {\n  display: none;\n  align-items: center;\n  gap: 10px;\n  margin: 16px 0 10px;\n  color: #94a3b8;\n  font-size: 11px;\n  font-weight: 700;\n  letter-spacing: 0.14em;\n  text-transform: uppercase;\n}\n.chatbot-divider::before,\n.chatbot-divider::after {\n  content: \"\";\n  flex: 1;\n  height: 1px;\n  background: #e2e8f0;\n}\n.chatbot-body.human-mode .chatbot-divider {\n  display: flex;\n}\n\n.chatbot-bubble {\n  max-width: 86%;\n  border-radius: 12px;\n  padding: 8px 10px;\n  line-height: 1.45;\n  font-size: 13px;\n  white-space: pre-wrap;\n}\n\n.chatbot-bubble.user {\n  align-self: flex-end;\n  background: linear-gradient(135deg, var(--chatbot-primary), #1d4ed8);\n  color: #ffffff;\n}\n\n.chatbot-bubble.bot {\n  align-self: flex-start;\n  background: #e2e8f0;\n  color: #1e293b;\n}\n.chatbot-bubble.bot a {\n  color: #1d4ed8;\n  text-decoration: underline;\n  text-underline-offset: 2px;\n}\n.chatbot-bubble.bot code {\n  background: #e2e8f0;\n  border-radius: 6px;\n  padding: 1px 4px;\n  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\",\n    \"Courier New\", monospace;\n  font-size: 12px;\n}\n.chatbot-bubble.bot pre {\n  margin: 8px 0 0;\n  padding: 10px 12px;\n  border-radius: 10px;\n  background: #0f172a;\n  color: #e2e8f0;\n  overflow-x: auto;\n  font-size: 12px;\n  line-height: 1.5;\n}\n.chatbot-bubble.bot pre code {\n  background: transparent;\n  padding: 0;\n  color: inherit;\n}\n.chatbot-md-h1,\n.chatbot-md-h2,\n.chatbot-md-h3 {\n  font-weight: 700;\n  color: #0f172a;\n  margin: 6px 0 4px;\n}\n.chatbot-md-h1 {\n  font-size: 15px;\n}\n.chatbot-md-h2 {\n  font-size: 14px;\n}\n.chatbot-md-h3 {\n  font-size: 13px;\n  text-transform: uppercase;\n  letter-spacing: 0.08em;\n}\n.chatbot-bubble.system {\n  align-self: center;\n  background: transparent;\n  color: #2563eb;\n  font-size: 11px;\n  font-weight: 700;\n  letter-spacing: 0.12em;\n  text-transform: uppercase;\n  padding: 4px 6px;\n  box-shadow: none;\n}\n\n.chatbot-footer {\n  border-top: 1px solid #dbe4f5;\n  background: #f8fbff;\n  padding: 10px;\n}\n\n.chatbot-input-row {\n  display: grid;\n  grid-template-columns: 1fr auto;\n  gap: 8px;\n  margin-bottom: 8px;\n  align-items: center;\n}\n\n.chatbot-input-row input {\n  border: 1px solid #bfdbfe;\n  border-radius: 10px;\n  min-height: 44px;\n  padding: 0 12px;\n  outline: none;\n  font-size: 13px;\n  background: #ffffff;\n  color: #1e293b;\n}\n.chatbot-input-row textarea {\n  border: 1px solid #bfdbfe;\n  border-radius: 12px;\n  min-height: 46px;\n  padding: 10px 12px;\n  outline: none;\n  font-size: 13px;\n  background: #ffffff;\n  color: #1e293b;\n  resize: none;\n  line-height: 1.4;\n  font-family: inherit;\n}\n\n.chatbot-input-row input:focus {\n  border-color: var(--chatbot-primary);\n  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);\n}\n.chatbot-input-row textarea:focus {\n  border-color: var(--chatbot-primary);\n  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);\n}\n\n.chatbot-input-row button {\n  width: 46px;\n  height: 44px;\n  border: 0;\n  border-radius: 12px;\n  background: linear-gradient(135deg, var(--chatbot-primary), #1d4ed8);\n  color: #ffffff;\n  font-size: 14px;\n  font-weight: 700;\n  cursor: pointer;\n  padding: 0;\n  display: grid;\n  place-items: center;\n  box-shadow: 0 10px 18px rgba(37, 99, 235, 0.28);\n  transition: transform 0.2s ease, box-shadow 0.2s ease;\n}\n\n.chatbot-input-row button svg {\n  width: 17px;\n  height: 17px;\n  stroke-width: 2.2;\n}\n\n.chatbot-input-row button:hover {\n  transform: translateY(-1px);\n  box-shadow: 0 14px 24px rgba(37, 99, 235, 0.34);\n}\n\n.chatbot-human-button {\n  width: 100%;\n  border: 1px solid #cbd5e1;\n  border-radius: 12px;\n  background: #ffffff;\n  color: #334155;\n  min-height: 44px;\n  padding: 0 12px;\n  font-size: 14px;\n  font-weight: 600;\n  cursor: pointer;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  gap: 8px;\n  transition: border-color 0.2s ease, background 0.2s ease;\n}\n\n.chatbot-human-button:hover {\n  background: #f8fafc;\n  border-color: #94a3b8;\n}\n\n.chatbot-human-button svg {\n  width: 16px;\n  height: 16px;\n  stroke-width: 2.1;\n}\n\n.chatbot-powered {\n  margin: 8px 0 0;\n  text-align: center;\n  font-size: 11px;\n  color: #94a3b8;\n}\n\n.chatbot-powered strong {\n  color: #64748b;\n}\n\n/* --- Human Form Styles --- */\n.chatbot-widget-root.show-human-form .chatbot-body,\n.chatbot-widget-root.show-human-form .chatbot-footer {\n  display: none !important;\n}\n\n.chatbot-human-container {\n  display: none;\n  flex: 1;\n  flex-direction: column;\n  background: #f8fbff;\n  overflow-y: auto;\n}\n\n.chatbot-widget-root.show-human-form .chatbot-human-container {\n  display: flex;\n}\n\n.chatbot-human-container::-webkit-scrollbar {\n  width: 8px;\n}\n\n.chatbot-human-container::-webkit-scrollbar-thumb {\n  background: #bfdbfe;\n  border-radius: 999px;\n}\n\n.chatbot-human-header {\n  padding: 20px 16px 12px;\n  text-align: center;\n}\n\n.chatbot-human-header h3 {\n  margin: 0 0 6px;\n  color: #0f172a;\n  font-size: 18px;\n}\n\n.chatbot-human-header p {\n  margin: 0;\n  color: #64748b;\n  font-size: 13px;\n  line-height: 1.45;\n}\n\n.chatbot-human-form {\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n  padding: 0 16px 20px;\n}\n\n.chatbot-form-group {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n}\n\n.chatbot-form-group label {\n  font-size: 13px;\n  font-weight: 600;\n  color: #334155;\n}\n\n.chatbot-form-group input,\n.chatbot-form-group textarea {\n  border: 1px solid #bfdbfe;\n  border-radius: 8px;\n  padding: 10px;\n  font-size: 13px;\n  outline: none;\n  background: #ffffff;\n  color: #1e293b;\n  font-family: inherit;\n  transition: border-color 0.2s, box-shadow 0.2s;\n}\n\n.chatbot-form-group input:focus,\n.chatbot-form-group textarea:focus {\n  border-color: var(--chatbot-primary);\n  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);\n}\n\n.chatbot-form-group textarea {\n  resize: vertical;\n  min-height: 80px;\n}\n\n.chatbot-form-actions {\n  display: flex;\n  gap: 12px;\n  margin-top: 8px;\n}\n\n.chatbot-btn-primary {\n  flex: 1;\n  background: linear-gradient(135deg, var(--chatbot-primary), #1d4ed8);\n  color: white;\n  border: none;\n  padding: 10px;\n  border-radius: 8px;\n  font-weight: 600;\n  cursor: pointer;\n  transition: transform 0.2s, box-shadow 0.2s;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  gap: 6px;\n}\n\n.chatbot-btn-primary:hover {\n  transform: translateY(-1px);\n  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);\n}\n\n.chatbot-btn-secondary {\n  flex: 1;\n  background: #e2e8f0;\n  color: #334155;\n  border: none;\n  padding: 10px;\n  border-radius: 8px;\n  font-weight: 600;\n  cursor: pointer;\n  transition: background 0.2s;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  gap: 6px;\n}\n\n.chatbot-btn-secondary:hover {\n  background: #cbd5e1;\n}\n\n.chatbot-human-success {\n  display: none;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  text-align: center;\n  padding: 32px 24px;\n  height: 100%;\n}\n\n.chatbot-widget-root.show-human-success .chatbot-human-success {\n  display: flex;\n}\n.chatbot-widget-root.show-human-success .chatbot-human-form,\n.chatbot-widget-root.show-human-success .chatbot-human-header {\n  display: none !important;\n}\n\n.chatbot-success-icon {\n  width: 56px;\n  height: 56px;\n  background: #dcfce7;\n  color: #16a34a;\n  border-radius: 50%;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  margin-bottom: 20px;\n}\n\n.chatbot-success-icon svg {\n  width: 28px;\n  height: 28px;\n}\n\n.chatbot-human-success h3 {\n  margin: 0 0 8px;\n  color: #0f172a;\n  font-size: 20px;\n}\n\n.chatbot-human-success p {\n  margin: 0 0 24px;\n  color: #475569;\n  font-size: 14px;\n  line-height: 1.5;\n}\n\n@media (max-width: 640px) {\n  .chatbot-widget-root.right,\n  .chatbot-widget-root.left {\n    right: 10px;\n    left: 10px;\n  }\n\n  .chatbot-widget-root {\n    bottom: 10px;\n  }\n\n  .chatbot-panel {\n    width: min(360px, calc(100vw - 20px));\n    height: min(520px, calc(100vh - 70px));\n  }\n\n  .chatbot-intro h3 {\n    font-size: 22px;\n  }\n}\n", mt = () => {
+	if (document.getElementById(dt)) return;
 	let e = document.createElement("style");
-	e.id = ut, e.textContent = ft, document.head.appendChild(e);
-}, mt = (e, t) => {
-	let n = document.createElement("div");
-	return n.className = `chatbot-bubble ${t}`, n.textContent = e, n;
-}, ht = (e, t, n) => {
+	e.id = dt, e.textContent = pt, document.head.appendChild(e);
+}, ht = (e) => e.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"), gt = (e) => e.replace(/^###\s+(.+)$/gm, "<div class=\"chatbot-md-h3\">$1</div>").replace(/^##\s+(.+)$/gm, "<div class=\"chatbot-md-h2\">$1</div>").replace(/^#\s+(.+)$/gm, "<div class=\"chatbot-md-h1\">$1</div>").replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, (e, t, n) => `<a href="${n}" target="_blank" rel="noopener noreferrer">${t}</a>`).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>").replace(/\*([^*]+)\*/g, "<em>$1</em>").replace(/`([^`]+)`/g, "<code>$1</code>").replace(/^\s*-\s+/gm, "• ").replace(/\n/g, "<br>"), _t = (e) => String(e || "").split(/```/).map((e, t) => t % 2 == 1 ? `<pre><code>${ht(e.trim())}</code></pre>` : gt(ht(e))).join(""), $ = (e, t, n = !1) => {
+	let r = document.createElement("div");
+	return r.className = `chatbot-bubble ${t}`, n ? r.innerHTML = _t(e) : r.textContent = e, r;
+}, vt = (e, t, n) => {
 	let r = document.createElement("button");
 	return r.type = "button", r.innerHTML = `<i data-lucide="${e}" aria-hidden="true"></i>`, r.setAttribute("aria-label", t), n && r.addEventListener("click", n), r;
-}, gt = () => {
-	v({ icons: {
+}, yt = () => {
+	_({ icons: {
 		Bot: p,
 		MessageCircle: m,
-		SendHorizontal: h,
-		UserRound: g,
-		X: _,
+		SendHorizontal: te,
+		UserRound: h,
+		X: g,
 		CheckCircle: ee,
 		ArrowLeft: f
 	} });
-}, _t = (e) => e.replace(/\/+$/, ""), vt = (e) => e.startsWith("/") ? e : `/${e}`, yt = (e) => e.replace(/\/api\/?$/i, ""), bt = (e) => e && typeof e == "object" && "data" in e ? e.data : e, xt = (e = {}) => {
+}, bt = (e) => {
+	let t = String(e || "").trim().replace(/\/+$/, "");
+	return !t || /^https?:\/\//i.test(t) ? t : t.startsWith("/") ? `${window.location.origin}${t}` : t;
+}, xt = (e) => e.startsWith("/") ? e : `/${e}`, St = (e) => e.replace(/\/api\/?$/i, ""), Ct = (e) => e && typeof e == "object" && "data" in e ? e.data : e, wt = (e = {}) => {
 	if (typeof window > "u" || typeof document > "u") throw Error("chatbot-package can only run in a browser environment.");
-	pt();
+	mt();
 	let t = {
-		...dt,
+		...ft,
 		...e
 	}, n = document.createElement("div");
 	n.className = `chatbot-widget-root ${t.position === "bottom-left" ? "left" : "right"}`, n.style.setProperty("--chatbot-primary", t.primaryColor), n.style.zIndex = String(t.zIndex);
@@ -1571,82 +1574,94 @@ var ut = "chatbot-package-styles", dt = {
 	f.textContent = t.subtitle, u.append(d, f), c.append(l, u), o.append(s, c);
 	let p = document.createElement("div");
 	p.className = "chatbot-controls";
-	let ee = ht("x", "Close chat", () => {
+	let ee = vt("x", "Close chat", () => {
 		n.classList.remove("open"), r.setAttribute("aria-expanded", "false");
 	});
 	p.append(ee), a.append(o, p);
 	let m = document.createElement("div");
 	m.className = "chatbot-body";
-	let h = document.createElement("section");
-	h.className = "chatbot-intro";
-	let g = document.createElement("div");
-	g.className = "chatbot-intro-icon", g.textContent = "?";
-	let _ = document.createElement("h3");
-	_.textContent = "Hi there!";
+	let te = document.createElement("section");
+	te.className = "chatbot-intro";
+	let h = document.createElement("div");
+	h.className = "chatbot-intro-icon", h.textContent = "?";
+	let g = document.createElement("h3");
+	g.textContent = "Hi there!";
+	let _ = document.createElement("p");
+	_.textContent = "I am your AI support assistant. Ask me anything.";
 	let v = document.createElement("p");
-	v.textContent = "I am your AI support assistant. Ask me anything.";
-	let y = document.createElement("p");
-	y.className = "chatbot-human-note", y.textContent = "If I cannot help, you can connect with our human support team.", h.append(g, _, v, y);
-	let b = document.createElement("div");
-	b.className = "chatbot-messages", b.setAttribute("aria-live", "polite"), b.appendChild(mt(t.welcomeMessage, "bot")), m.append(h, b);
+	v.className = "chatbot-human-note", v.textContent = "If I cannot help, you can connect with our human support team.", te.append(h, g, _, v);
+	let y = document.createElement("section");
+	y.className = "chatbot-human-hero";
+	let b = document.createElement("h3");
+	b.textContent = "Talk to Support";
+	let ne = document.createElement("p");
+	ne.textContent = "Our team typically replies in a few minutes.";
 	let x = document.createElement("div");
-	x.className = "chatbot-footer";
-	let S = document.createElement("form");
-	S.className = "chatbot-input-row";
-	let C = document.createElement("input");
-	C.type = "text", C.placeholder = t.placeholder;
-	let w = document.createElement("button");
-	w.type = "submit", w.setAttribute("aria-label", "Send message"), w.innerHTML = "<i data-lucide=\"send-horizontal\" aria-hidden=\"true\"></i>", S.append(C, w);
-	let T = document.createElement("button");
-	T.type = "button", T.className = "chatbot-human-button";
-	let te = "<i data-lucide=\"user-round\" aria-hidden=\"true\"></i><span>Talk to a real human</span>";
-	T.innerHTML = te;
-	let E = document.createElement("p");
-	E.className = "chatbot-powered", E.innerHTML = "Powered by <strong>AI assistant</strong>", x.append(S, T, E);
-	let D = document.createElement("div");
-	D.className = "chatbot-human-container";
-	let ne = document.createElement("div");
-	ne.className = "chatbot-human-header";
-	let re = document.createElement("h3");
-	re.textContent = "Contact Support";
-	let O = document.createElement("p");
-	O.textContent = "Please provide your details and we will get back to you shortly.", ne.append(re, O);
-	let k = document.createElement("form");
-	k.className = "chatbot-human-form";
-	let ie = (e, t) => {
+	x.className = "chatbot-history-label", x.textContent = "Previous Messages", y.append(b, ne, x);
+	let S = document.createElement("div");
+	S.className = "chatbot-divider", S.textContent = "Previous AI Interaction";
+	let C = document.createElement("div");
+	C.className = "chatbot-messages", C.setAttribute("aria-live", "polite"), C.appendChild($(t.welcomeMessage, "bot", !0)), m.append(te, y, C);
+	let w = document.createElement("div");
+	w.className = "chatbot-footer";
+	let T = document.createElement("form");
+	T.className = "chatbot-input-row";
+	let E = document.createElement("textarea");
+	E.rows = 1, E.placeholder = t.placeholder;
+	let re = document.createElement("button");
+	re.type = "submit", re.setAttribute("aria-label", "Send message"), re.innerHTML = "<i data-lucide=\"send-horizontal\" aria-hidden=\"true\"></i>", T.append(E, re);
+	let D = document.createElement("button");
+	D.type = "button", D.className = "chatbot-human-button";
+	let O = "<i data-lucide=\"user-round\" aria-hidden=\"true\"></i><span>Talk to a real human</span>", ie = "<i data-lucide=\"bot\" aria-hidden=\"true\"></i><span>Talk to AI</span>";
+	D.innerHTML = O;
+	let ae = document.createElement("p");
+	ae.className = "chatbot-powered", ae.innerHTML = "Powered by <strong>AI assistant</strong>", w.append(T, D, ae);
+	let k = document.createElement("div");
+	k.className = "chatbot-human-container";
+	let oe = document.createElement("div");
+	oe.className = "chatbot-human-header";
+	let se = document.createElement("h3");
+	se.textContent = "Contact Support";
+	let ce = document.createElement("p");
+	ce.textContent = "Please provide your details and we will get back to you shortly.", oe.append(se, ce);
+	let A = document.createElement("form");
+	A.className = "chatbot-human-form";
+	let le = (e, t) => {
 		let n = document.createElement("div");
 		n.className = "chatbot-form-group";
 		let r = document.createElement("label");
 		return r.textContent = e, n.append(r, t), n;
-	}, A = document.createElement("input");
-	A.type = "text", A.placeholder = "John Doe", A.required = !0;
-	let j = document.createElement("input");
-	j.type = "email", j.placeholder = "john@example.com", j.required = !0;
-	let M = document.createElement("textarea");
-	M.placeholder = "How can we help you?", M.required = !0;
-	let N = document.createElement("div");
-	N.className = "chatbot-form-actions";
-	let P = document.createElement("button");
-	P.type = "button", P.className = "chatbot-btn-secondary", P.innerHTML = "<i data-lucide=\"arrow-left\" aria-hidden=\"true\" style=\"width: 16px; height: 16px;\"></i> Back";
+	}, j = document.createElement("input");
+	j.type = "text", j.placeholder = "John Doe", j.required = !0;
+	let M = document.createElement("input");
+	M.type = "email", M.placeholder = "john@example.com", M.required = !0;
+	let N = document.createElement("textarea");
+	N.placeholder = "How can we help you?", N.required = !0;
+	let P = document.createElement("div");
+	P.className = "chatbot-form-actions";
 	let F = document.createElement("button");
-	F.type = "submit", F.className = "chatbot-btn-primary", F.textContent = "Send Message", N.append(P, F), k.append(ie("Name", A), ie("Email", j), ie("Description", M), N);
-	let ae = document.createElement("div");
-	ae.className = "chatbot-human-success";
-	let I = document.createElement("div");
-	I.className = "chatbot-success-icon", I.innerHTML = "<i data-lucide=\"check-circle\" aria-hidden=\"true\"></i>";
-	let L = document.createElement("h3");
-	L.textContent = "Message Sent!";
-	let R = document.createElement("p");
-	R.textContent = "Our support team will reach out to you via email shortly.";
+	F.type = "button", F.className = "chatbot-btn-secondary", F.innerHTML = "<i data-lucide=\"arrow-left\" aria-hidden=\"true\" style=\"width: 16px; height: 16px;\"></i> Back";
+	let I = document.createElement("button");
+	I.type = "submit", I.className = "chatbot-btn-primary", I.textContent = "Send Message", P.append(F, I), A.append(le("Name", j), le("Email", M), le("Description", N), P);
+	let ue = document.createElement("div");
+	ue.className = "chatbot-human-success";
+	let L = document.createElement("div");
+	L.className = "chatbot-success-icon", L.innerHTML = "<i data-lucide=\"check-circle\" aria-hidden=\"true\"></i>";
+	let R = document.createElement("h3");
+	R.textContent = "Message Sent!";
+	let de = document.createElement("p");
+	de.textContent = "Our support team will reach out to you via email shortly.";
 	let z = document.createElement("button");
-	z.type = "button", z.className = "chatbot-btn-primary", z.textContent = "Back to Chat", ae.append(I, L, R, z), D.append(ne, k, ae), i.append(a, m, x, D), n.append(i, r), document.body.appendChild(n), gt();
-	let B = !1, V = !1, H = !1, U = !1, W = null, G = null, K = null, oe = e.aiSupport?.sessionId || (typeof crypto < "u" && typeof crypto.randomUUID == "function" ? crypto.randomUUID() : `widget-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`), q = (e) => {
-		e.trim() && (m.classList.add("has-messages"), b.appendChild(mt(e.trim(), "bot")), m.scrollTop = m.scrollHeight);
+	z.type = "button", z.className = "chatbot-btn-primary", z.textContent = "Back to Chat", ue.append(L, R, de, z), k.append(oe, A, ue), i.append(a, m, w, k), n.append(i, r), document.body.appendChild(n), yt();
+	let B = !1, V = !1, H = !1, U = !1, fe = !1, pe = !1, W = !1, G = null, me = null, K = null, he = /* @__PURE__ */ new Set(), q = (e, t) => {
+		e.trim() && (m.classList.add("has-messages"), C.appendChild($(e.trim(), "bot", t?.markdown ?? !1)), m.scrollTop = m.scrollHeight);
 	}, J = (e) => {
-		V || (B = e, n.classList.toggle("open", B), r.setAttribute("aria-expanded", String(B)), B && window.setTimeout(() => C.focus(), 0));
-	}, se = async (n) => {
-		if (H && W) {
-			W.emit("widget:message", { text: n });
+		m.classList.toggle("human-mode", e), e ? (C.contains(S) || C.insertBefore(S, C.firstChild), D.innerHTML = ie) : (C.contains(S) && S.remove(), D.innerHTML = O), yt();
+	}, ge = (e) => {
+		V || (B = e, n.classList.toggle("open", B), r.setAttribute("aria-expanded", String(B)), B && window.setTimeout(() => E.focus(), 0));
+	}, _e = async (n) => {
+		if (H && G) {
+			G.emit("widget:message", { text: n });
 			return;
 		}
 		if (e.onUserMessage) {
@@ -1656,34 +1671,42 @@ var ut = "chatbot-package-styles", dt = {
 		}
 		if (e.aiSupport) {
 			try {
-				let t = _t(e.aiSupport.apiBaseUrl), r = vt(e.aiSupport.chatPath || "/rag/chat"), i = await fetch(`${t}${r}`, {
+				let t = bt(e.aiSupport.apiBaseUrl), r = xt(e.aiSupport.chatPath || "/rag/chat"), i = await fetch(`${t}${r}`, {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
 						"x-api-key": e.aiSupport.apiKey
 					},
-					body: JSON.stringify({
-						query: n,
-						sessionId: oe
-					})
+					body: JSON.stringify({ query: n })
 				});
 				if (!i.ok) throw Error("Unable to fetch chatbot response right now.");
-				let a = bt(await i.json());
-				q(typeof a?.answer == "string" && a.answer || typeof a?.response == "string" && a.response || typeof a?.message == "string" && a.message || "I processed your question, but no answer text was returned.");
+				let a = Ct(await i.json());
+				if (q(typeof a?.answer == "string" && a.answer || typeof a?.response == "string" && a.response || typeof a?.message == "string" && a.message || "I processed your question, but no answer text was returned.", { markdown: !0 }), a?.raise_ticket && a?.ticket_payload) {
+					let e = a.ticket_payload, t = a?.ticket?._id || a?.ticketId || a?.ticket_id;
+					q([
+						"### Ticket Details",
+						e?.summary ? `- Summary: ${e.summary}` : null,
+						e?.priority ? `- Priority: ${String(e.priority).toUpperCase()}` : null,
+						e?.urgency ? `- Urgency: ${String(e.urgency).toUpperCase()}` : null,
+						t ? `- Ticket ID: ${t}` : null,
+						"- Status: Pending"
+					].filter(Boolean).join("\n"), { markdown: !0 });
+				}
 			} catch (e) {
-				q(e instanceof Error ? e.message : "Sorry, I am having trouble connecting right now.");
+				let t = e instanceof Error ? e.message : "Sorry, I am having trouble connecting right now.";
+				q(t.includes("Failed to fetch") ? "Unable to reach the AI server. Please try again." : t);
 			}
 			return;
 		}
 		q(`Thanks! ${t.botName} received: "${n}"`);
-	}, ce = async (n) => {
+	}, ve = async (n) => {
 		if (!t.humanSupport) {
 			q("Human support is not configured for this widget yet.");
 			return;
 		}
 		let r = t.humanSupport.widgetKey || e.aiSupport?.apiKey;
 		if (!r) throw Error("Human support requires a widget key or aiSupport.apiKey.");
-		let i = _t(t.humanSupport.apiBaseUrl), a = await fetch(`${i}/widget/session`, {
+		let i = bt(t.humanSupport.apiBaseUrl), a = await fetch(`${i}/widget/session`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
@@ -1693,24 +1716,27 @@ var ut = "chatbot-package-styles", dt = {
 				issue: n.issue
 			})
 		});
-		if (!a.ok) throw Error("Unable to connect to human support right now.");
-		let o = bt(await a.json());
-		G = o.sessionId, K = o.ticketId, H = !0;
-		let s = lt(yt(i), {
+		if (!a.ok) {
+			let e = await a.json().catch(() => null), t = e?.message || e?.error || "Unable to connect to human support right now.";
+			throw Error(t);
+		}
+		let o = Ct(await a.json());
+		me = o.sessionId, K = o.ticketId, H = !0, J(!0);
+		let s = ut(St(i), {
 			path: "/socket.io",
 			transports: ["websocket"],
 			auth: { token: o.chatToken }
 		});
-		W = s, s.on("connect", () => {
+		G = s, s.on("connect", () => {
 			f.textContent = "Connecting to a human agent...";
 		}), s.on("disconnect", () => {
 			H && (f.textContent = "Reconnecting to human support...");
 		}), s.on("chat:message", (e) => {
-			e.sessionId === G && e.sender === "agent" && typeof e.text == "string" && q(e.text);
+			e.sessionId === me && (e._id && he.has(e._id) || (e._id && he.add(e._id), e.sender === "agent" && typeof e.text == "string" && (U || (q("You are now connected to a human agent."), C.appendChild($("AGENT JOINED THE SESSION", "system")), pe = !0), q(e.text), U = !0)));
 		}), s.on("chat:ticket_status", (e) => {
-			if (e.sessionId && e.sessionId === G || e.ticketId && e.ticketId === K) {
+			if (e.sessionId && e.sessionId === me || e.ticketId && e.ticketId === K) {
 				if (e.status === "assigned") {
-					U || q("A human agent has accepted your chat. You are now connected."), U = !0, f.textContent = "Connected with human support";
+					U || q("A human agent has accepted your chat. You are now connected."), U = !0, pe ||= (C.appendChild($("AGENT JOINED THE SESSION", "system")), !0), f.textContent = "Connected with human support";
 					return;
 				}
 				e.status === "pending" && (f.textContent = "Connecting to a human agent...");
@@ -1722,58 +1748,60 @@ var ut = "chatbot-package-styles", dt = {
 			email: n.email,
 			issue: n.issue
 		}), f.textContent = "Connecting to a human agent...";
-	}, le = async (e) => {
+	}, Y = async (e) => {
 		let t = e.trim();
-		!t || V || (m.classList.add("has-messages"), b.appendChild(mt(t, "user")), C.value = "", m.scrollTop = m.scrollHeight, await se(t));
+		if (!(!t || V)) {
+			if (W) {
+				m.classList.add("has-messages"), J(!0), C.appendChild($(t, "user")), E.value = "", m.scrollTop = m.scrollHeight, W = !1;
+				try {
+					await ve({
+						name: "Website Visitor",
+						email: "",
+						issue: t
+					}), q("You're now connected to a support agent. Please wait..."), D.innerHTML = ie, yt();
+				} catch (e) {
+					q(e instanceof Error ? e.message : "Unable to connect to support right now."), W = !0;
+				}
+				return;
+			}
+			m.classList.add("has-messages"), J(H), C.appendChild($(t, "user")), E.value = "", m.scrollTop = m.scrollHeight, await _e(t);
+		}
 	};
 	return r.addEventListener("click", () => {
-		J(!B);
-	}), S.addEventListener("submit", async (e) => {
-		e.preventDefault(), await le(C.value);
-	}), T.addEventListener("click", async () => {
+		ge(!B);
+	}), T.addEventListener("submit", async (e) => {
+		e.preventDefault(), await Y(E.value);
+	}), E.addEventListener("keydown", async (e) => {
+		e.key === "Enter" && !e.shiftKey && (e.preventDefault(), await Y(E.value));
+	}), D.addEventListener("click", async () => {
 		if (H) {
-			q(U ? "You are already connected with a human agent in this chat." : "Your request is already in queue. An agent will join shortly.");
+			H = !1, U = !1, W = !1, J(!1), q("You are now chatting with AI again.");
 			return;
 		}
-		if (e.onTalkToHumanClick) {
-			T.disabled = !0, T.textContent = "Creating ticket...";
+		if (!fe) {
+			fe = !0, J(!0), q("Please describe the issue you are facing."), W = !0;
 			try {
-				let t = await e.onTalkToHumanClick();
-				typeof t == "string" && t.trim() && q(t);
+				D.innerHTML = ie, yt();
 			} catch (e) {
-				q(e instanceof Error ? e.message : "Unable to create support ticket right now.");
+				let t = e instanceof Error ? e.message : "Unable to connect to support right now.";
+				q(t.includes("Failed to fetch") ? "Unable to reach support server. Please try again." : t), H = !1, U = !1, W = !1, J(!1), D.innerHTML = O, yt();
 			} finally {
-				T.disabled = !1, T.innerHTML = te, gt();
+				fe = !1;
 			}
-			return;
 		}
-		n.classList.add("show-human-form"), n.classList.remove("show-human-success");
-	}), P.addEventListener("click", () => {
-		n.classList.remove("show-human-form");
-	}), k.addEventListener("submit", async (e) => {
-		e.preventDefault(), F.disabled = !0, F.textContent = "Connecting...";
-		try {
-			await ce({
-				name: A.value.trim(),
-				email: j.value.trim(),
-				issue: M.value.trim()
-			}), n.classList.remove("show-human-form"), n.classList.remove("show-human-success"), k.reset(), m.classList.add("has-messages"), b.appendChild(mt(K ? `Ticket ${K.slice(-6)} created. Connecting you to a human agent now...` : "Your request is submitted. Connecting you to a human agent now...", "bot")), m.scrollTop = m.scrollHeight, T.disabled = !0, T.innerHTML = "<i data-lucide=\"check-circle\" aria-hidden=\"true\"></i><span>Human Support Requested</span>", gt(), F.textContent = "Send Message";
-		} catch (e) {
-			q(e instanceof Error ? e.message : "Unable to connect to support right now."), F.textContent = "Send Message";
-		} finally {
-			F.disabled = !1;
-		}
+	}), F.addEventListener("click", () => {}), A.addEventListener("submit", async (e) => {
+		e.preventDefault();
 	}), z.addEventListener("click", () => {
-		n.classList.remove("show-human-form"), n.classList.remove("show-human-success"), k.reset(), m.classList.add("has-messages"), b.appendChild(mt(H && K ? U ? `You are now connected with our support team (ticket ${K.slice(-6)}).` : `Your ticket ${K.slice(-6)} is waiting for an available human agent.` : "Your issue has been submitted. A human agent will contact you soon.", "bot")), m.scrollTop = m.scrollHeight;
+		n.classList.remove("show-human-form"), n.classList.remove("show-human-success"), A.reset(), m.classList.add("has-messages"), C.appendChild($(H && K ? U ? `You are now connected with our support team (ticket ${K.slice(-6)}).` : `Your ticket ${K.slice(-6)} is waiting for an available human agent.` : "Your issue has been submitted. A human agent will contact you soon.", "bot")), m.scrollTop = m.scrollHeight;
 	}), {
-		open: () => J(!0),
-		close: () => J(!1),
-		toggle: () => J(!B),
-		sendMessage: le,
+		open: () => ge(!0),
+		close: () => ge(!1),
+		toggle: () => ge(!B),
+		sendMessage: Y,
 		destroy: () => {
-			V || (V = !0, W &&= (W.close(), null), n.remove());
+			V || (V = !0, G &&= (G.close(), null), n.remove());
 		}
 	};
 };
 //#endregion
-export { xt as createChatbotWidget };
+export { wt as createChatbotWidget };

@@ -3,13 +3,14 @@ import { ObjectId } from "mongodb";
 import { getCollections } from "../config/db";
 import { createTicketSchema } from "../schemas/ticketSchemas";
 import { emitRealtimeMessageFromHttp, emitRealtimeTicketStatusFromHttp } from "../services/chatSocketServer";
+import { resolveAssignedRole } from "../utils/roleAssignment";
 
 type TicketStatus = "pending" | "assigned" | "resolved" | "escalated";
-type TicketPriority = "low" | "medium" | "high";
+type TicketPriority = "low" | "medium" | "high" | "critical";
 type TicketCategory = "billing" | "technical" | "login" | "other";
 
 const STATUS_VALUES: TicketStatus[] = ["pending", "assigned", "resolved", "escalated"];
-const PRIORITY_VALUES: TicketPriority[] = ["low", "medium", "high"];
+const PRIORITY_VALUES: TicketPriority[] = ["low", "medium", "high", "critical"];
 const CATEGORY_VALUES: TicketCategory[] = ["billing", "technical", "login", "other"];
 
 function parseObjectId(id: string): ObjectId | null {
@@ -65,6 +66,7 @@ async function insertTicketFromInput(
   }
 
   const targetCompanyId = company.id;
+  const assignedRole = await resolveAssignedRole(targetCompanyId, input.category, input.message);
 
   const ticketDoc = {
     companyId: targetCompanyId,
@@ -74,6 +76,8 @@ async function insertTicketFromInput(
     urgency: normalizePriority(input.urgency) ?? "medium",
     status: "pending" as TicketStatus,
     assignedTo: null as number | null,
+    assignedRoleId: assignedRole?.id ?? null,
+    assignedRoleName: assignedRole?.name ?? null,
     customerName: String(customerNameRaw ?? "Test Customer").trim() || "Test Customer",
     createdAt: now,
     updatedAt: now,

@@ -33,6 +33,7 @@ const RoleBasedDashboard = () => {
     high: 'bg-red-100 text-red-700',
     medium: 'bg-orange-100 text-orange-700',
     low: 'bg-green-100 text-green-700',
+    critical: 'bg-red-200 text-red-800',
   };
 
   const statusStyles = {
@@ -197,12 +198,11 @@ const RoleBasedDashboard = () => {
   if (isAdmin) {
     const maxDailyCount = Math.max(...adminAnalytics.dailyTrend.map((item) => item.count), 1);
     const maxCategoryCount = Math.max(...Object.values(adminAnalytics.categoryCount), 1);
-    const urgentTickets = tickets.filter(
-      (ticket) =>
-        typeof ticket.priority === 'string' &&
-        ticket.priority.toLowerCase() === 'high' &&
-        ticket.status?.toLowerCase() !== 'resolved'
-    );
+    const urgentTickets = tickets.filter((ticket) => {
+      const priority = typeof ticket.priority === 'string' ? ticket.priority.toLowerCase() : '';
+      const isUrgent = priority === 'high' || priority === 'critical';
+      return isUrgent && ticket.status?.toLowerCase() !== 'resolved';
+    });
     const chartWidth = 720;
     const chartHeight = 300;
     const chartPadding = { top: 22, right: 24, bottom: 44, left: 48 };

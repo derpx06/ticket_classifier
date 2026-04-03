@@ -275,7 +275,12 @@ export default function QueriesScreen() {
               onPress={() => setSelectedId(ticketId)}
               style={[styles.ticketCard, isActive && styles.ticketCardActive]}>
               <View style={styles.ticketHeader}>
-                <Text style={styles.ticketCode}>{ticket.ticketCode || ticketId}</Text>
+                <View style={styles.ticketHeaderLeft}>
+                  {ticket.sentimentEmoji ? (
+                    <Text style={styles.ticketEmoji}>{ticket.sentimentEmoji}</Text>
+                  ) : null}
+                  <Text style={styles.ticketCode}>{ticket.ticketCode || ticketId}</Text>
+                </View>
                 <Text style={[styles.badge, { color: statusColors[status] }]}>
                   {formatLabel(status)}
                 </Text>
@@ -283,6 +288,11 @@ export default function QueriesScreen() {
               <Text style={styles.customerName}>{ticket.customerName || '-'}</Text>
               <Text style={styles.ticketMessage}>{ticket.message || '-'}</Text>
               <View style={styles.badgeRow}>
+                {ticket.sentimentEmoji ? (
+                  <Text style={styles.sentimentBadge}>
+                    {ticket.sentimentEmoji} {formatLabel(String(ticket.sentiment || 'neutral'))}
+                  </Text>
+                ) : null}
                 <Text style={[styles.badge, { color: categoryColors[category] || '#64748b' }]}>
                   {formatLabel(category)}
                 </Text>
@@ -306,6 +316,11 @@ export default function QueriesScreen() {
               {selectedTicket.ticketCode || selectedTicketId}
             </Text>
             <Text style={styles.customerName}>{selectedTicket.customerName || '-'}</Text>
+            {selectedTicket.sentimentEmoji ? (
+              <Text style={styles.sentimentDetail}>
+                {selectedTicket.sentimentEmoji} {formatLabel(String(selectedTicket.sentiment || 'neutral'))}
+              </Text>
+            ) : null}
             <Text style={styles.ticketMessage}>{selectedTicket.message || '-'}</Text>
 
             <Text style={styles.sectionLabel}>Conversation</Text>
@@ -449,6 +464,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  ticketHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexShrink: 1,
+  },
+  ticketEmoji: {
+    fontSize: 16,
+  },
   ticketCode: {
     color: '#1d4ed8',
     fontWeight: '800',
@@ -468,6 +492,11 @@ const styles = StyleSheet.create({
     gap: 8,
     flexWrap: 'wrap',
   },
+  sentimentBadge: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#475569',
+  },
   badge: {
     fontSize: 11,
     fontWeight: '800',
@@ -481,6 +510,12 @@ const styles = StyleSheet.create({
     color: '#0f172a',
     fontSize: 18,
     fontWeight: '800',
+  },
+  sentimentDetail: {
+    color: '#475569',
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 2,
   },
   sectionLabel: {
     color: '#475569',

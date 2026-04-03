@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { acceptTicket, createTicket, getTickets, updateTicket } from '../../services/api';
+import { acceptTicket, getTickets, updateTicket } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
 
 const priorityWeight = {
@@ -13,6 +13,7 @@ const priorityStyles = {
   high: 'bg-rose-100 text-rose-700',
   medium: 'bg-orange-100 text-orange-700',
   low: 'bg-emerald-100 text-emerald-700',
+  critical: 'bg-red-200 text-red-800',
 };
 
 const statusStyles = {
@@ -45,21 +46,6 @@ const Queries = () => {
   const [selectedId, setSelectedId] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [pendingAcceptId, setPendingAcceptId] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
-  const [newTicketForm, setNewTicketForm] = useState({
-    apiKey: '',
-    message: '',
-    category: 'billing',
-    priority: 'medium',
-  });
-
-  useEffect(() => {
-    if (companyUuid) {
-      setNewTicketForm((previous) =>
-        previous.apiKey === '' ? { ...previous, apiKey: companyUuid } : previous
-      );
-    }
-  }, [companyUuid]);
 
   useEffect(() => {
     const loadTickets = async () => {
@@ -139,62 +125,6 @@ const Queries = () => {
     }
   };
 
-  const handleCreateTicket = async (event) => {
-    event.preventDefault();
-    const message = newTicketForm.message.trim();
-    if (!message) {
-      toast.error('Enter a message to raise a test ticket.');
-      return;
-    }
-    const apiKey = newTicketForm.apiKey.trim();
-    if (!apiKey) {
-      toast.error('Enter a company API key (UUID).');
-      return;
-    }
-    try {
-      setIsCreating(true);
-      const created = await createTicket({
-        apiKey,
-        message,
-        category: newTicketForm.category,
-        priority: newTicketForm.priority,
-        customerName: 'Test Customer',
-      });
-      setNewTicketForm((previous) => ({ ...previous, message: '' }));
-
-      const result = await getTickets();
-      const list = Array.isArray(result) ? result : [];
-      setTickets(list);
-
-      const createdId = created?._id ?? created?.id;
-      const idStr = createdId != null ? String(createdId) : '';
-      const inList = idStr && list.some((t) => String(t._id ?? t.id) === idStr);
-      if (inList) {
-        setSelectedId(createdId);
-      } else if (list.length > 0) {
-        setSelectedId(list[0]._id || list[0].id || '');
-      } else {
-        setSelectedId('');
-      }
-
-      const myCompanyId = user?.companyId;
-      const raisedForOther =
-        created != null
-        && myCompanyId != null
-        && Number(created.companyId) !== Number(myCompanyId);
-      if (raisedForOther) {
-        toast.success(
-          'Ticket raised for that company. It is not shown here because this list is only for your organization.',
-        );
-      } else {
-        toast.success('Test ticket raised.');
-      }
-    } catch (error) {
-      toast.error(error?.response?.data?.message || 'Unable to raise test ticket.');
-    } finally {
-      setIsCreating(false);
-    }
-  };
 
   return (
     <div className="space-y-5">
@@ -228,81 +158,6 @@ const Queries = () => {
 
       <section className="grid grid-cols-1 gap-5 xl:grid-cols-12">
         <div className="space-y-4 xl:col-span-8">
-          <form
-            onSubmit={handleCreateTicket}
-            className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
-          >
-            <p className="text-sm font-semibold text-slate-800">Raise Test Ticket</p>
-            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-4">
-              <label className="md:col-span-2">
-                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Company API Key (UUID)
-                </span>
-                <input
-                  value={newTicketForm.apiKey}
-                  onChange={(event) =>
-                    setNewTicketForm((previous) => ({ ...previous, apiKey: event.target.value }))
-                  }
-                  placeholder="Company UUID"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                />
-              </label>
-              <label className="md:col-span-2">
-                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Message
-                </span>
-                <input
-                  value={newTicketForm.message}
-                  onChange={(event) =>
-                    setNewTicketForm((previous) => ({ ...previous, message: event.target.value }))
-                  }
-                  placeholder="Enter a test issue..."
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                />
-              </label>
-              <label>
-                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Category
-                </span>
-                <select
-                  value={newTicketForm.category}
-                  onChange={(event) =>
-                    setNewTicketForm((previous) => ({ ...previous, category: event.target.value }))
-                  }
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                >
-                  <option value="billing">Billing</option>
-                  <option value="technical">Technical</option>
-                  <option value="login">Login</option>
-                  <option value="other">Other</option>
-                </select>
-              </label>
-              <label>
-                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Priority
-                </span>
-                <select
-                  value={newTicketForm.priority}
-                  onChange={(event) =>
-                    setNewTicketForm((previous) => ({ ...previous, priority: event.target.value }))
-                  }
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                </select>
-              </label>
-            </div>
-            <button
-              type="submit"
-              disabled={isCreating}
-              className="mt-3 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {isCreating ? 'Raising...' : 'Raise Test Ticket'}
-            </button>
-          </form>
-
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
               <label className="xl:col-span-2">
@@ -344,6 +199,7 @@ const Queries = () => {
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 >
                   <option>All</option>
+                  <option>Critical</option>
                   <option>High</option>
                   <option>Medium</option>
                   <option>Low</option>
@@ -395,6 +251,9 @@ const Queries = () => {
                       Ticket
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Sentiment
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                       Category
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -420,13 +279,23 @@ const Queries = () => {
                       }`}
                     >
                       <td className="px-4 py-3">
-                        <p className="text-sm font-semibold text-blue-700">
+                        <p className="max-w-[280px] truncate text-sm font-semibold text-slate-800">
+                          {ticket.message || 'No description provided.'}
+                        </p>
+                        <p className="mt-1 max-w-[260px] break-all text-xs text-blue-700">
                           {ticket.ticketCode || ticket._id || ticket.id}
                         </p>
-                        <p className="mt-1 max-w-[280px] truncate text-xs text-slate-600">
-                          {ticket.message}
-                        </p>
                         <p className="mt-1 text-xs text-slate-400">{ticket.customerName || '-'}</p>
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        {ticket.sentimentEmoji ? (
+                          <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                            <span className="text-base">{ticket.sentimentEmoji}</span>
+                            {formatLabel(ticket.sentiment || 'neutral')}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-400">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <span
@@ -477,8 +346,8 @@ const Queries = () => {
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm font-semibold text-blue-700">
-                      {ticket.ticketCode || ticket._id || ticket.id}
+                    <p className="text-sm font-semibold text-slate-800">
+                      {ticket.message || 'No description provided.'}
                     </p>
                     <span
                       className={`inline-flex rounded-full px-2 py-1 text-[10px] font-semibold ${
@@ -488,8 +357,10 @@ const Queries = () => {
                       {formatLabel(ticket.status)}
                     </span>
                   </div>
+                  <p className="mt-1 break-all text-xs text-blue-700">
+                    {ticket.ticketCode || ticket._id || ticket.id}
+                  </p>
                   <p className="mt-1 text-xs text-slate-500">{ticket.customerName || '-'}</p>
-                  <p className="mt-2 text-sm text-slate-700">{ticket.message}</p>
                   <div className="mt-2 flex gap-2">
                     <span
                       className={`inline-flex rounded-full px-2 py-1 text-[10px] font-semibold ${
@@ -527,7 +398,7 @@ const Queries = () => {
             {selectedTicket ? (
               <div className="mt-3 space-y-4">
                 <div>
-                  <p className="text-lg font-semibold text-slate-900">
+                  <p className="break-all text-lg font-semibold text-slate-900">
                     {selectedTicket.ticketCode || selectedTicket._id || selectedTicket.id}
                   </p>
                   <p className="text-sm text-slate-500">{selectedTicket.customerName || '-'}</p>
