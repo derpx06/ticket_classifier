@@ -6,7 +6,7 @@ const QDRANT_URL = process.env.QDRANT_URL || 'http://localhost:6333';
 const QDRANT_API_KEY = process.env.QDRANT_API_KEY || undefined;
 
 export const COLLECTION_NAME = process.env.QDRANT_COLLECTION || 'ticket_knowledge';
-export const VECTOR_SIZE = 768; // text-embedding-004 dimension
+export const VECTOR_SIZE = 384; // BAAI/bge-small-en-v1.5 dimension
 
 
 export const qdrant = new QdrantClient({

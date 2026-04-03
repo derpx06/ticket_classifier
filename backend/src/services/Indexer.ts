@@ -1,25 +1,22 @@
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
-import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
+import { LocalEmbeddings } from './LocalEmbeddings';
+
 import { Document as LangChainDocument } from '@langchain/core/documents';
 import { v4 as uuidv4 } from 'uuid';
 import { qdrant, COLLECTION_NAME, ensureCollection } from '../config/qdrant';
 import { getCollections } from '../config/db';
 import dotenv from 'dotenv';
 
-
 dotenv.config();
 
 export class IndexerService {
-    private embeddings: GoogleGenerativeAIEmbeddings;
+    private embeddings: LocalEmbeddings;
     private ready: boolean = false;
 
     constructor() {
-        this.embeddings = new GoogleGenerativeAIEmbeddings({
-            apiKey: process.env.GEMINI_API_KEY,
-            modelName: "text-embedding-004",
-        });
-
+        this.embeddings = new LocalEmbeddings();
     }
+
 
     /** Lazily ensure the Qdrant collection is ready */
     private async init() {
@@ -52,9 +49,6 @@ export class IndexerService {
             console.error("[Indexer] Failed to store sitemap:", err);
         }
 
-        // 2. Clear existing (Optional: for full overwrite)
-        // await this.deleteAll();
-
         const splitter = new RecursiveCharacterTextSplitter({
             chunkSize: 1000,
             chunkOverlap: 200,
@@ -77,22 +71,29 @@ export class IndexerService {
         for (let i = 0; i < docs.length; i += batchSize) {
             const batch = docs.slice(i, i + batchSize);
 
-            const embeddings = await Promise.all(
-                batch.map(d => this.embeddings.embedQuery(d.pageContent))
-            );
+            try {
+                const embeddings = await this.embeddings.embedDocuments(
+                    batch.map(d => d.pageContent)
+                );
 
-            const points = batch.map((doc, idx) => ({
-                id: uuidv4(),
-                vector: embeddings[idx],
-                payload: {
-                    text: doc.pageContent,
-                    source: doc.metadata.source,
-                    title: doc.metadata.title,
-                    chunkIndex: doc.metadata.chunkIndex,
-                },
-            }));
+                const points = batch.map((doc, idx) => ({
+                    id: uuidv4(),
+                    vector: embeddings[idx],
+                    payload: {
+                        content: doc.pageContent,
+                        source: doc.metadata.source,
+                        title: doc.metadata.title,
+                        chunkIndex: doc.metadata.chunkIndex,
+                        companyId: 1
+                    },
+                }));
 
-            await qdrant.upsert(COLLECTION_NAME, { points, wait: true });
+                await qdrant.upsert(COLLECTION_NAME, { points, wait: true });
+            } catch (err: any) {
+                console.error(`[Indexer] Batch embedding error (offset ${i}):`, err.message);
+                if (err.response?.data) console.error("[Indexer] Error details:", err.response.data);
+                throw err;
+            }
 
             if (i + batchSize < docs.length) await new Promise(r => setTimeout(r, 500));
         }
@@ -103,27 +104,16 @@ export class IndexerService {
 
     async similaritySearch(query: string, k: number = 5): Promise<LangChainDocument[]> {
         await this.init();
-
-        const queryVec = await this.embeddings.embedQuery(query);
-
-        const result = await qdrant.search(COLLECTION_NAME, {
-            vector: queryVec,
+        const queryVector = await this.embeddings.embedQuery(query);
+        const results = await qdrant.search(COLLECTION_NAME, {
+            vector: queryVector,
             limit: k,
             with_payload: true,
         });
 
-        if (result.length === 0) {
-            throw new Error('No documents found in knowledge base. Run a crawl first.');
-        }
-
-        return result.map(hit => new LangChainDocument({
-            pageContent: String(hit.payload?.text ?? ''),
-            metadata: {
-                source: hit.payload?.source,
-                title: hit.payload?.title,
-                chunkIndex: hit.payload?.chunkIndex,
-                score: hit.score,
-            },
+        return results.map(r => new LangChainDocument({
+            pageContent: r.payload?.content as string,
+            metadata: { ...r.payload, score: r.score }
         }));
     }
 
@@ -138,4 +128,3 @@ export class IndexerService {
 }
 
 export const indexerService = new IndexerService();
-

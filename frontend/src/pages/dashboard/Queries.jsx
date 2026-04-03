@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { acceptTicket, createTicket, getTickets, updateTicket } from '../../services/api';
+import { useAuth } from '../../hooks/useAuth';
 
 const priorityWeight = {
   high: 3,
@@ -33,6 +34,8 @@ const formatLabel = (value = '') => {
 };
 
 const Queries = () => {
+  const { user } = useAuth();
+  const companyUuid = user?.company?.uuid || user?.companyUuid || '';
   const [tickets, setTickets] = useState([]);
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -134,10 +137,14 @@ const Queries = () => {
       toast.error('Enter a message to raise a test ticket.');
       return;
     }
-
+    if (!companyUuid) {
+      toast.error('Company UUID not available in your session.');
+      return;
+    }
     try {
       setIsCreating(true);
       const created = await createTicket({
+        apiKey: companyUuid,
         message,
         category: newTicketForm.category,
         priority: newTicketForm.priority,
@@ -194,6 +201,16 @@ const Queries = () => {
           >
             <p className="text-sm font-semibold text-slate-800">Raise Test Ticket</p>
             <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-4">
+              <label className="md:col-span-2">
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Company API Key (UUID)
+                </span>
+                <input
+                  value={companyUuid}
+                  readOnly
+                  className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-700 outline-none"
+                />
+              </label>
               <label className="md:col-span-2">
                 <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Message

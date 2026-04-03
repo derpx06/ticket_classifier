@@ -18,8 +18,17 @@ export const updateTicket = async (id, updates) =>
   unwrapData(await apiClient.patch(`/tickets/${id}`, updates));
 export const acceptTicket = async (id) => unwrapData(await apiClient.post(`/tickets/${id}/accept`));
 export const getMessagesByTicket = async (ticketId) =>
-  unwrapData(await apiClient.get(`/messages/${ticketId}`));
-export const sendMessage = async (body) => unwrapData(await apiClient.post('/messages', body));
+  unwrapData(await apiClient.get(`/tickets/${ticketId}/messages`));
+export const sendMessage = async (body) => {
+  const ticketId = body?.ticketId;
+  if (!ticketId) throw new Error('ticketId is required.');
+  return unwrapData(
+    await apiClient.post(`/tickets/${ticketId}/messages`, {
+      sender: body.sender,
+      text: body.text,
+    }),
+  );
+};
 export const getWidgetConfig = async () => unwrapData(await apiClient.get('/widget/config'));
 export const createWidgetSession = async (body) =>
   unwrapData(await apiClient.post('/widget/session', body));

@@ -1,13 +1,18 @@
-import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
-import { PromptTemplate } from '@langchain/core/prompts';
-import { StringOutputParser } from '@langchain/core/output_parsers';
-import { RunnableSequence } from '@langchain/core/runnables';
-import { Document as LangChainDocument } from '@langchain/core/documents';
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { LocalEmbeddings } from "./LocalEmbeddings";
 
 
-import { indexerService } from './Indexer';
-import { getCollections } from '../config/db';
-import dotenv from 'dotenv';
+import { PromptTemplate } from "@langchain/core/prompts";
+import { StringOutputParser } from "@langchain/core/output_parsers";
+import { RunnableSequence } from "@langchain/core/runnables";
+import { Document as LangChainDocument } from "@langchain/core/documents";
+import { qdrant, COLLECTION_NAME } from "../config/qdrant";
+
+import { getCollections } from "../config/db";
+import { indexerService } from "./Indexer";
+import dotenv from "dotenv";
+
+
 
 
 
@@ -15,17 +20,19 @@ dotenv.config();
 
 export class RAGEngine {
     private model: ChatGoogleGenerativeAI;
+    private embeddings: LocalEmbeddings;
     private history: Map<string, any[]> = new Map();
 
     constructor() {
+        this.embeddings = new LocalEmbeddings();
         this.model = new ChatGoogleGenerativeAI({
             apiKey: process.env.GEMINI_API_KEY,
-            model: process.env.GEMINI_MODEL || "gemini-3-flash-preview",
-
+            model: process.env.GEMINI_MODEL || "gemini-1.5-flash",
             temperature: 0.2,
         });
-
     }
+
+
 
 
     async answerTicket(query: string, sessionId: string = "default", companyId?: number) {
