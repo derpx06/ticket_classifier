@@ -110,8 +110,9 @@ async function ensureIndexes(database: Db): Promise<void> {
     companies.createIndex({ id: 1 }, { unique: true }),
     companies.createIndex(
       { uuid: 1 },
-      { unique: true, sparse: true, partialFilterExpression: { uuid: { $type: "string" } } },
+      { unique: true, partialFilterExpression: { uuid: { $type: "string" } } },
     ),
+
     users.createIndex({ id: 1 }, { unique: true }),
     users.createIndex({ email: 1 }, { unique: true }),
     users.createIndex({ companyId: 1 }),
