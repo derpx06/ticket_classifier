@@ -42,13 +42,13 @@ const KnowledgeBase = () => {
     const [useAI, setUseAI] = useState(false);
 
     /* auth state */
-    const [authMode, setAuthMode] = useState('none');
-    const [cookieString, setCookieString] = useState('');
-    const [authHeader, setAuthHeader] = useState('');
-    const [loginUrl, setLoginUrl] = useState('');
-    const [loginUser, setLoginUser] = useState('');
-    const [loginPass, setLoginPass] = useState('');
-    const [waitSelector, setWaitSelector] = useState('');
+    const [authMode, _setAuthMode] = useState('none');
+    const [cookieString, _setCookieString] = useState('');
+    const [authHeader, _setAuthHeader] = useState('');
+    const [loginUrl, _setLoginUrl] = useState('');
+    const [loginUser, _setLoginUser] = useState('');
+    const [loginPass, _setLoginPass] = useState('');
+    const [waitSelector, _setWaitSelector] = useState('');
 
     /* upload state */
     const [crawlUrlBySite, setCrawlUrlBySite] = useState({});
@@ -61,7 +61,7 @@ const KnowledgeBase = () => {
     const [uploadErrorBySite, setUploadErrorBySite] = useState({});
 
     const [deleteStatus, setDeleteStatus] = useState(null);
-    const [deleteError, setDeleteError] = useState('');
+    const [_deleteError, setDeleteError] = useState('');
     const [confirmDelete, setConfirmDelete] = useState(false);
 
     const [showAdvOpts, setShowAdvOpts] = useState(false);
@@ -389,42 +389,88 @@ createChatbotWidget({
         ]);
     };
 
+    const knowledgeSites = knowledgeData?.sites || [];
+    const siteCount = knowledgeSites.length;
+    const totalIndexedPages = knowledgeSites.reduce((sum, site) => sum + Number(site.totalPages || 0), 0);
+    const vectorCount = Number(knowledgeData?.vectorCount || 0);
+    const activeTabLabel =
+        activeTab === 'crawl' ? 'Knowledge' : activeTab === 'developer' ? 'Deployment' : 'Demo Chat';
+
     return (
-        <div className="p-8 max-w-6xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div>
-                    <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-                        <BrainCircuit className="text-indigo-600" size={36} /> Support Chatbot
-                    </h1>
-                    <p className="text-slate-500 mt-2 text-lg">Teach and deploy your AI assistant anywhere.</p>
+        <div className="space-y-6">
+            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="relative overflow-hidden border-b border-slate-200 bg-[linear-gradient(120deg,_rgba(15,23,42,1)_0%,_rgba(30,64,175,1)_62%,_rgba(37,99,235,1)_100%)] px-4 py-5 text-white sm:px-6">
+                    <span className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
+                    <span className="pointer-events-none absolute -bottom-16 left-16 h-40 w-40 rounded-full bg-blue-300/20 blur-2xl" />
+
+                    <div className="relative flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                            <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+                                <BrainCircuit size={22} />
+                                Knowledge Base
+                            </h1>
+                            <p className="mt-1 text-sm text-blue-100">
+                                Manage crawl sources, deployment keys, and demo chat from one workspace.
+                            </p>
+                        </div>
+                        <span className="inline-flex rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold text-blue-50">
+                            Active view: {activeTabLabel}
+                        </span>
+                    </div>
+
+                    <div className="relative mt-4 grid grid-cols-2 gap-2 text-xs font-semibold sm:grid-cols-4">
+                        <div className="rounded-xl border border-white/20 bg-white/10 px-3 py-2.5">
+                            <p className="text-blue-100">Websites</p>
+                            <p className="mt-0.5 text-lg text-white">{siteCount}</p>
+                        </div>
+                        <div className="rounded-xl border border-white/20 bg-white/10 px-3 py-2.5">
+                            <p className="text-blue-100">Indexed Pages</p>
+                            <p className="mt-0.5 text-lg text-white">{totalIndexedPages}</p>
+                        </div>
+                        <div className="rounded-xl border border-white/20 bg-white/10 px-3 py-2.5">
+                            <p className="text-blue-100">Vectors</p>
+                            <p className="mt-0.5 text-lg text-white">{vectorCount}</p>
+                        </div>
+                        <div className="rounded-xl border border-white/20 bg-white/10 px-3 py-2.5">
+                            <p className="text-blue-100">Status</p>
+                            <p className="mt-0.5 text-sm text-white">{knowledgeLoading ? 'Refreshing...' : 'Ready'}</p>
+                        </div>
+                    </div>
                 </div>
 
-                <div className="flex p-1 bg-slate-100 rounded-2xl">
-                    <button
-                        onClick={() => setActiveTab('crawl')}
-                        className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 ${activeTab === 'crawl' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-                    >
-                        <Globe size={16} /> Knowledge
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('developer')}
-                        className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 ${activeTab === 'developer' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-                    >
-                        <Code size={16} /> Deployment
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('demo')}
-                        className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 ${activeTab === 'demo' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-                    >
-                        <MessageSquare size={16} /> Demo
-                    </button>
+                <div className="border-b border-slate-200 bg-slate-50 p-3">
+                    <div className="flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-1">
+                        <button
+                            onClick={() => setActiveTab('crawl')}
+                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center gap-2 ${activeTab === 'crawl' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}
+                        >
+                            <Globe size={16} /> Knowledge
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('developer')}
+                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center gap-2 ${activeTab === 'developer' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}
+                        >
+                            <Code size={16} /> Deployment
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('demo')}
+                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center gap-2 ${activeTab === 'demo' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}
+                        >
+                            <MessageSquare size={16} /> Demo
+                        </button>
+                    </div>
                 </div>
-            </div>
+
+                {knowledgeError && (
+                    <div className="mx-3 mb-3 mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        {knowledgeError}
+                    </div>
+                )}
+            </section>
 
             {activeTab === 'crawl' ? (
                 /* --- KNOWLEDGE TAB --- */
-                <div className="grid grid-cols-1 gap-10">
+                <div className="grid grid-cols-1 gap-6">
                     {/* Website Setup */}
                     <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
                         <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-6 py-4">
@@ -686,7 +732,7 @@ createChatbotWidget({
                 </div>
             ) : activeTab === 'developer' ? (
                 /* --- DEVELOPER TOOLS TAB --- */
-                <div className="grid grid-cols-1 gap-10">
+                <div className="grid grid-cols-1 gap-6">
                     {/* API Keys */}
                     <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
                         <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-6 py-4">
@@ -788,7 +834,7 @@ createChatbotWidget({
                 </div>
             ) : (
                 /* --- DEMO CHAT TAB --- */
-                <div className="grid grid-cols-1 gap-10">
+                <div className="grid grid-cols-1 gap-6">
                     <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
                         <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/60 px-6 py-4">
                             <div className="flex items-center gap-3">
@@ -824,7 +870,7 @@ createChatbotWidget({
                                             <ReactMarkdown
                                                 remarkPlugins={[remarkGfm]}
                                                 components={{
-                                                    a: ({ node, ...props }) => (
+                                                    a: ({ ...props }) => (
                                                         <a
                                                             {...props}
                                                             target="_blank"
