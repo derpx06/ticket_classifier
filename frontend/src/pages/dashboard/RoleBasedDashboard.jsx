@@ -17,27 +17,21 @@ const formatLabel = (value = '') => {
   return value.charAt(0).toUpperCase() + value.slice(1);
 };
 
-const toDateKey = (dateObj) => {
-  const year = dateObj.getFullYear();
-  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-  const day = String(dateObj.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
+const formatSlotLabel = (timestamp) =>
+  new Date(timestamp).toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
 
-const toWeekdayLabel = (dateKey) =>
-  new Date(`${dateKey}T00:00:00`).toLocaleDateString('en-US', { weekday: 'short' });
-
-const normalizeDateKey = (value) => {
-  if (!value) return null;
-  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  return toDateKey(date);
-};
-
-const toMonthDayLabel = (dateKey) =>
-  new Date(`${dateKey}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+const formatSlotWithDate = (timestamp) =>
+  new Date(timestamp).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
 
 const RoleBasedDashboard = () => {
   const { role } = useAuth();
@@ -120,89 +114,86 @@ const RoleBasedDashboard = () => {
       return acc;
     }, {});
 
-    const responseValues = tickets.map((ticket) => ticket.firstResponseMinutes);
+    const responseValues = tickets
+      .map((ticket) => Number(ticket.firstResponseMinutes))
+      .filter((value) => Number.isFinite(value));
     const avgFirstResponse = responseValues.length
       ? Math.round(responseValues.reduce((sum, value) => sum + value, 0) / responseValues.length)
       : 0;
 
-    const resolvedTickets = tickets.filter(
-      (ticket) => typeof ticket.status === 'string' && ticket.status.toLowerCase() === 'resolved'
-    );
-    const avgResolutionHours = resolvedTickets.length
-      ? (
-          resolvedTickets.reduce(
-            (sum, ticket) => sum + (typeof ticket.resolutionHours === 'number' ? ticket.resolutionHours : 0),
-            0
-          ) / resolvedTickets.length
-        ).toFixed(1)
+    const resolutionHourValues = tickets
+      .map((ticket) => Number(ticket.resolutionHours))
+      .filter((value) => Number.isFinite(value));
+    const avgResolutionHours = resolutionHourValues.length
+      ? (resolutionHourValues.reduce((sum, value) => sum + value, 0) / resolutionHourValues.length).toFixed(1)
       : '0.0';
 
     const resolutionRate = total ? Math.round((statusCount.resolved / total) * 100) : 0;
     const escalationRate = total ? Math.round((statusCount.escalated / total) * 100) : 0;
-    const slaBreached = tickets.filter((ticket) => ticket.firstResponseMinutes > 10).length;
-    const slaCompliance = total ? Math.round(((total - slaBreached) / total) * 100) : 0;
+    const slaMeasuredCount = responseValues.length;
+    const slaBreached = responseValues.filter((value) => value > 10).length;
+    const slaCompliance = slaMeasuredCount
+      ? Math.round(((slaMeasuredCount - slaBreached) / slaMeasuredCount) * 100)
+      : 0;
 
-    const dailyTrendMap = tickets.reduce((acc, ticket) => {
-      const dateKey = normalizeDateKey(ticket.createdAt);
-      if (!dateKey) return acc;
-      acc[dateKey] = (acc[dateKey] || 0) + 1;
-      return acc;
-    }, {});
+    const timelineTickets = tickets
+      .map((ticket) => {
+        const createdAt = new Date(ticket.createdAt);
+        if (Number.isNaN(createdAt.getTime())) return null;
+        return { ...ticket, createdAtMs: createdAt.getTime() };
+      })
+      .filter(Boolean);
 
-    const dailyTrend = Object.entries(dailyTrendMap)
-      .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
-      .map(([date, count]) => ({ date, count }));
+    const intervalMs = 3 * 60 * 60 * 1000;
+    const slotCount = 8;
+    const latestTimestamp = timelineTickets.length
+      ? Math.max(...timelineTickets.map((ticket) => ticket.createdAtMs))
+      : Date.now();
+    const alignedEnd = Math.ceil(latestTimestamp / intervalMs) * intervalMs;
 
-    const highestDay = dailyTrend.reduce(
-      (best, day) => (day.count > best.count ? day : best),
-      dailyTrend[0] || { date: '-', count: 0 }
-    );
-
-    const latestDate = tickets
-      .map((ticket) => normalizeDateKey(ticket.createdAt))
-      .filter(Boolean)
-      .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
-      .at(-1);
-
-    const weeklyWindow = latestDate
-      ? Array.from({ length: 7 }, (_, index) => {
-          const date = new Date(`${latestDate}T00:00:00`);
-          date.setDate(date.getDate() - (6 - index));
-          return toDateKey(date);
-        })
-      : [];
-
-    const weeklyResponseResolution = weeklyWindow.map((dateKey) => {
-      const dayTickets = tickets.filter((ticket) => normalizeDateKey(ticket.createdAt) === dateKey);
-      const resolvedDayTickets = dayTickets.filter(
-        (ticket) => typeof ticket.resolutionHours === 'number'
+    const threeHourTrend = Array.from({ length: slotCount }, (_, index) => {
+      const slotStart = alignedEnd - (slotCount - index) * intervalMs;
+      const slotEnd = slotStart + intervalMs;
+      const slotTickets = timelineTickets.filter(
+        (ticket) => ticket.createdAtMs >= slotStart && ticket.createdAtMs < slotEnd
       );
 
-      const avgResponseMinutes = dayTickets.length
-        ? Number(
-            (
-              dayTickets.reduce((sum, ticket) => sum + ticket.firstResponseMinutes, 0) /
-              dayTickets.length
-            ).toFixed(1)
-          )
-        : null;
-
-      const avgResolutionMinutes = resolvedDayTickets.length
-        ? Number(
-            (
-              (resolvedDayTickets.reduce((sum, ticket) => sum + ticket.resolutionHours, 0) * 60) /
-              resolvedDayTickets.length
-            ).toFixed(1)
-          )
-        : null;
+      const slotResponseMinutes = slotTickets
+        .map((ticket) => Number(ticket.firstResponseMinutes))
+        .filter((value) => Number.isFinite(value));
+      const slotResolutionHours = slotTickets
+        .map((ticket) => Number(ticket.resolutionHours))
+        .filter((value) => Number.isFinite(value));
 
       return {
-        date: dateKey,
-        day: toWeekdayLabel(dateKey),
-        avgResponseMinutes,
-        avgResolutionMinutes,
+        key: String(slotStart),
+        label: formatSlotLabel(slotStart),
+        slotStart,
+        count: slotTickets.length,
+        avgResponseMinutes: slotResponseMinutes.length
+          ? Number(
+              (
+                slotResponseMinutes.reduce((sum, value) => sum + value, 0) /
+                slotResponseMinutes.length
+              ).toFixed(1)
+            )
+          : null,
+        avgResolutionMinutes: slotResolutionHours.length
+          ? Number(
+              (
+                (slotResolutionHours.reduce((sum, value) => sum + value, 0) /
+                  slotResolutionHours.length) *
+                60
+              ).toFixed(1)
+            )
+          : null,
       };
     });
+
+    const peakSlot = threeHourTrend.reduce(
+      (best, slot) => (slot.count > best.count ? slot : best),
+      threeHourTrend[0] || { count: 0, label: '-', slotStart: Date.now() }
+    );
 
     return {
       total,
@@ -213,9 +204,8 @@ const RoleBasedDashboard = () => {
       resolutionRate,
       escalationRate,
       slaCompliance,
-      dailyTrend,
-      highestDay,
-      weeklyResponseResolution,
+      threeHourTrend,
+      peakSlot,
     };
   }, [tickets]);
 
@@ -235,15 +225,15 @@ const RoleBasedDashboard = () => {
     const latencyChartPadding = { top: 22, right: 24, bottom: 44, left: 48 };
     const latencyPlotWidth = latencyChartWidth - latencyChartPadding.left - latencyChartPadding.right;
     const latencyPlotHeight = latencyChartHeight - latencyChartPadding.top - latencyChartPadding.bottom;
-    const weeklySeries = adminAnalytics.weeklyResponseResolution;
+    const intervalSeries = adminAnalytics.threeHourTrend;
     const weeklyMaxMetric = Math.max(
-      ...weeklySeries.flatMap((point) => [
+      ...intervalSeries.flatMap((point) => [
         point.avgResponseMinutes ?? 0,
         point.avgResolutionMinutes ?? 0,
       ]),
       1
     );
-    const latencyXStep = weeklySeries.length > 1 ? latencyPlotWidth / (weeklySeries.length - 1) : 0;
+    const latencyXStep = intervalSeries.length > 1 ? latencyPlotWidth / (intervalSeries.length - 1) : 0;
     const toLatencyX = (index) => latencyChartPadding.left + index * latencyXStep;
     const toLatencyY = (value) =>
       latencyChartPadding.top + (1 - value / weeklyMaxMetric) * latencyPlotHeight;
@@ -252,7 +242,7 @@ const RoleBasedDashboard = () => {
       let path = '';
       let isSegmentOpen = false;
 
-      weeklySeries.forEach((point, index) => {
+      intervalSeries.forEach((point, index) => {
         const value = point[key];
         if (typeof value !== 'number') {
           isSegmentOpen = false;
@@ -272,7 +262,7 @@ const RoleBasedDashboard = () => {
       Math.round(weeklyMaxMetric * ratio)
     );
 
-    const volumeSeries = adminAnalytics.dailyTrend.slice(-14);
+    const volumeSeries = adminAnalytics.threeHourTrend;
     const volumeChartWidth = 760;
     const volumeChartHeight = 300;
     const volumeChartPadding = { top: 16, right: 20, bottom: 48, left: 44 };
@@ -292,7 +282,7 @@ const RoleBasedDashboard = () => {
         } L ${toVolumeX(0)} ${volumeChartHeight - volumeChartPadding.bottom} Z`
       : '';
     const volumeYAxisTicks = [1, 0.75, 0.5, 0.25, 0].map((ratio) => Math.round(volumeMax * ratio));
-    const labelStep = volumeSeries.length > 10 ? 2 : 1;
+    const labelStep = 1;
 
     return (
       <div className="space-y-6 font-sans">
@@ -308,10 +298,10 @@ const RoleBasedDashboard = () => {
               </div>
               <div className="grid grid-cols-2 gap-2 text-xs font-medium text-slate-200">
                 <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5">
-                  Last peak: {adminAnalytics.highestDay.date}
+                  Last peak: {formatSlotWithDate(adminAnalytics.peakSlot.slotStart)}
                 </span>
                 <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5">
-                  Peak volume: {adminAnalytics.highestDay.count}
+                  Peak volume: {adminAnalytics.peakSlot.count}
                 </span>
               </div>
             </div>
@@ -377,7 +367,7 @@ const RoleBasedDashboard = () => {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <h2 className="text-lg font-semibold text-slate-900">Average Response & Resolution Time</h2>
-                  <p className="text-xs text-slate-500">Weekly trend of first reply vs resolution duration (minutes)</p>
+                  <p className="text-xs text-slate-500">Last 24 hours in 3-hour intervals (minutes)</p>
                 </div>
                 <div className="flex items-center gap-4 text-xs text-slate-600">
                   <span className="inline-flex items-center gap-1.5">
@@ -396,7 +386,7 @@ const RoleBasedDashboard = () => {
                   viewBox={`0 0 ${latencyChartWidth} ${latencyChartHeight}`}
                   className="h-64 w-full min-w-[640px]"
                   role="img"
-                  aria-label="Average response and resolution time by weekday"
+                  aria-label="Average response and resolution time in 3-hour intervals"
                 >
                   {latencyYAxisTicks.map((tick) => {
                     const y = toLatencyY(tick);
@@ -456,10 +446,10 @@ const RoleBasedDashboard = () => {
                     />
                   )}
 
-                  {weeklySeries.map((point, index) =>
+                  {intervalSeries.map((point, index) =>
                     typeof point.avgResponseMinutes === 'number' ? (
                         <circle
-                          key={`response-dot-${point.date}`}
+                          key={`response-dot-${point.key}`}
                           cx={toLatencyX(index)}
                           cy={toLatencyY(point.avgResponseMinutes)}
                           r="4"
@@ -467,10 +457,10 @@ const RoleBasedDashboard = () => {
                         />
                     ) : null
                   )}
-                  {weeklySeries.map((point, index) =>
+                  {intervalSeries.map((point, index) =>
                     typeof point.avgResolutionMinutes === 'number' ? (
                         <circle
-                          key={`resolution-dot-${point.date}`}
+                          key={`resolution-dot-${point.key}`}
                           cx={toLatencyX(index)}
                           cy={toLatencyY(point.avgResolutionMinutes)}
                           r="4"
@@ -479,15 +469,15 @@ const RoleBasedDashboard = () => {
                     ) : null
                   )}
 
-                  {weeklySeries.map((point, index) => (
+                  {intervalSeries.map((point, index) => (
                     <text
-                      key={`x-label-${point.date}`}
+                      key={`x-label-${point.key}`}
                       x={toLatencyX(index)}
                       y={latencyChartHeight - 16}
                       textAnchor="middle"
                       className="fill-slate-500 text-[11px]"
                     >
-                      {point.day}
+                      {point.label}
                     </text>
                   ))}
                 </svg>
@@ -498,11 +488,11 @@ const RoleBasedDashboard = () => {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <h2 className="text-lg font-semibold text-slate-900">Ticket Volume Trend</h2>
-                  <p className="text-xs text-slate-500">Last 14 days ticket creation pattern</p>
+                  <p className="text-xs text-slate-500">Last 24 hours in 3-hour intervals</p>
                 </div>
                 <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
                   <BarChart3 size={14} />
-                  Peak {adminAnalytics.highestDay.count} on {adminAnalytics.highestDay.date}
+                  Peak {adminAnalytics.peakSlot.count} at {adminAnalytics.peakSlot.label}
                 </span>
               </div>
 
@@ -574,7 +564,7 @@ const RoleBasedDashboard = () => {
 
                     {volumeSeries.map((item, index) => (
                       <circle
-                        key={`volume-dot-${item.date}`}
+                        key={`volume-dot-${item.key}`}
                         cx={toVolumeX(index)}
                         cy={toVolumeY(item.count)}
                         r="3.8"
@@ -585,13 +575,13 @@ const RoleBasedDashboard = () => {
                     {volumeSeries.map((item, index) =>
                       index % labelStep === 0 || index === volumeSeries.length - 1 ? (
                         <text
-                          key={`volume-label-${item.date}`}
+                          key={`volume-label-${item.key}`}
                           x={toVolumeX(index)}
                           y={volumeChartHeight - 16}
                           textAnchor="middle"
                           className="fill-slate-500 text-[11px]"
                         >
-                          {toMonthDayLabel(item.date)}
+                          {item.label}
                         </text>
                       ) : null
                     )}
