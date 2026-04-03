@@ -62,6 +62,12 @@
     mask-image: radial-gradient(circle at center, black 48%, transparent 90%);
   }
 
+  .landing-noise {
+    background-image: radial-gradient(rgba(15, 23, 42, 0.06) 0.6px, transparent 0.6px);
+    background-size: 2px 2px;
+    mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.36), transparent 70%);
+  }
+
   .landing-fade-up {
     animation: landing-fade-up 620ms ease-out;
   }
@@ -70,12 +76,26 @@
     animation: landing-fade-up 760ms 110ms ease-out both;
   }
 
+  .landing-section-reveal {
+    animation: landing-fade-up 620ms ease-out both;
+  }
+
   .landing-soft-glow {
     animation: landing-soft-glow 4.5s ease-in-out infinite;
   }
 
   .landing-glass {
     backdrop-filter: blur(8px);
+  }
+
+  .landing-card-hover {
+    transition: transform 240ms ease, box-shadow 240ms ease, border-color 240ms ease;
+  }
+
+  .landing-card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 14px 28px -20px rgba(15, 23, 42, 0.55);
+    border-color: rgba(59, 130, 246, 0.25);
   }
 
   .landing-orb {
