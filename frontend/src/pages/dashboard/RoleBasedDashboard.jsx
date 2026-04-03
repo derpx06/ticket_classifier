@@ -1,5 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import { useAuth } from '../../hooks/useAuth';
+import { getTickets } from '../../services/api';
+
+const formatLabel = (value = '') => {
+  if (!value) return 'Unknown';
+  return value.charAt(0).toUpperCase() + value.slice(1);
+};
 
 const toDateKey = (dateObj) => {
   const year = dateObj.getFullYear();
@@ -16,132 +23,74 @@ const RoleBasedDashboard = () => {
   const normalizedRole = typeof role === 'string' ? role.toLowerCase() : '';
   const isAdmin = normalizedRole === 'admin';
 
-  const tickets = useMemo(
-    () => [
-      {
-        id: 'TCK-1001',
-        message: 'Payment failed',
-        category: 'Billing',
-        priority: 'High',
-        status: 'Pending',
-        customer: 'Aisha Khan',
-        createdAt: '2026-04-01',
-        firstResponseMinutes: 6,
-        resolutionHours: null,
-        chat: [
-          { sender: 'user', text: 'My payment keeps failing at checkout.' },
-          { sender: 'bot', text: 'I can help with that. Did you try another card?' },
-        ],
-      },
-      {
-        id: 'TCK-1002',
-        message: 'App not loading',
-        category: 'Technical',
-        priority: 'Medium',
-        status: 'Escalated',
-        customer: 'Omar N.',
-        createdAt: '2026-04-02',
-        firstResponseMinutes: 11,
-        resolutionHours: null,
-        chat: [
-          { sender: 'user', text: 'The app is stuck on the loading screen.' },
-          { sender: 'bot', text: 'I have shared this with technical support for deeper checks.' },
-        ],
-      },
-      {
-        id: 'TCK-1003',
-        message: 'Unable to login',
-        category: 'Login',
-        priority: 'Low',
-        status: 'Resolved',
-        customer: 'Sara Lee',
-        createdAt: '2026-03-31',
-        firstResponseMinutes: 4,
-        resolutionHours: 1.8,
-        chat: [
-          { sender: 'user', text: 'I was unable to login this morning.' },
-          { sender: 'bot', text: 'Your password reset worked and access is restored.' },
-        ],
-      },
-      {
-        id: 'TCK-1004',
-        message: 'Invoice mismatch',
-        category: 'Billing',
-        priority: 'High',
-        status: 'Pending',
-        customer: 'Daniel M.',
-        createdAt: '2026-04-03',
-        firstResponseMinutes: 9,
-        resolutionHours: null,
-        chat: [
-          { sender: 'user', text: 'The charged amount differs from my invoice.' },
-          { sender: 'bot', text: 'I am reviewing your billing timeline now.' },
-        ],
-      },
-      {
-        id: 'TCK-1005',
-        message: 'MFA code not arriving',
-        category: 'Login',
-        priority: 'Medium',
-        status: 'Resolved',
-        customer: 'Neha P.',
-        createdAt: '2026-04-03',
-        firstResponseMinutes: 5,
-        resolutionHours: 2.2,
-        chat: [
-          { sender: 'user', text: 'The verification email is not coming through.' },
-          { sender: 'bot', text: 'I synced your authentication channel and resent the code.' },
-        ],
-      },
-      {
-        id: 'TCK-1006',
-        message: 'Refund not reflected',
-        category: 'Billing',
-        priority: 'High',
-        status: 'Escalated',
-        customer: 'Rohan S.',
-        createdAt: '2026-04-03',
-        firstResponseMinutes: 12,
-        resolutionHours: null,
-        chat: [
-          { sender: 'user', text: 'I still do not see my refund after five days.' },
-          { sender: 'bot', text: 'I am escalating this to billing operations right away.' },
-        ],
-      },
-    ],
-    []
-  );
-
-  const [selectedTicketId, setSelectedTicketId] = useState(tickets[0]?.id || '');
-  const selectedTicket = tickets.find((ticket) => ticket.id === selectedTicketId) || null;
+  const [tickets, setTickets] = useState([]);
+  const [selectedTicketId, setSelectedTicketId] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const selectedTicket =
+    tickets.find((ticket) => (ticket._id || ticket.id) === selectedTicketId) || null;
 
   const priorityStyles = {
-    High: 'bg-red-100 text-red-700',
-    Medium: 'bg-orange-100 text-orange-700',
-    Low: 'bg-green-100 text-green-700',
+    high: 'bg-red-100 text-red-700',
+    medium: 'bg-orange-100 text-orange-700',
+    low: 'bg-green-100 text-green-700',
   };
 
   const statusStyles = {
-    Pending: 'bg-amber-100 text-amber-700',
-    Resolved: 'bg-emerald-100 text-emerald-700',
-    Escalated: 'bg-rose-100 text-rose-700',
+    assigned: 'bg-blue-100 text-blue-700',
+    pending: 'bg-amber-100 text-amber-700',
+    resolved: 'bg-emerald-100 text-emerald-700',
+    escalated: 'bg-rose-100 text-rose-700',
   };
 
-  const statCards = [
-    { label: 'Assigned Tickets', value: 12, subtitle: 'Tickets assigned to you' },
-    { label: 'Pending Tickets', value: 5, subtitle: 'Awaiting response' },
-    { label: 'Resolved Tickets', value: 20, subtitle: 'Handled successfully' },
-    { label: 'Escalated Tickets', value: 2, subtitle: 'Forwarded to higher team' },
-  ];
+  useEffect(() => {
+    const loadTickets = async () => {
+      try {
+        setIsLoading(true);
+        const result = await getTickets();
+        const list = Array.isArray(result) ? result : [];
+        setTickets(list);
+        if (list.length > 0) {
+          setSelectedTicketId(list[0]._id || list[0].id || '');
+        }
+      } catch (error) {
+        toast.error(error?.response?.data?.message || 'Failed to load dashboard tickets.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadTickets();
+  }, []);
+
+  const statCards = useMemo(() => {
+    const assigned = tickets.filter((ticket) => ticket.status === 'assigned').length;
+    const pending = tickets.filter((ticket) => ticket.status === 'pending').length;
+    const resolved = tickets.filter((ticket) => ticket.status === 'resolved').length;
+    const escalated = tickets.filter((ticket) => ticket.status === 'escalated').length;
+
+    return [
+      { label: 'Assigned Tickets', value: assigned, subtitle: 'Tickets assigned to you' },
+      { label: 'Pending Tickets', value: pending, subtitle: 'Awaiting response' },
+      { label: 'Resolved Tickets', value: resolved, subtitle: 'Handled successfully' },
+      { label: 'Escalated Tickets', value: escalated, subtitle: 'Forwarded to higher team' },
+    ];
+  }, [tickets]);
+
+  const recentTickets = useMemo(() => {
+    return [...tickets]
+      .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+      .slice(0, 5);
+  }, [tickets]);
 
   const adminAnalytics = useMemo(() => {
     const total = tickets.length;
     const statusCount = tickets.reduce(
       (acc, ticket) => {
-        acc[ticket.status] = (acc[ticket.status] || 0) + 1;
+        const status = typeof ticket.status === 'string' ? ticket.status.toLowerCase() : '';
+        if (status) acc[status] = (acc[status] || 0) + 1;
         return acc;
       },
-      { Pending: 0, Resolved: 0, Escalated: 0 }
+      { pending: 0, resolved: 0, escalated: 0 }
     );
 
     const categoryCount = tickets.reduce((acc, ticket) => {
@@ -154,7 +103,9 @@ const RoleBasedDashboard = () => {
       ? Math.round(responseValues.reduce((sum, value) => sum + value, 0) / responseValues.length)
       : 0;
 
-    const resolvedTickets = tickets.filter((ticket) => ticket.status === 'Resolved');
+    const resolvedTickets = tickets.filter(
+      (ticket) => typeof ticket.status === 'string' && ticket.status.toLowerCase() === 'resolved'
+    );
     const avgResolutionHours = resolvedTickets.length
       ? (
           resolvedTickets.reduce(
@@ -164,8 +115,8 @@ const RoleBasedDashboard = () => {
         ).toFixed(1)
       : '0.0';
 
-    const resolutionRate = total ? Math.round((statusCount.Resolved / total) * 100) : 0;
-    const escalationRate = total ? Math.round((statusCount.Escalated / total) * 100) : 0;
+    const resolutionRate = total ? Math.round((statusCount.resolved / total) * 100) : 0;
+    const escalationRate = total ? Math.round((statusCount.escalated / total) * 100) : 0;
     const slaBreached = tickets.filter((ticket) => ticket.firstResponseMinutes > 10).length;
     const slaCompliance = total ? Math.round(((total - slaBreached) / total) * 100) : 0;
 
@@ -247,7 +198,10 @@ const RoleBasedDashboard = () => {
     const maxDailyCount = Math.max(...adminAnalytics.dailyTrend.map((item) => item.count), 1);
     const maxCategoryCount = Math.max(...Object.values(adminAnalytics.categoryCount), 1);
     const urgentTickets = tickets.filter(
-      (ticket) => ticket.priority === 'High' && ticket.status !== 'Resolved'
+      (ticket) =>
+        typeof ticket.priority === 'string' &&
+        ticket.priority.toLowerCase() === 'high' &&
+        ticket.status?.toLowerCase() !== 'resolved'
     );
     const chartWidth = 720;
     const chartHeight = 300;
@@ -311,14 +265,14 @@ const RoleBasedDashboard = () => {
           </article>
           <article className="rounded-xl border border-amber-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Pending</p>
-            <p className="mt-2 text-3xl font-bold text-amber-700">
-              {adminAnalytics.statusCount.Pending}
+              <p className="mt-2 text-3xl font-bold text-amber-700">
+              {adminAnalytics.statusCount.pending}
             </p>
           </article>
           <article className="rounded-xl border border-rose-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-wide text-rose-700">Escalated</p>
-            <p className="mt-2 text-3xl font-bold text-rose-700">
-              {adminAnalytics.statusCount.Escalated}
+              <p className="mt-2 text-3xl font-bold text-rose-700">
+              {adminAnalytics.statusCount.escalated}
             </p>
           </article>
           <article className="rounded-xl border border-emerald-200 bg-white p-5 shadow-sm">
@@ -540,17 +494,19 @@ const RoleBasedDashboard = () => {
               <ul className="mt-3 space-y-2">
                 {urgentTickets.map((ticket) => (
                   <li
-                    key={ticket.id}
+                    key={ticket._id || ticket.id}
                     className={`rounded-md border border-rose-200 bg-white p-2 text-sm ${
-                      selectedTicketId === ticket.id ? 'ring-2 ring-rose-300' : ''
+                      selectedTicketId === (ticket._id || ticket.id) ? 'ring-2 ring-rose-300' : ''
                     }`}
                   >
                     <button
                       type="button"
-                      onClick={() => setSelectedTicketId(ticket.id)}
+                      onClick={() => setSelectedTicketId(ticket._id || ticket.id)}
                       className="w-full text-left"
                     >
-                      <p className="font-semibold text-rose-700">{ticket.id}</p>
+                      <p className="font-semibold text-rose-700">
+                        {ticket.ticketCode || ticket._id || ticket.id}
+                      </p>
                       <p className="truncate text-xs text-slate-600">{ticket.message}</p>
                     </button>
                   </li>
@@ -562,7 +518,9 @@ const RoleBasedDashboard = () => {
               <h2 className="text-lg font-semibold text-slate-900">Focused Ticket</h2>
               {selectedTicket ? (
                 <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
-                  <p className="text-sm font-semibold text-blue-700">{selectedTicket.id}</p>
+                  <p className="text-sm font-semibold text-blue-700">
+                    {selectedTicket.ticketCode || selectedTicket._id || selectedTicket.id}
+                  </p>
                   <p className="mt-1 text-sm text-slate-700">{selectedTicket.message}</p>
                   <p className="mt-2 text-xs text-slate-500">{selectedTicket.customer}</p>
                 </div>
@@ -627,44 +585,44 @@ const RoleBasedDashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
-                  {tickets.map((ticket) => (
+                  {recentTickets.map((ticket) => (
                     <tr
-                      key={ticket.id}
+                      key={ticket._id || ticket.id}
                       role="button"
                       tabIndex={0}
-                      onClick={() => setSelectedTicketId(ticket.id)}
+                      onClick={() => setSelectedTicketId(ticket._id || ticket.id)}
                       onKeyDown={(event) => {
                         if (event.key === 'Enter' || event.key === ' ') {
-                          setSelectedTicketId(ticket.id);
+                          setSelectedTicketId(ticket._id || ticket.id);
                         }
                       }}
                       className={`cursor-pointer transition-colors hover:bg-blue-50 ${
-                        selectedTicketId === ticket.id ? 'bg-blue-50/70' : ''
+                        selectedTicketId === (ticket._id || ticket.id) ? 'bg-blue-50/70' : ''
                       }`}
                     >
                       <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-blue-700">
-                        {ticket.id}
+                        {ticket.ticketCode || ticket._id || ticket.id}
                       </td>
                       <td className="max-w-[220px] truncate px-4 py-3 text-sm text-slate-700">
                         {ticket.message}
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-700">{ticket.category}</td>
+                      <td className="px-4 py-3 text-sm text-slate-700">{formatLabel(ticket.category)}</td>
                       <td className="px-4 py-3">
                         <span
                           className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                            priorityStyles[ticket.priority]
+                            priorityStyles[ticket.priority] || 'bg-slate-100 text-slate-700'
                           }`}
                         >
-                          {ticket.priority}
+                          {formatLabel(ticket.priority)}
                         </span>
                       </td>
                       <td className="px-4 py-3">
                         <span
                           className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                            statusStyles[ticket.status]
+                            statusStyles[ticket.status] || 'bg-slate-100 text-slate-700'
                           }`}
                         >
-                          {ticket.status}
+                          {formatLabel(ticket.status)}
                         </span>
                       </td>
                     </tr>
@@ -682,9 +640,13 @@ const RoleBasedDashboard = () => {
 
             <div className="mt-4 space-y-4">
               <div className="rounded-lg bg-blue-50 p-4">
-                <p className="text-sm font-semibold text-blue-800">Pending Tickets: 5</p>
+                <p className="text-sm font-semibold text-blue-800">
+                  Pending Tickets: {statCards[1].value}
+                </p>
                 <p className="mt-1 text-sm text-blue-700">
-                  You have 5 tickets awaiting response
+                  {isLoading
+                    ? 'Loading tickets...'
+                    : `You have ${statCards[1].value} tickets awaiting response`}
                 </p>
               </div>
 
