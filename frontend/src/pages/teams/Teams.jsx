@@ -1,72 +1,113 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
+import {
+  Building2,
+  Copy,
+  Pencil,
+  Plus,
+  Settings2,
+  ShieldCheck,
+  Trash2,
+  UserPlus2,
+  UsersRound,
+} from 'lucide-react';
 import teamService from '../../services/teamService';
-import { UsersRound, Plus, Pencil, Trash2, ShieldCheck, Settings2, Copy } from 'lucide-react';
 import { SkeletonBlock } from '../../components/feedback/Skeleton';
 import { useAuth } from '../../hooks/useAuth';
 
-const TeamsSkeleton = () => (
-  <div className="space-y-8">
-    <section className="space-y-3">
-      <SkeletonBlock className="h-7 w-48" />
-      <SkeletonBlock className="h-4 w-full max-w-2xl" />
-      <SkeletonBlock className="h-12 w-72 rounded-2xl" />
-    </section>
+const cardClass = 'rounded-2xl border border-slate-200 bg-white shadow-sm';
+const inputClass =
+  'w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100';
 
-    <section className="space-y-3">
-      <SkeletonBlock className="h-6 w-40" />
-      <SkeletonBlock className="h-4 w-96 max-w-full" />
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <div className="flex justify-end border-b border-slate-100 px-4 py-3">
-          <SkeletonBlock className="h-9 w-28 rounded-lg" />
+const TeamsSkeleton = () => (
+  <div className="space-y-6">
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <SkeletonBlock className="h-7 w-48" />
+      <SkeletonBlock className="mt-2 h-4 w-full max-w-xl" />
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <SkeletonBlock className="h-16 rounded-xl" />
+        <SkeletonBlock className="h-16 rounded-xl" />
+        <SkeletonBlock className="h-16 rounded-xl" />
+      </div>
+    </div>
+
+    {Array.from({ length: 3 }).map((_, idx) => (
+      <div key={idx} className={`${cardClass} overflow-hidden`}>
+        <div className="border-b border-slate-100 px-5 py-4">
+          <SkeletonBlock className="h-5 w-40" />
+          <SkeletonBlock className="mt-2 h-4 w-64" />
         </div>
-        <div className="space-y-0">
-          {Array.from({ length: 4 }).map((_, rowIndex) => (
-            <div key={rowIndex} className="grid grid-cols-[1.1fr_90px_150px_1.9fr_96px] gap-4 border-b border-slate-100 px-4 py-4">
-              <SkeletonBlock className="h-5 w-24" />
-              <SkeletonBlock className="h-5 w-12" />
-              <SkeletonBlock className="h-5 w-24" />
-              <SkeletonBlock className="h-5 w-full" />
-              <div className="flex gap-2 justify-end">
-                <SkeletonBlock className="h-9 w-9 rounded-md" />
-                <SkeletonBlock className="h-9 w-9 rounded-md" />
-              </div>
-            </div>
+        <div className="space-y-3 p-5">
+          {Array.from({ length: 3 }).map((__, row) => (
+            <SkeletonBlock key={row} className="h-12 rounded-xl" />
           ))}
         </div>
       </div>
-    </section>
-
-    {Array.from({ length: 2 }).map((_, sectionIndex) => (
-      <section key={sectionIndex} className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <div className="space-y-2">
-            <SkeletonBlock className="h-6 w-36" />
-            <SkeletonBlock className="h-4 w-44" />
-          </div>
-          <SkeletonBlock className="h-9 w-32 rounded-lg" />
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-          {Array.from({ length: 3 }).map((_, rowIndex) => (
-            <div key={rowIndex} className="grid grid-cols-[1.1fr_1.3fr_1fr_96px] gap-4 border-b border-slate-100 px-4 py-4">
-              <SkeletonBlock className="h-5 w-28" />
-              <SkeletonBlock className="h-5 w-full" />
-              <SkeletonBlock className="h-5 w-24" />
-              <div className="flex gap-2 justify-end">
-                <SkeletonBlock className="h-9 w-9 rounded-md" />
-                <SkeletonBlock className="h-9 w-9 rounded-md" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
     ))}
+  </div>
+);
+
+const SectionShell = ({ icon: Icon, title, subtitle, action, children }) => (
+  <section className={`${cardClass} overflow-hidden`}>
+    <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 bg-slate-50/80 px-5 py-4">
+      <div>
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
+            <Icon size={16} />
+          </span>
+          {title}
+        </h2>
+        {subtitle ? <p className="mt-1 text-sm text-slate-600">{subtitle}</p> : null}
+      </div>
+      {action}
+    </div>
+    <div className="p-5">{children}</div>
+  </section>
+);
+
+const IconButton = ({ onClick, title, tone = 'default', children }) => {
+  const toneClass =
+    tone === 'danger'
+      ? 'text-rose-600 hover:bg-rose-50'
+      : 'text-slate-600 hover:bg-slate-100 hover:text-blue-700';
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition ${toneClass}`}
+    >
+      {children}
+    </button>
+  );
+};
+
+const ModalShell = ({ title, subtitle, onClose, children }) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4 backdrop-blur-[2px]">
+    <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+      <div className="border-b border-slate-200 bg-slate-50 px-5 py-4">
+        <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
+        {subtitle ? <p className="mt-1 text-sm text-slate-500">{subtitle}</p> : null}
+      </div>
+      <div className="p-5">{children}</div>
+      <div className="flex justify-end gap-2 border-t border-slate-200 bg-slate-50 px-5 py-3">
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-200"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
   </div>
 );
 
 const Teams = () => {
   const { user } = useAuth();
   const companyUuid = user?.company?.uuid || user?.companyUuid || user?.companyId || 'N/A';
+
   const [roles, setRoles] = useState([]);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -93,7 +134,7 @@ const Teams = () => {
     try {
       await navigator.clipboard.writeText(String(companyUuid));
       toast.success('Company UUID copied.');
-    } catch (error) {
+    } catch {
       toast.error('Unable to copy Company UUID.');
     }
   }, [companyUuid]);
@@ -101,10 +142,7 @@ const Teams = () => {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [r, m] = await Promise.all([
-        teamService.listRoles(),
-        teamService.listMembers(),
-      ]);
+      const [r, m] = await Promise.all([teamService.listRoles(), teamService.listMembers()]);
       setRoles(r);
       setMembers(m);
     } catch (e) {
@@ -113,7 +151,7 @@ const Teams = () => {
       toast.error(
         status
           ? `${base}${status === 503 ? ' (server could not update the database schema.)' : ''}`
-          : base,
+          : base
       );
     } finally {
       setLoading(false);
@@ -126,7 +164,12 @@ const Teams = () => {
 
   const adminMembers = useMemo(
     () => members.filter((m) => m.systemRole === 'admin'),
-    [members],
+    [members]
+  );
+
+  const rolesOrdered = useMemo(
+    () => [...roles].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })),
+    [roles]
   );
 
   const membersByRoleId = useMemo(() => {
@@ -143,24 +186,20 @@ const Teams = () => {
   }, [roles, members]);
 
   const roleIds = useMemo(() => new Set(roles.map((r) => r.id)), [roles]);
-
   const unassignedMembers = useMemo(
     () =>
       members.filter(
-        (m) => m.systemRole !== 'admin' && (!m.companyRole || !roleIds.has(m.companyRole.id)),
+        (m) => m.systemRole !== 'admin' && (!m.companyRole || !roleIds.has(m.companyRole.id))
       ),
-    [members, roleIds],
+    [members, roleIds]
   );
 
-  const rolesOrdered = useMemo(() => {
-    return [...roles].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
-  }, [roles]);
+  const roleCount = roles.length;
+  const memberCount = members.filter((m) => m.systemRole !== 'admin').length;
+  const adminCount = adminMembers.length;
 
   const openCreateRole = () => {
-    setRoleForm({
-      name: '',
-      description: '',
-    });
+    setRoleForm({ name: '', description: '' });
     setRoleModal('create');
   };
 
@@ -172,12 +211,13 @@ const Teams = () => {
     setRoleModal({ mode: 'edit', id: role.id });
   };
 
-  const submitRole = async (e) => {
-    e.preventDefault();
+  const submitRole = async (event) => {
+    event.preventDefault();
     if (!roleForm.name.trim()) {
       toast.error('Role name is required.');
       return;
     }
+
     try {
       if (roleModal === 'create') {
         await teamService.createRole({
@@ -200,7 +240,7 @@ const Teams = () => {
   };
 
   const removeRole = async (role) => {
-    if (!window.confirm(`Delete role “${role.name}”?`)) return;
+    if (!window.confirm(`Delete role "${role.name}"?`)) return;
     try {
       await teamService.deleteRole(role.id);
       toast.success('Role removed.');
@@ -220,12 +260,13 @@ const Teams = () => {
     setMemberModal(true);
   };
 
-  const submitMember = async (e) => {
-    e.preventDefault();
+  const submitMember = async (event) => {
+    event.preventDefault();
     if (memberForm.passcode.length < 6) {
       toast.error('Passcode must be at least 6 characters.');
       return;
     }
+
     try {
       await teamService.createMember({
         fullName: memberForm.fullName.trim(),
@@ -241,28 +282,29 @@ const Teams = () => {
     }
   };
 
-  const openEditMember = (m) => {
-    if (m.systemRole === 'admin') {
+  const openEditMember = (member) => {
+    if (member.systemRole === 'admin') {
       toast.error('Organization admins are managed separately.');
       return;
     }
+
     setEditForm({
-      companyRoleId: m.companyRole?.id ?? '',
+      companyRoleId: member.companyRole?.id ?? '',
     });
-    setEditMember(m);
+    setEditMember(member);
   };
 
-  const submitEditMember = async (e) => {
-    e.preventDefault();
+  const submitEditMember = async (event) => {
+    event.preventDefault();
     if (!editForm.companyRoleId) {
       toast.error('Select a team role.');
       return;
     }
+
     try {
-      const payload = {
+      await teamService.updateMember(editMember.id, {
         companyRoleId: Number(editForm.companyRoleId),
-      };
-      await teamService.updateMember(editMember.id, payload);
+      });
       toast.success('Member updated.');
       setEditMember(null);
       await load();
@@ -271,14 +313,15 @@ const Teams = () => {
     }
   };
 
-  const removeMember = async (m) => {
-    if (m.systemRole === 'admin') {
+  const removeMember = async (member) => {
+    if (member.systemRole === 'admin') {
       toast.error('Cannot remove admins from this screen.');
       return;
     }
-    if (!window.confirm(`Remove ${m.fullName} from the workspace?`)) return;
+    if (!window.confirm(`Remove ${member.fullName} from the workspace?`)) return;
+
     try {
-      await teamService.deleteMember(m.id);
+      await teamService.deleteMember(member.id);
       toast.success('Member removed.');
       await load();
     } catch (err) {
@@ -286,430 +329,410 @@ const Teams = () => {
     }
   };
 
-  const MemberRow = ({ m }) => (
-    <tr key={m.id} className="hover:bg-slate-50/80">
-      <td className="px-4 py-3 font-medium text-slate-900">{m.fullName}</td>
-      <td className="px-4 py-3 text-slate-600">{m.email}</td>
-      <td className="px-4 py-3">
-        <div className="flex gap-1">
-          <button
-            type="button"
-            onClick={() => openEditMember(m)}
-            className="p-1.5 text-slate-500 hover:text-primary rounded-md hover:bg-slate-100"
-            title="Edit"
-          >
-            <Pencil size={16} />
-          </button>
-          <button
-            type="button"
-            onClick={() => removeMember(m)}
-            className="p-1.5 text-slate-500 hover:text-red-600 rounded-md hover:bg-red-50"
-            title="Remove"
-          >
-            <Trash2 size={16} />
-          </button>
-        </div>
-      </td>
-    </tr>
-  );
-
   if (loading && members.length === 0 && roles.length === 0) {
     return <TeamsSkeleton />;
   }
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       <Toaster position="top-right" />
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-          <UsersRound className="text-primary" size={28} />
-          Teams
-        </h1>
-        <p className="text-slate-600 mt-1 text-sm max-w-2xl">
-          Configure roles and rosters. New members use email + passcode at login.
-        </p>
-        <div className="mt-3 inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-          <span className="text-xs font-medium text-slate-500">Company UUID</span>
-          <code className="rounded bg-white px-2 py-0.5 text-xs font-semibold text-slate-800">
+
+      <section className={`${cardClass} overflow-hidden`}>
+        <div className="bg-[linear-gradient(125deg,_rgba(15,23,42,1)_0%,_rgba(30,64,175,1)_52%,_rgba(37,99,235,1)_100%)] px-5 py-6 text-white">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
+                <UsersRound size={26} />
+                Teams Workspace
+              </h1>
+              <p className="mt-1 text-sm text-blue-100">
+                Create role groups, manage rosters, and keep your company structure organized.
+              </p>
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-xs font-semibold">
+              <div className="rounded-xl border border-white/20 bg-white/10 px-3 py-2">
+                <p className="text-blue-100">Roles</p>
+                <p className="mt-0.5 text-base text-white">{roleCount}</p>
+              </div>
+              <div className="rounded-xl border border-white/20 bg-white/10 px-3 py-2">
+                <p className="text-blue-100">Members</p>
+                <p className="mt-0.5 text-base text-white">{memberCount}</p>
+              </div>
+              <div className="rounded-xl border border-white/20 bg-white/10 px-3 py-2">
+                <p className="text-blue-100">Admins</p>
+                <p className="mt-0.5 text-base text-white">{adminCount}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 border-t border-slate-200 bg-slate-50 px-5 py-3">
+          <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <Building2 size={14} />
+            Company UUID
+          </span>
+          <code className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700">
             {companyUuid}
           </code>
           <button
             type="button"
             onClick={copyCompanyId}
-            className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100"
-            aria-label="Copy Company UUID"
-            title="Copy Company UUID"
+            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-100"
           >
-            <Copy size={14} />
+            <Copy size={13} />
             Copy
           </button>
         </div>
-      </div>
+      </section>
 
-      <>
-          {/* —— Role definitions: its own block (not mixed with member rows) —— */}
-          <section className="space-y-3" aria-labelledby="role-definitions-heading">
-            <div className="flex items-center gap-2 text-slate-800">
-              <Settings2 size={20} className="text-slate-500" />
-              <h2 id="role-definitions-heading" className="text-lg font-semibold">
-                Role definitions
-              </h2>
-            </div>
-            <p className="text-xs text-slate-500">
-              Role name and description. This table is only for grouping employees—not for listing people.
-            </p>
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="px-4 py-3 border-b border-slate-100 flex justify-end">
-                <button
-                  type="button"
-                  onClick={openCreateRole}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary-dark"
-                >
-                  <Plus size={18} />
-                  New role
-                </button>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-50 text-slate-600">
-                    <tr>
-                      <th className="px-4 py-3 font-medium">Role name</th>
-                      <th className="px-4 py-3 font-medium">Description</th>
-                      <th className="px-4 py-3 font-medium w-28">Actions</th>
+      <SectionShell
+        icon={Settings2}
+        title="Role Definitions"
+        subtitle="Define company roles used to group and assign members."
+        action={
+          <button
+            type="button"
+            onClick={openCreateRole}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+          >
+            <Plus size={16} />
+            New Role
+          </button>
+        }
+      >
+        <div className="overflow-x-auto rounded-xl border border-slate-200">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-slate-50 text-slate-600">
+              <tr>
+                <th className="px-4 py-3 font-semibold">Role Name</th>
+                <th className="px-4 py-3 font-semibold">Description</th>
+                <th className="px-4 py-3 font-semibold">Members</th>
+                <th className="px-4 py-3 font-semibold w-28">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 bg-white">
+              {rolesOrdered.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-4 py-8 text-center text-slate-400">
+                    No roles created yet.
+                  </td>
+                </tr>
+              ) : (
+                rolesOrdered.map((role) => {
+                  const count = (membersByRoleId.get(role.id) || []).length;
+                  return (
+                    <tr key={role.id} className="hover:bg-slate-50/70">
+                      <td className="px-4 py-3 font-semibold text-slate-900">{role.name}</td>
+                      <td className="px-4 py-3 text-slate-600">{role.description || '-'}</td>
+                      <td className="px-4 py-3">
+                        <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                          {count}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-1">
+                          <IconButton onClick={() => openEditRole(role)} title="Edit role">
+                            <Pencil size={15} />
+                          </IconButton>
+                          <IconButton onClick={() => removeRole(role)} title="Delete role" tone="danger">
+                            <Trash2 size={15} />
+                          </IconButton>
+                        </div>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {rolesOrdered.map((role) => (
-                      <tr key={role.id} className="hover:bg-slate-50/80">
-                        <td className="px-4 py-3 font-medium text-slate-900">{role.name}</td>
-                        <td className="px-4 py-3 text-slate-500 text-xs">{role.description || '—'}</td>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </SectionShell>
+
+      <SectionShell
+        icon={ShieldCheck}
+        title="Administrators"
+        subtitle="Company admins created during onboarding. Managed separately."
+      >
+        <div className="overflow-x-auto rounded-xl border border-slate-200">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-slate-50 text-slate-600">
+              <tr>
+                <th className="px-4 py-3 font-semibold">Name</th>
+                <th className="px-4 py-3 font-semibold">Email</th>
+                <th className="px-4 py-3 font-semibold">System Role</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 bg-white">
+              {adminMembers.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="px-4 py-8 text-center text-slate-400">
+                    No administrators listed.
+                  </td>
+                </tr>
+              ) : (
+                adminMembers.map((member) => (
+                  <tr key={member.id} className="hover:bg-slate-50/70">
+                    <td className="px-4 py-3 font-medium text-slate-900">{member.fullName}</td>
+                    <td className="px-4 py-3 text-slate-600">{member.email}</td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex rounded-full bg-violet-100 px-2.5 py-1 text-xs font-semibold text-violet-700">
+                        Admin
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </SectionShell>
+
+      {rolesOrdered.map((role) => {
+        const rows = membersByRoleId.get(role.id) || [];
+
+        return (
+          <SectionShell
+            key={role.id}
+            icon={UsersRound}
+            title={role.name}
+            subtitle={`${rows.length} member${rows.length === 1 ? '' : 's'} in this role`}
+            action={
+              <button
+                type="button"
+                onClick={() => openCreateMemberForRole(role)}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+              >
+                <UserPlus2 size={16} />
+                Add Member
+              </button>
+            }
+          >
+            <div className="overflow-x-auto rounded-xl border border-slate-200">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-slate-50 text-slate-600">
+                  <tr>
+                    <th className="px-4 py-3 font-semibold">Name</th>
+                    <th className="px-4 py-3 font-semibold">Email</th>
+                    <th className="px-4 py-3 font-semibold">Access</th>
+                    <th className="px-4 py-3 font-semibold w-28">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white">
+                  {rows.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-8 text-center text-slate-400">
+                        No members in this role yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    rows.map((member) => (
+                      <tr key={member.id} className="hover:bg-slate-50/70">
+                        <td className="px-4 py-3 font-medium text-slate-900">{member.fullName}</td>
+                        <td className="px-4 py-3 text-slate-600">{member.email}</td>
+                        <td className="px-4 py-3 capitalize text-slate-600">{member.systemRole || 'employee'}</td>
                         <td className="px-4 py-3">
                           <div className="flex gap-1">
-                            <button
-                              type="button"
-                              onClick={() => openEditRole(role)}
-                              className="p-1.5 text-slate-500 hover:text-primary rounded-md hover:bg-slate-100"
-                              title="Edit role"
-                            >
-                              <Pencil size={16} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => removeRole(role)}
-                              className="p-1.5 text-slate-500 hover:text-red-600 rounded-md hover:bg-red-50"
-                              title="Delete role"
-                            >
-                              <Trash2 size={16} />
-                            </button>
+                            <IconButton onClick={() => openEditMember(member)} title="Edit member">
+                              <Pencil size={15} />
+                            </IconButton>
+                            <IconButton onClick={() => removeMember(member)} title="Remove member" tone="danger">
+                              <Trash2 size={15} />
+                            </IconButton>
                           </div>
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
-          </section>
+          </SectionShell>
+        );
+      })}
 
-          {/* —— Administrators: separate table —— */}
-          <section className="space-y-3" aria-labelledby="admins-heading">
-            <h2 id="admins-heading" className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-              <ShieldCheck size={20} className="text-purple-600" />
-              Administrators
-            </h2>
-            <p className="text-xs text-slate-500">Company admins (created at registration). Not editable here.</p>
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-50 text-slate-600">
-                    <tr>
-                      <th className="px-4 py-3 font-medium">Name</th>
-                      <th className="px-4 py-3 font-medium">Email</th>
-                      <th className="px-4 py-3 font-medium w-24">Actions</th>
+      {unassignedMembers.length > 0 && (
+        <section className="overflow-hidden rounded-2xl border border-amber-200 bg-amber-50/60 shadow-sm">
+          <div className="border-b border-amber-200 bg-amber-100/70 px-5 py-4">
+            <h2 className="text-lg font-semibold text-amber-900">Without a Team Role</h2>
+            <p className="mt-1 text-sm text-amber-800">
+              These members are not admins and currently do not have a company role assigned.
+            </p>
+          </div>
+          <div className="p-5">
+            <div className="overflow-x-auto rounded-xl border border-amber-200">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-amber-100/70 text-amber-900">
+                  <tr>
+                    <th className="px-4 py-3 font-semibold">Name</th>
+                    <th className="px-4 py-3 font-semibold">Email</th>
+                    <th className="px-4 py-3 font-semibold">System Role</th>
+                    <th className="px-4 py-3 font-semibold w-28">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-amber-200 bg-white">
+                  {unassignedMembers.map((member) => (
+                    <tr key={member.id} className="hover:bg-amber-50/70">
+                      <td className="px-4 py-3 font-medium text-slate-900">{member.fullName}</td>
+                      <td className="px-4 py-3 text-slate-600">{member.email}</td>
+                      <td className="px-4 py-3 capitalize text-slate-600">{member.systemRole}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-1">
+                          <IconButton onClick={() => openEditMember(member)} title="Edit member">
+                            <Pencil size={15} />
+                          </IconButton>
+                          <IconButton onClick={() => removeMember(member)} title="Remove member" tone="danger">
+                            <Trash2 size={15} />
+                          </IconButton>
+                        </div>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {adminMembers.length === 0 ? (
-                      <tr>
-                        <td colSpan={3} className="px-4 py-8 text-center text-slate-400 text-sm">
-                          No administrators listed.
-                        </td>
-                      </tr>
-                    ) : (
-                      adminMembers.map((m) => (
-                        <tr key={m.id} className="hover:bg-slate-50/80">
-                          <td className="px-4 py-3 font-medium text-slate-900">{m.fullName}</td>
-                          <td className="px-4 py-3 text-slate-600">{m.email}</td>
-                          <td className="px-4 py-3 text-xs text-slate-400">—</td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </section>
-
-          {/* —— One member table per role, stacked —— */}
-          {rolesOrdered.map((role) => {
-            const rows = membersByRoleId.get(role.id) ?? [];
-            return (
-              <section key={role.id} className="space-y-3" aria-labelledby={`role-members-${role.id}`}>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div>
-                    <h2
-                      id={`role-members-${role.id}`}
-                      className="text-lg font-semibold text-slate-800"
-                    >
-                      {role.name}
-                    </h2>
-                    <p className="text-xs text-slate-500 mt-0.5 capitalize">
-                      {rows.length} member{rows.length === 1 ? '' : 's'}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => openCreateMemberForRole(role)}
-                    className="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary-dark shrink-0"
-                  >
-                    <Plus size={18} />
-                    Add to this role
-                  </button>
-                </div>
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left">
-                      <thead className="bg-slate-50 text-slate-600">
-                        <tr>
-                          <th className="px-4 py-3 font-medium">Name</th>
-                          <th className="px-4 py-3 font-medium">Email</th>
-                          <th className="px-4 py-3 font-medium w-28">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {rows.length === 0 ? (
-                          <tr>
-                            <td
-                              colSpan={3}
-                              className="px-4 py-8 text-center text-slate-400 text-sm"
-                            >
-                              No members in this role yet.
-                            </td>
-                          </tr>
-                        ) : (
-                          rows.map((m) => (
-                            <MemberRow key={m.id} m={m} />
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </section>
-            );
-          })}
-
-          {unassignedMembers.length > 0 && (
-            <section className="space-y-3" aria-labelledby="unassigned-heading">
-              <h2 id="unassigned-heading" className="text-lg font-semibold text-amber-800">
-                Without a team role
-              </h2>
-              <p className="text-xs text-slate-500">
-                These users are not admins and have no company role assigned. Assign a role via Edit.
-              </p>
-              <div className="bg-amber-50/50 rounded-xl border border-amber-200/80 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-left">
-                    <thead className="bg-amber-100/60 text-amber-900">
-                      <tr>
-                        <th className="px-4 py-3 font-medium">Name</th>
-                        <th className="px-4 py-3 font-medium">Email</th>
-                        <th className="px-4 py-3 font-medium">System</th>
-                        <th className="px-4 py-3 font-medium w-28">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-amber-100 bg-white">
-                      {unassignedMembers.map((m) => (
-                        <tr key={m.id} className="hover:bg-amber-50/40">
-                          <td className="px-4 py-3 font-medium text-slate-900">{m.fullName}</td>
-                          <td className="px-4 py-3 text-slate-600">{m.email}</td>
-                          <td className="px-4 py-3 capitalize text-slate-600">{m.systemRole}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex gap-1">
-                              <button
-                                type="button"
-                                onClick={() => openEditMember(m)}
-                                className="p-1.5 text-slate-500 hover:text-primary rounded-md hover:bg-slate-100"
-                              >
-                                <Pencil size={16} />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => removeMember(m)}
-                                className="p-1.5 text-slate-500 hover:text-red-600 rounded-md hover:bg-red-50"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </section>
-          )}
-        </>
+          </div>
+        </section>
+      )}
 
       {roleModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40">
-          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">
-              {roleModal === 'create' ? 'Create role' : 'Edit role'}
-            </h3>
-            <form onSubmit={submitRole} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Role name</label>
-                <input
-                  value={roleForm.name}
-                  onChange={(e) => setRoleForm((p) => ({ ...p, name: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
-                <textarea
-                  rows={3}
-                  value={roleForm.description}
-                  onChange={(e) => setRoleForm((p) => ({ ...p, description: e.target.value }))}
-                  placeholder="Optional: what does this employee group handle?"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none resize-y"
-                />
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setRoleModal(null)}
-                  className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary-dark"
-                >
-                  Save
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <ModalShell
+          title={roleModal === 'create' ? 'Create Role' : 'Edit Role'}
+          subtitle="Role definitions help organize team members and permissions."
+          onClose={() => setRoleModal(null)}
+        >
+          <form id="role-form" onSubmit={submitRole} className="space-y-4">
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-slate-700">Role Name</label>
+              <input
+                value={roleForm.name}
+                onChange={(event) => setRoleForm((prev) => ({ ...prev, name: event.target.value }))}
+                className={inputClass}
+                required
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-slate-700">Description</label>
+              <textarea
+                rows={3}
+                value={roleForm.description}
+                onChange={(event) => setRoleForm((prev) => ({ ...prev, description: event.target.value }))}
+                className={`${inputClass} resize-y`}
+                placeholder="Optional: what does this group handle?"
+              />
+            </div>
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+              >
+                Save Role
+              </button>
+            </div>
+          </form>
+        </ModalShell>
       )}
 
       {memberModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-1">Add team member</h3>
-            <form onSubmit={submitMember} className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Full name</label>
-                <input
-                  value={memberForm.fullName}
-                  onChange={(e) => setMemberForm((p) => ({ ...p, fullName: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Email (login)</label>
-                <input
-                  type="email"
-                  value={memberForm.email}
-                  onChange={(e) => setMemberForm((p) => ({ ...p, email: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Passcode (login)
-                </label>
-                <input
-                  type="password"
-                  autoComplete="new-password"
-                  value={memberForm.passcode}
-                  onChange={(e) => setMemberForm((p) => ({ ...p, passcode: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                  required
-                  minLength={6}
-                  placeholder="Used with email on the login page"
-                />
-                <p className="text-xs text-slate-500 mt-1">
-                  Same credential they enter as password on sign-in—minimum 6 characters.
-                </p>
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setMemberModal(false)}
-                  className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-dark"
-                >
-                  Add member
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <ModalShell
+          title="Add Team Member"
+          subtitle="New members sign in using email and passcode."
+          onClose={() => setMemberModal(false)}
+        >
+          <form id="member-form" onSubmit={submitMember} className="space-y-4">
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-slate-700">Full Name</label>
+              <input
+                value={memberForm.fullName}
+                onChange={(event) => setMemberForm((prev) => ({ ...prev, fullName: event.target.value }))}
+                className={inputClass}
+                required
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-slate-700">Email (Login)</label>
+              <input
+                type="email"
+                value={memberForm.email}
+                onChange={(event) => setMemberForm((prev) => ({ ...prev, email: event.target.value }))}
+                className={inputClass}
+                required
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-slate-700">Passcode (Login)</label>
+              <input
+                type="password"
+                autoComplete="new-password"
+                value={memberForm.passcode}
+                onChange={(event) => setMemberForm((prev) => ({ ...prev, passcode: event.target.value }))}
+                className={inputClass}
+                required
+                minLength={6}
+                placeholder="Minimum 6 characters"
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                This is the password they will use on the sign-in page.
+              </p>
+            </div>
+            <div className="hidden">
+              <label className="mb-1 block text-sm font-semibold text-slate-700">Role</label>
+              <select
+                value={memberForm.companyRoleId}
+                onChange={(event) => setMemberForm((prev) => ({ ...prev, companyRoleId: event.target.value }))}
+                className={inputClass}
+                required
+              >
+                {rolesOrdered.map((role) => (
+                  <option key={role.id} value={role.id}>
+                    {role.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+              >
+                Add Member
+              </button>
+            </div>
+          </form>
+        </ModalShell>
       )}
 
       {editMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-1">Edit member</h3>
-            <p className="text-sm text-slate-500 mb-4">{editMember.fullName}</p>
-            <form onSubmit={submitEditMember} className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Team role</label>
-                <select
-                  value={editForm.companyRoleId}
-                  onChange={(e) => setEditForm((p) => ({ ...p, companyRoleId: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                  required
-                >
-                  {roles.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setEditMember(null)}
-                  className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-dark"
-                >
-                  Save
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <ModalShell
+          title="Edit Member"
+          subtitle={editMember.fullName}
+          onClose={() => setEditMember(null)}
+        >
+          <form id="edit-member-form" onSubmit={submitEditMember} className="space-y-4">
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-slate-700">Team Role</label>
+              <select
+                value={editForm.companyRoleId}
+                onChange={(event) => setEditForm((prev) => ({ ...prev, companyRoleId: event.target.value }))}
+                className={inputClass}
+                required
+              >
+                {rolesOrdered.map((role) => (
+                  <option key={role.id} value={role.id}>
+                    {role.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+              >
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </ModalShell>
       )}
     </div>
   );

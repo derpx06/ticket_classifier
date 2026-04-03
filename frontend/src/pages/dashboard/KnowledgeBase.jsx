@@ -30,6 +30,21 @@ const SectionToggle = ({ open, onToggle, label, icon }) => (
     </button>
 );
 
+const panelClass =
+    'rounded-3xl border border-slate-200/80 bg-white/95 shadow-[0_24px_48px_-36px_rgba(15,23,42,0.65)] ring-1 ring-white/70 overflow-hidden';
+
+const panelHeadClass =
+    'flex items-center gap-3 border-b border-slate-100 bg-[linear-gradient(180deg,_rgba(248,250,252,0.95),_rgba(255,255,255,0.95))] px-6 py-4';
+
+const fieldClass =
+    'w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition-all focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10';
+
+const primaryBtnClass =
+    'inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 px-6 py-3 text-sm font-bold text-white transition-all hover:from-indigo-700 hover:to-blue-700 disabled:opacity-50';
+
+const subtleBtnClass =
+    'rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50';
+
 /* ─── main component ─── */
 const KnowledgeBase = () => {
     /* crawl state */
@@ -321,44 +336,65 @@ createChatbotWidget({
     };
 
     return (
-        <div className="p-8 max-w-6xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div>
-                    <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-                        <BrainCircuit className="text-indigo-600" size={36} /> Support Chatbot
-                    </h1>
-                    <p className="text-slate-500 mt-2 text-lg">Teach and deploy your AI assistant anywhere.</p>
-                </div>
+        <div className="relative mx-auto max-w-6xl space-y-8 px-4 pb-8 pt-6 sm:px-6 lg:px-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div aria-hidden className="pointer-events-none absolute -top-16 left-0 h-48 w-48 rounded-full bg-blue-200/40 blur-3xl" />
+            <div aria-hidden className="pointer-events-none absolute right-10 top-24 h-56 w-56 rounded-full bg-indigo-200/35 blur-3xl" />
 
-                <div className="flex p-1 bg-slate-100 rounded-2xl">
-                    <button
-                        onClick={() => setActiveTab('crawl')}
-                        className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 ${activeTab === 'crawl' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-                    >
-                        <Globe size={16} /> Knowledge
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('developer')}
-                        className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 ${activeTab === 'developer' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-                    >
-                        <Code size={16} /> Deployment
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('demo')}
-                        className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 ${activeTab === 'demo' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-                    >
-                        <MessageSquare size={16} /> Demo
-                    </button>
+            {/* Header */}
+            <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-[linear-gradient(130deg,_rgba(15,23,42,1)_0%,_rgba(30,64,175,1)_52%,_rgba(56,189,248,0.95)_100%)] px-6 py-7 text-white shadow-[0_26px_45px_-34px_rgba(15,23,42,0.95)]">
+                <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+                    <div>
+                        <h1 className="flex items-center gap-3 text-3xl font-black tracking-tight md:text-4xl">
+                            <BrainCircuit className="text-cyan-200" size={36} /> Support Chatbot
+                        </h1>
+                        <p className="mt-2 text-base text-blue-100 md:text-lg">
+                            Teach, test, and deploy your AI assistant from one workspace.
+                        </p>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-xs font-semibold text-blue-100">
+                        <div className="rounded-xl border border-white/25 bg-white/10 px-3 py-2">
+                            <p>Pages</p>
+                            <p className="mt-0.5 text-base text-white">{knowledgeData?.totalPages ?? 0}</p>
+                        </div>
+                        <div className="rounded-xl border border-white/25 bg-white/10 px-3 py-2">
+                            <p>Chunks</p>
+                            <p className="mt-0.5 text-base text-white">{knowledgeData?.vectorCount ?? 0}</p>
+                        </div>
+                        <div className="rounded-xl border border-white/25 bg-white/10 px-3 py-2">
+                            <p>Keys</p>
+                            <p className="mt-0.5 text-base text-white">{apiKeys.length}</p>
+                        </div>
+                    </div>
                 </div>
+            </div>
+
+            <div className="inline-flex flex-wrap gap-1.5 rounded-2xl border border-slate-200 bg-white/90 p-1.5 shadow-sm backdrop-blur">
+                <button
+                    onClick={() => setActiveTab('crawl')}
+                    className={`rounded-xl px-5 py-2.5 text-sm font-bold transition-all duration-200 inline-flex items-center gap-2 ${activeTab === 'crawl' ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}
+                >
+                    <Globe size={16} /> Knowledge
+                </button>
+                <button
+                    onClick={() => setActiveTab('developer')}
+                    className={`rounded-xl px-5 py-2.5 text-sm font-bold transition-all duration-200 inline-flex items-center gap-2 ${activeTab === 'developer' ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}
+                >
+                    <Code size={16} /> Deployment
+                </button>
+                <button
+                    onClick={() => setActiveTab('demo')}
+                    className={`rounded-xl px-5 py-2.5 text-sm font-bold transition-all duration-200 inline-flex items-center gap-2 ${activeTab === 'demo' ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}
+                >
+                    <MessageSquare size={16} /> Demo
+                </button>
             </div>
 
             {activeTab === 'crawl' ? (
                 /* --- KNOWLEDGE TAB --- */
-                <div className="grid grid-cols-1 gap-10">
+                <div className="grid grid-cols-1 gap-6">
                     {/* Crawler Card */}
-                    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-                        <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-6 py-4">
+                    <div className={panelClass}>
+                        <div className={panelHeadClass}>
                             <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white"><Globe size={18} /></span>
                             <div>
                                 <p className="font-semibold text-slate-900">Website Crawler</p>
@@ -371,7 +407,7 @@ createChatbotWidget({
                                     <div className="flex-1 relative">
                                         <input
                                             type="url"
-                                            className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
+                                            className={`${fieldClass} pl-10`}
                                             placeholder="https://example.com"
                                             value={crawlUrl}
                                             onChange={(e) => setCrawlUrl(e.target.value)}
@@ -382,7 +418,7 @@ createChatbotWidget({
                                     <button
                                         type="submit"
                                         disabled={crawlStatus === 'loading'}
-                                        className="bg-indigo-600 text-white rounded-xl px-8 py-3 text-sm font-bold hover:bg-indigo-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                                        className={primaryBtnClass}
                                     >
                                         {crawlStatus === 'loading' ? <><Loader2 size={16} className="animate-spin" /> Crawling...</> : <><Zap size={16} /> Start Crawl</>}
                                     </button>
@@ -404,7 +440,7 @@ createChatbotWidget({
                                             min={1}
                                             value={maxPages}
                                             onChange={(e) => setMaxPages(parseInt(e.target.value, 10) || 1)}
-                                            className="w-20 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs outline-none focus:border-indigo-500"
+                                            className="w-20 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs outline-none transition focus:border-indigo-500"
                                         />
                                     </div>
                                     <div className="flex items-center gap-2">
@@ -415,22 +451,22 @@ createChatbotWidget({
                                             max={10}
                                             value={depthLimit}
                                             onChange={(e) => setDepthLimit(parseInt(e.target.value, 10) || 0)}
-                                            className="w-16 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs outline-none focus:border-indigo-500"
+                                            className="w-16 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs outline-none transition focus:border-indigo-500"
                                         />
                                     </div>
                                     <SectionToggle open={showAdvOpts} onToggle={() => setShowAdvOpts(!showAdvOpts)} label="Advanced & Privacy" icon={<Settings2 size={13} />} />
                                 </div>
 
                                 {showAdvOpts && (
-                                    <div className="mt-4 p-5 bg-slate-50 rounded-xl border border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in zoom-in-95 duration-200">
+                                    <div className="mt-4 grid grid-cols-1 gap-6 rounded-xl border border-slate-100 bg-[linear-gradient(180deg,_rgba(248,250,252,0.95),_rgba(255,255,255,0.95))] p-5 animate-in fade-in zoom-in-95 duration-200">
                                         <div>
                                             <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Exclusions (Skip patterns)</label>
-                                            <input type="text" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs" value={excludePatterns} onChange={(e) => setExcludePatterns(e.target.value)} />
+                                            <input type="text" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs outline-none transition focus:border-indigo-500" value={excludePatterns} onChange={(e) => setExcludePatterns(e.target.value)} />
                                             <p className="mt-1 text-[10px] text-slate-400">Comma-separated keywords (e.g. login, logout)</p>
                                         </div>
                                         <div>
                                             <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Privacy Patterns (AI Glimpse only)</label>
-                                            <input type="text" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs" value={privacyPatterns} onChange={(e) => setPrivacyPatterns(e.target.value)} />
+                                            <input type="text" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs outline-none transition focus:border-indigo-500" value={privacyPatterns} onChange={(e) => setPrivacyPatterns(e.target.value)} />
                                             <p className="mt-1 text-[10px] text-slate-400">Sensitive routes to be summarized instead of indexed</p>
                                         </div>
                                     </div>
@@ -451,8 +487,8 @@ createChatbotWidget({
                     </div>
 
                     {/* Document Upload */}
-                    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-                        <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-6 py-4">
+                    <div className={panelClass}>
+                        <div className={panelHeadClass}>
                             <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-purple-600 text-white"><Upload size={18} /></span>
                             <div>
                                 <p className="font-semibold text-slate-900">Document Upload</p>
@@ -461,8 +497,8 @@ createChatbotWidget({
                         </div>
                         <div className="p-6">
                             <form onSubmit={handleUpload} className="flex flex-col md:flex-row gap-4">
-                                <input type="file" onChange={(e) => setUploadFile(e.target.files[0])} className="flex-1 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-2.5 text-sm file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-600 hover:bg-slate-100 transition-colors" />
-                                <button type="submit" disabled={uploadStatus === 'loading' || !uploadFile} className="bg-slate-900 text-white rounded-xl px-8 py-3 text-sm font-bold hover:bg-slate-800 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
+                                <input type="file" onChange={(e) => setUploadFile(e.target.files[0])} className="flex-1 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-2.5 text-sm transition-colors file:mr-4 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-1 file:text-xs file:font-bold file:text-indigo-600 hover:bg-slate-100" />
+                                <button type="submit" disabled={uploadStatus === 'loading' || !uploadFile} className={primaryBtnClass}>
                                     {uploadStatus === 'loading' ? <><Loader2 size={16} className="animate-spin" /> Uploading...</> : <><FileText size={16} /> Upload Doc</>}
                                 </button>
                             </form>
@@ -477,8 +513,8 @@ createChatbotWidget({
                     </div>
 
                     {/* Knowledge Base (Dynamic) */}
-                    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-                        <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/60 px-6 py-4">
+                    <div className={panelClass}>
+                        <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-[linear-gradient(180deg,_rgba(248,250,252,0.95),_rgba(255,255,255,0.95))] px-6 py-4">
                             <div className="flex items-center gap-3">
                                 <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white"><BrainCircuit size={18} /></span>
                                 <div>
@@ -489,7 +525,7 @@ createChatbotWidget({
                             <button
                                 type="button"
                                 onClick={fetchKnowledgeBase}
-                                className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                                className={subtleBtnClass}
                             >
                                 Refresh
                             </button>
@@ -538,7 +574,7 @@ createChatbotWidget({
                     </div>
 
                     {/* Danger Zone */}
-                    <div className="rounded-2xl border border-red-200 bg-white shadow-sm overflow-hidden">
+                    <div className="rounded-3xl border border-red-200 bg-white shadow-[0_24px_48px_-36px_rgba(15,23,42,0.65)] ring-1 ring-white/70 overflow-hidden">
                         <div className="flex items-center gap-3 border-b border-red-100 bg-red-50/50 px-6 py-4">
                             <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-red-600 text-white"><AlertCircle size={18} /></span>
                             <div>
@@ -559,10 +595,10 @@ createChatbotWidget({
                 </div>
             ) : activeTab === 'developer' ? (
                 /* --- DEVELOPER TOOLS TAB --- */
-                <div className="grid grid-cols-1 gap-10">
+                <div className="grid grid-cols-1 gap-6">
                     {/* API Keys */}
-                    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-                        <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-6 py-4">
+                    <div className={panelClass}>
+                        <div className={panelHeadClass}>
                             <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white"><KeyRound size={18} /></span>
                             <div>
                                 <p className="font-semibold text-slate-900">API Access Keys</p>
@@ -571,8 +607,8 @@ createChatbotWidget({
                         </div>
                         <div className="p-6">
                             <form onSubmit={handleCreateKey} className="flex gap-3 mb-8">
-                                <input type="text" placeholder="Key Label (e.g. My Portfolio Site)" value={newKeyLabel} onChange={(e) => setNewKeyLabel(e.target.value)} className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-indigo-500" />
-                                <button type="submit" disabled={isCreatingKey} className="bg-indigo-600 text-white rounded-xl px-6 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-indigo-700">
+                                <input type="text" placeholder="Key Label (e.g. My Portfolio Site)" value={newKeyLabel} onChange={(e) => setNewKeyLabel(e.target.value)} className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
+                                <button type="submit" disabled={isCreatingKey} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 px-6 py-2.5 text-sm font-bold text-white transition hover:from-indigo-700 hover:to-blue-700 disabled:opacity-50">
                                     <Plus size={16} /> Create Key
                                 </button>
                             </form>
@@ -600,8 +636,8 @@ createChatbotWidget({
                     </div>
 
                     {/* Embedding Snippet */}
-                    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-                        <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-6 py-4">
+                    <div className={panelClass}>
+                        <div className={panelHeadClass}>
                             <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-white"><Code size={18} /></span>
                             <div>
                                 <p className="font-semibold text-slate-900">Embeddable Widget</p>
@@ -632,9 +668,9 @@ createChatbotWidget({
                 </div>
             ) : (
                 /* --- DEMO CHAT TAB --- */
-                <div className="grid grid-cols-1 gap-10">
-                    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-                        <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/60 px-6 py-4">
+                <div className="grid grid-cols-1 gap-6">
+                    <div className={panelClass}>
+                        <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-[linear-gradient(180deg,_rgba(248,250,252,0.95),_rgba(255,255,255,0.95))] px-6 py-4">
                             <div className="flex items-center gap-3">
                                 <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-fuchsia-600 text-white"><MessageSquare size={18} /></span>
                                 <div>
@@ -644,7 +680,7 @@ createChatbotWidget({
                             </div>
                             <button
                                 onClick={handleResetChat}
-                                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
                             >
                                 <RotateCcw size={14} /> New Session
                             </button>
@@ -738,12 +774,12 @@ createChatbotWidget({
                                     value={chatInput}
                                     onChange={(e) => setChatInput(e.target.value)}
                                     placeholder="Ask: Where is billing? How can I update profile? What is pricing?"
-                                    className="flex-1 rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+                                    className={fieldClass}
                                 />
                                 <button
                                     type="submit"
                                     disabled={chatLoading || !chatInput.trim()}
-                                    className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-50"
+                                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 px-5 py-3 text-sm font-bold text-white transition hover:from-indigo-700 hover:to-blue-700 disabled:opacity-50"
                                 >
                                     {chatLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                                     Send
