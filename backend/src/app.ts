@@ -3,6 +3,7 @@ import cors from "cors";
 import healthRoutes from "./routes/healthRoutes";
 import authRoutes from "./routes/authRoutes";
 import teamRoutes from "./routes/teamRoutes";
+import ragRoutes from "./routes/ragRoutes";
 
 export function createApp(): express.Application {
   const app = express();
@@ -13,6 +14,8 @@ export function createApp(): express.Application {
   app.use("/api", healthRoutes);
   app.use("/api/auth", authRoutes);
   app.use("/api/teams", teamRoutes);
+  app.use("/api/rag", ragRoutes);
+
 
   return app;
 }
