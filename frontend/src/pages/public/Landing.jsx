@@ -19,47 +19,47 @@ import { useAuth } from '../../hooks/useAuth';
 
 const featureCards = [
   {
-    title: 'Smart Intake Forms',
-    body: 'Agents capture customer issues quickly with guided forms, validation, and required fields.',
+    title: 'NLP Ticket Understanding',
+    body: 'Analyze ticket text to detect intent, category, and urgency without relying on rigid keyword rules.',
     icon: ReceiptText,
   },
   {
-    title: 'Escalation Rules',
-    body: 'Define multi-step escalations by priority and role so every ticket follows support policy.',
+    title: 'AI Priority Prediction',
+    body: 'Automatically score tickets as Low, Medium, High, or Critical based on business impact and language signals.',
     icon: ShieldCheck,
   },
   {
-    title: 'Live Operations View',
-    body: 'Track open, escalated, and resolved tickets in one dashboard with clear audit context.',
+    title: 'Smart Team Routing',
+    body: 'Route each ticket to the right support queue using issue type, urgency, and team expertise.',
     icon: ChartColumnBig,
   },
   {
-    title: 'Role-Aware Access',
-    body: 'Admin and agent experiences stay focused with role-aware access controls.',
+    title: 'SLA Risk Visibility',
+    body: 'Spot delay risks early and keep critical tickets moving before service targets are breached.',
     icon: UsersRound,
   },
 ];
 
 const quickStats = [
-  { label: 'Avg Resolution Time', value: '2.4 days' },
-  { label: 'Policy Compliance', value: '98.7%' },
-  { label: 'Processed Requests', value: '10k+' },
+  { label: 'Classification Accuracy', value: '94.8%' },
+  { label: 'Critical First Response', value: '< 12 min' },
+  { label: 'Automated Triage Coverage', value: '82%' },
 ];
 
 const workflow = [
   {
-    title: 'Submit',
-    detail: 'Agent creates a support ticket with customer context and required metadata.',
+    title: 'Classify',
+    detail: 'Incoming ticket text is interpreted by NLP to identify issue type and domain context.',
     icon: ReceiptText,
   },
   {
-    title: 'Review',
-    detail: 'Admins and leads review queue health, apply escalations, and unblock teams.',
+    title: 'Prioritize',
+    detail: 'AI assigns urgency so critical incidents are surfaced first and routine requests are queued efficiently.',
     icon: Clock3,
   },
   {
-    title: 'Resolve',
-    detail: 'Teams close the ticket and status updates are recorded instantly for everyone.',
+    title: 'Route',
+    detail: 'Tickets are distributed to the most relevant team to reduce handoffs and speed up resolution.',
     icon: CheckCircle2,
   },
 ];
@@ -67,15 +67,15 @@ const workflow = [
 const footerGroups = [
   {
     title: 'Platform',
-    items: ['Dashboard', 'Teams', 'Logs', 'Audit Trail'],
+    items: ['AI Triage', 'Priority Queue', 'Routing Rules', 'Audit Trail'],
   },
   {
     title: 'Company',
-    items: ['About', 'Security', 'Support', 'Docs'],
+    items: ['About', 'Use Cases', 'Support', 'Documentation'],
   },
   {
     title: 'Contact',
-    items: ['help@odoosupport.io', '+1 (415) 555-0189', 'San Francisco, CA'],
+    items: ['support@pvgsupporthub.com', '+1 (800) 555-0174', 'Pune, India'],
   },
 ];
 
@@ -95,8 +95,8 @@ const Landing = () => {
 
       <header className="relative mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6 md:px-10">
         <Link to="/" className="flex items-center gap-2 text-lg font-bold tracking-tight text-slate-900">
-          <span className="landing-soft-glow inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white">O</span>
-          Odoo Support Hub
+          <span className="landing-soft-glow inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white">P</span>
+          PVG Support Hub
         </Link>
 
         <nav className="hidden items-center gap-6 text-sm font-semibold text-slate-600 md:flex">
@@ -126,15 +126,15 @@ const Landing = () => {
           <div className="landing-fade-up space-y-8">
             <div className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-white/90 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700">
               <Sparkles size={14} />
-              Customer Support Command Center
+              AI Ticket Triage System
             </div>
 
             <div className="space-y-4">
               <h1 className="max-w-2xl text-4xl font-bold leading-tight text-slate-900 md:text-6xl">
-                Make customer support operations feel effortless.
+                Classify, prioritize, and route support tickets with AI.
               </h1>
               <p className="landing-copy max-w-xl text-lg text-slate-600 md:text-xl">
-                Give agents a simple ticket workflow, empower leads with clear queues, and keep operations in control from intake to resolution.
+                PVG Support Hub helps teams reduce manual triaging, respond faster to critical issues, and distribute workload intelligently across support teams.
               </p>
             </div>
 
@@ -143,14 +143,14 @@ const Landing = () => {
                 to="/auth/signup"
                 className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5 hover:bg-primary-dark"
               >
-                Launch Workspace
+                Start Triage Automation
                 <ArrowRight size={16} />
               </Link>
               <Link
                 to="/auth/login"
                 className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
               >
-                Open Portal
+                Open Dashboard
               </Link>
             </div>
 
@@ -165,32 +165,32 @@ const Landing = () => {
           </div>
 
           <aside className="landing-fade-up-delayed landing-glass rounded-3xl border border-cyan-100 bg-white/90 p-6 shadow-xl shadow-cyan-100/50 backdrop-blur md:p-7">
-            <h2 className="text-xl font-bold text-slate-800">Live Queue Snapshot</h2>
+            <h2 className="text-xl font-bold text-slate-800">AI Queue Snapshot</h2>
             <p className="landing-copy mt-2 text-sm text-slate-600">
-              Every ticket stays visible from creation to final resolution with full status history.
+              Tickets are continuously scored for urgency and routed to the right team in real time.
             </p>
 
             <div className="mt-6 space-y-4">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <div className="flex items-center justify-between text-sm">
-                  <p className="font-semibold text-slate-700">Request #OD-2418</p>
-                  <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700">Pending</span>
+                  <p className="font-semibold text-slate-700">Ticket #PVG-2418</p>
+                  <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700">Critical</span>
                 </div>
-                <p className="landing-copy mt-2 text-sm text-slate-500">Priority customer onboarding issue</p>
+                <p className="landing-copy mt-2 text-sm text-slate-500">Payment gateway outage reported by enterprise customer</p>
               </div>
 
               <div className="grid gap-2 text-sm">
                 <div className="flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-emerald-700">
                   <BadgeCheck size={16} />
-                  Submission validated in 18 seconds
+                  Classified as Incident in 1.3 seconds
                 </div>
                 <div className="flex items-center gap-2 rounded-lg bg-sky-50 px-3 py-2 text-sky-700">
                   <UsersRound size={16} />
-                  Waiting in escalation queue
+                  Routed to Payments Response Team
                 </div>
                 <div className="flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2 text-blue-700">
                   <Clock3 size={16} />
-                  Target resolution in 48 hours
+                  SLA risk alert triggered for immediate action
                 </div>
               </div>
             </div>
@@ -199,9 +199,9 @@ const Landing = () => {
 
         <section id="features" className="mt-20">
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-            <h2 className="text-2xl font-bold text-slate-900 md:text-3xl">Built for support precision</h2>
+            <h2 className="text-2xl font-bold text-slate-900 md:text-3xl">Built for intelligent support operations</h2>
             <p className="landing-copy max-w-md text-sm text-slate-600">
-              Reduce manual follow-up work while preserving governance, transparency, and policy confidence.
+              Replace manual ticket triaging with fast, explainable AI decisions your team can trust.
             </p>
           </div>
 
@@ -220,9 +220,9 @@ const Landing = () => {
 
         <section id="workflow" className="mt-20">
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-            <h2 className="text-2xl font-bold text-slate-900 md:text-3xl">Three-step operating rhythm</h2>
+            <h2 className="text-2xl font-bold text-slate-900 md:text-3xl">Three-step AI triage flow</h2>
             <p className="landing-copy max-w-md text-sm text-slate-600">
-              Keep every ticket moving with clean handoffs across agents, leads, and admins.
+              Keep every support request moving with smart prioritization and clean handoffs.
             </p>
           </div>
 
@@ -250,13 +250,13 @@ const Landing = () => {
               <div className="max-w-xl">
                 <p className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-white/90 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-700">
                   <Building2 size={14} />
-                  For Growing Support Teams
+                  For High-Volume Support Teams
                 </p>
                 <h3 className="mt-3 text-2xl font-bold text-slate-900 md:text-3xl">
-                  Ready to modernize your support workflow?
+                  Ready to build faster and smarter ticket resolution?
                 </h3>
                 <p className="landing-copy mt-2 text-sm text-slate-600 md:text-base">
-                  Start with a simple support operating model and scale to complex role setups as your organization grows.
+                  Deploy AI-based classification, prioritization, and routing to protect SLAs and improve customer satisfaction.
                 </p>
               </div>
 
@@ -264,7 +264,7 @@ const Landing = () => {
                 to="/auth/signup"
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-700"
               >
-                Create Account
+                Create Workspace
                 <ArrowRight size={16} />
               </Link>
             </div>
@@ -275,9 +275,9 @@ const Landing = () => {
       <footer id="contact" className="relative mt-16 border-t border-slate-200/70 bg-white/80">
         <div className="mx-auto grid w-full max-w-6xl gap-10 px-6 py-12 md:grid-cols-[1.2fr_0.8fr_0.8fr_1fr] md:px-10">
           <div>
-            <p className="text-xl font-bold tracking-tight text-slate-900">Odoo Support Hub</p>
+            <p className="text-xl font-bold tracking-tight text-slate-900">PVG Support Hub</p>
             <p className="landing-copy mt-3 max-w-sm text-sm text-slate-600">
-              Support operations platform for teams that want speed, control, and reliable visibility.
+              AI-driven support operations platform for classifying, prioritizing, and routing customer tickets at scale.
             </p>
           </div>
 
@@ -294,11 +294,11 @@ const Landing = () => {
         </div>
 
         <div className="mx-auto flex w-full max-w-6xl flex-col items-start justify-between gap-3 border-t border-slate-200/70 px-6 py-4 text-xs text-slate-500 md:flex-row md:items-center md:px-10">
-          <p>Copyright {currentYear} Odoo Support Hub. All rights reserved.</p>
+          <p>Copyright {currentYear} PVG Support Hub. All rights reserved.</p>
           <div className="flex flex-wrap items-center gap-4">
-            <span className="inline-flex items-center gap-1.5"><Mail size={13} />help@odoosupport.io</span>
-            <span className="inline-flex items-center gap-1.5"><PhoneCall size={13} />+1 (415) 555-0189</span>
-            <span className="inline-flex items-center gap-1.5"><MapPin size={13} />San Francisco</span>
+            <span className="inline-flex items-center gap-1.5"><Mail size={13} />support@pvgsupporthub.com</span>
+            <span className="inline-flex items-center gap-1.5"><PhoneCall size={13} />+1 (800) 555-0174</span>
+            <span className="inline-flex items-center gap-1.5"><MapPin size={13} />Pune</span>
           </div>
         </div>
       </footer>

@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import { ZodError } from "zod";
-import { pool } from "../config/db";
+import { getCollections, nextSequence, type CompanyRoleDoc, type UserDoc } from "../config/db";
 import {
   createCompanyRoleSchema,
   createTeamMemberSchema,
@@ -20,33 +20,23 @@ function sendZodError(res: Response, err: ZodError): void {
   });
 }
 
-function mapRoleRow(row: {
-  id: number;
-  name: string;
-  description?: string | null;
-  base_role: string;
-  permissions: unknown;
-  created_at: Date;
-}) {
+function mapRoleRow(row: CompanyRoleDoc) {
   return {
     id: row.id,
     name: row.name,
     description: row.description ?? null,
-    baseRole: row.base_role,
+    baseRole: row.baseRole,
     permissions: row.permissions,
-    createdAt: row.created_at,
+    createdAt: row.createdAt,
   };
 }
 
 export async function listRoles(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.auth!.companyId;
-    const r = await pool.query(
-      `SELECT id, name, description, base_role, permissions, created_at
-       FROM company_roles WHERE company_id = $1 ORDER BY name ASC`,
-      [companyId],
-    );
-    res.json({ roles: r.rows.map(mapRoleRow) });
+    const { companyRoles } = await getCollections();
+    const rows = await companyRoles.find({ companyId }).sort({ name: 1 }).toArray();
+    res.json({ roles: rows.map(mapRoleRow) });
   } catch (e) {
     console.error("listRoles", e);
     res.status(500).json({ message: "Could not load team roles." });
@@ -57,22 +47,26 @@ export async function createRole(req: Request, res: Response): Promise<void> {
   try {
     const body = createCompanyRoleSchema.parse(req.body);
     const companyId = req.auth!.companyId;
-    const perms = defaultEmployeePermissions();
-    const description = body.description ?? null;
-    const r = await pool.query(
-      `INSERT INTO company_roles (company_id, name, base_role, permissions, description)
-       VALUES ($1, $2, $3, $4::jsonb, $5)
-       RETURNING id, name, description, base_role, permissions, created_at`,
-      [companyId, body.name.trim(), "employee", JSON.stringify(perms), description],
-    );
-    res.status(201).json({ role: mapRoleRow(r.rows[0]) });
+    const { companyRoles } = await getCollections();
+    const role: CompanyRoleDoc = {
+      id: await nextSequence("company_roles"),
+      companyId,
+      name: body.name.trim(),
+      baseRole: "employee",
+      permissions: defaultEmployeePermissions(),
+      description: body.description ?? null,
+      createdAt: new Date(),
+    };
+
+    await companyRoles.insertOne(role);
+    res.status(201).json({ role: mapRoleRow(role) });
   } catch (e) {
     if (e instanceof ZodError) {
       sendZodError(res, e);
       return;
     }
-    const err = e as { code?: string };
-    if (err.code === "23505") {
+    const err = e as { code?: number };
+    if (err.code === 11000) {
       res.status(409).json({ message: "A role with this name already exists." });
       return;
     }
@@ -90,31 +84,40 @@ export async function updateRole(req: Request, res: Response): Promise<void> {
     }
     const body = updateCompanyRoleSchema.parse(req.body);
     const companyId = req.auth!.companyId;
-    const nextName = body.name?.trim() ?? null;
-    const nextDescription = body.description ?? null;
+    const { companyRoles } = await getCollections();
 
-    const r = await pool.query(
-      `UPDATE company_roles
-       SET name = COALESCE($1, name),
-           description = COALESCE($2, description)
-       WHERE id = $3 AND company_id = $4
-       RETURNING id, name, description, base_role, permissions, created_at`,
-      [nextName, nextDescription, id, companyId],
+    const set: Partial<CompanyRoleDoc> = {};
+    if (body.name !== undefined) {
+      set.name = body.name.trim();
+    }
+    if (body.description !== undefined) {
+      set.description = body.description;
+    }
+
+    const updated = await companyRoles.findOneAndUpdate(
+      { id, companyId },
+      { $set: set },
+      { returnDocument: "after" },
     );
 
-    if (r.rowCount === 0) {
+    const role =
+      "value" in (updated as Record<string, unknown>)
+        ? (updated as { value?: CompanyRoleDoc | null }).value
+        : (updated as CompanyRoleDoc | null);
+
+    if (!role) {
       res.status(404).json({ message: "Role not found." });
       return;
     }
 
-    res.json({ role: mapRoleRow(r.rows[0]) });
+    res.json({ role: mapRoleRow(role) });
   } catch (e) {
     if (e instanceof ZodError) {
       sendZodError(res, e);
       return;
     }
-    const err = e as { code?: string };
-    if (err.code === "23505") {
+    const err = e as { code?: number };
+    if (err.code === 11000) {
       res.status(409).json({ message: "A role with this name already exists." });
       return;
     }
@@ -130,20 +133,16 @@ export async function deleteRole(req: Request, res: Response): Promise<void> {
     return;
   }
   const companyId = req.auth!.companyId;
+  const { users, companyRoles } = await getCollections();
 
-  const inUse = await pool.query(`SELECT COUNT(*)::int AS n FROM users WHERE company_role_id = $1`, [
-    id,
-  ]);
-  if (inUse.rows[0].n > 0) {
+  const inUse = await users.countDocuments({ companyId, companyRoleId: id });
+  if (inUse > 0) {
     res.status(400).json({ message: "Cannot delete a role that is assigned to team members." });
     return;
   }
 
-  const del = await pool.query(
-    `DELETE FROM company_roles WHERE id = $1 AND company_id = $2 RETURNING id`,
-    [id, companyId],
-  );
-  if (del.rowCount === 0) {
+  const del = await companyRoles.deleteOne({ id, companyId });
+  if (del.deletedCount === 0) {
     res.status(404).json({ message: "Role not found." });
     return;
   }
@@ -153,29 +152,32 @@ export async function deleteRole(req: Request, res: Response): Promise<void> {
 export async function listMembers(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.auth!.companyId;
-    const r = await pool.query(
-      `SELECT u.id, u.full_name, u.email, u.role, u.company_role_id,
-              cr.name AS team_role_name, cr.base_role AS team_role_base
-       FROM users u
-       LEFT JOIN company_roles cr ON cr.id = u.company_role_id
-       WHERE u.company_id = $1
-       ORDER BY u.full_name ASC`,
-      [companyId],
-    );
+    const { users, companyRoles } = await getCollections();
+    const [members, roles] = await Promise.all([
+      users.find({ companyId }).sort({ fullName: 1 }).toArray(),
+      companyRoles
+        .find({ companyId }, { projection: { _id: 0, id: 1, name: 1, baseRole: 1 } })
+        .toArray(),
+    ]);
+
+    const roleById = new Map(roles.map((r) => [r.id, r]));
     res.json({
-      members: r.rows.map((row) => ({
-        id: row.id,
-        fullName: row.full_name,
-        email: row.email,
-        systemRole: row.role,
-        companyRole: row.company_role_id
-          ? {
-              id: row.company_role_id,
-              name: row.team_role_name,
-              baseRole: row.team_role_base,
-            }
-          : null,
-      })),
+      members: members.map((row) => {
+        const companyRole = row.companyRoleId != null ? roleById.get(row.companyRoleId) : null;
+        return {
+          id: row.id,
+          fullName: row.fullName,
+          email: row.email,
+          systemRole: row.role,
+          companyRole: companyRole
+            ? {
+                id: companyRole.id,
+                name: companyRole.name,
+                baseRole: companyRole.baseRole,
+              }
+            : null,
+        };
+      }),
     });
   } catch (e) {
     console.error("listMembers", e);
@@ -188,41 +190,35 @@ export async function createMember(req: Request, res: Response): Promise<void> {
     const body = createTeamMemberSchema.parse(req.body);
     const companyId = req.auth!.companyId;
     const emailNorm = body.email.trim().toLowerCase();
+    const { users, companyRoles } = await getCollections();
 
-    const roleRes = await pool.query(
-      `SELECT id FROM company_roles WHERE id = $1 AND company_id = $2`,
-      [body.companyRoleId, companyId],
-    );
-    if (roleRes.rows.length === 0) {
+    const role = await companyRoles.findOne({ id: body.companyRoleId, companyId }, { projection: { _id: 1 } });
+    if (!role) {
       res.status(400).json({ message: "Invalid team role for this company." });
       return;
     }
 
     const passwordHash = await bcrypt.hash(body.password, BCRYPT_ROUNDS);
+    const user: UserDoc = {
+      id: await nextSequence("users"),
+      companyId,
+      email: emailNorm,
+      passwordHash,
+      fullName: body.fullName.trim(),
+      role: "employee",
+      managerId: null,
+      companyRoleId: body.companyRoleId,
+      createdAt: new Date(),
+    };
 
-    const ins = await pool.query(
-      `INSERT INTO users (company_id, email, password_hash, full_name, role, manager_id, company_role_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING id, full_name, email, role, manager_id, company_role_id`,
-      [
-        companyId,
-        emailNorm,
-        passwordHash,
-        body.fullName.trim(),
-        "employee",
-        null,
-        body.companyRoleId,
-      ],
-    );
-
-    const row = ins.rows[0];
+    await users.insertOne(user);
     res.status(201).json({
       member: {
-        id: row.id,
-        fullName: row.full_name,
-        email: row.email,
-        systemRole: row.role,
-        companyRoleId: row.company_role_id,
+        id: user.id,
+        fullName: user.fullName,
+        email: user.email,
+        systemRole: user.role,
+        companyRoleId: user.companyRoleId,
       },
     });
   } catch (e) {
@@ -230,8 +226,8 @@ export async function createMember(req: Request, res: Response): Promise<void> {
       sendZodError(res, e);
       return;
     }
-    const err = e as { code?: string };
-    if (err.code === "23505") {
+    const err = e as { code?: number };
+    if (err.code === 11000) {
       res.status(409).json({ message: "A user with this email already exists." });
       return;
     }
@@ -249,42 +245,43 @@ export async function updateMember(req: Request, res: Response): Promise<void> {
     }
     const body = updateTeamMemberSchema.parse(req.body);
     const companyId = req.auth!.companyId;
+    const { users, companyRoles } = await getCollections();
 
-    const cur = await pool.query<{
-      role: string;
-      company_role_id: number | null;
-    }>(`SELECT role, company_role_id FROM users WHERE id = $1 AND company_id = $2`, [
-      memberId,
-      companyId,
-    ]);
-    if (cur.rows.length === 0) {
+    const current = await users.findOne(
+      { id: memberId, companyId },
+      { projection: { _id: 0, role: 1, companyRoleId: 1 } },
+    );
+    if (!current) {
       res.status(404).json({ message: "Member not found." });
       return;
     }
 
-    if (cur.rows[0].role === "admin") {
+    if (current.role === "admin") {
       res.status(400).json({ message: "Organization admins cannot be edited from Teams." });
       return;
     }
 
-    const u = cur.rows[0];
-    const finalCompanyRoleId = body.companyRoleId ?? u.company_role_id;
-
+    const finalCompanyRoleId = body.companyRoleId ?? current.companyRoleId;
     if (body.companyRoleId !== undefined) {
-      const roleExists = await pool.query(`SELECT id FROM company_roles WHERE id = $1 AND company_id = $2`, [
-        body.companyRoleId,
-        companyId,
-      ]);
-      if (roleExists.rows.length === 0) {
+      const roleExists = await companyRoles.findOne(
+        { id: body.companyRoleId, companyId },
+        { projection: { _id: 1 } },
+      );
+      if (!roleExists) {
         res.status(400).json({ message: "Invalid team role." });
         return;
       }
     }
 
-    await pool.query(
-      `UPDATE users SET role = 'employee', company_role_id = $1, manager_id = NULL
-       WHERE id = $2 AND company_id = $3`,
-      [finalCompanyRoleId, memberId, companyId],
+    await users.updateOne(
+      { id: memberId, companyId },
+      {
+        $set: {
+          role: "employee",
+          companyRoleId: finalCompanyRoleId,
+          managerId: null,
+        },
+      },
     );
     res.json({ success: true });
   } catch (e) {
@@ -305,31 +302,30 @@ export async function deleteMember(req: Request, res: Response): Promise<void> {
   }
   const companyId = req.auth!.companyId;
   const adminId = req.auth!.userId;
+  const { users } = await getCollections();
 
   if (memberId === adminId) {
     res.status(400).json({ message: "You cannot remove your own account." });
     return;
   }
 
-  const target = await pool.query<{ role: string }>(
-    `SELECT role FROM users WHERE id = $1 AND company_id = $2`,
-    [memberId, companyId],
+  const target = await users.findOne(
+    { id: memberId, companyId },
+    { projection: { _id: 0, role: 1 } },
   );
-  if (target.rows.length === 0) {
+  if (!target) {
     res.status(404).json({ message: "Member not found." });
     return;
   }
 
-  if (target.rows[0].role === "admin") {
-    const admins = await pool.query(`SELECT COUNT(*)::int AS n FROM users WHERE company_id = $1 AND role = 'admin'`, [
-      companyId,
-    ]);
-    if (admins.rows[0].n <= 1) {
+  if (target.role === "admin") {
+    const admins = await users.countDocuments({ companyId, role: "admin" });
+    if (admins <= 1) {
       res.status(400).json({ message: "Cannot remove the only company administrator." });
       return;
     }
   }
 
-  await pool.query(`DELETE FROM users WHERE id = $1 AND company_id = $2`, [memberId, companyId]);
+  await users.deleteOne({ id: memberId, companyId });
   res.status(204).send();
 }

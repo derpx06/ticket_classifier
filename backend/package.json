@@ -12,9 +12,7 @@
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "db:test": "ts-node src/utils/testDbConnection.ts",
-    "db:init": "ts-node src/utils/runSqlFile.ts db/init.sql",
-    "db:migrate:002": "ts-node src/utils/runSqlFile.ts db/migrate_002_company_profile_and_teams.sql",
-    "db:migrate:004": "ts-node src/utils/runSqlFile.ts db/migrate_004_role_hierarchy.sql"
+    "db:setup": "ts-node src/utils/setupMongo.ts"
   },
   "keywords": [],
   "author": "",
@@ -43,16 +41,15 @@
     "langchain": "^1.2.39",
     "mammoth": "^1.12.0",
     "multer": "^2.1.1",
+    "mongodb": "^6.21.0",
     "nodemon": "^3.1.14",
     "pdf-parse": "^2.4.5",
-    "pg": "^8.20.0",
     "playwright": "^1.59.1",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.2",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@types/pg": "^8.20.0",
     "@types/supertest": "^7.2.0",
     "supertest": "^7.2.2",
     "vitest": "^4.1.2"

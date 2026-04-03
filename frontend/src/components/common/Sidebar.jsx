@@ -5,6 +5,8 @@ import {
   Building2,
   ChevronRight,
   LayoutDashboard,
+  MessageCircle,
+  MessagesSquare,
   UsersRound,
   X,
 } from 'lucide-react';
@@ -16,6 +18,8 @@ const Sidebar = ({ isMobileOpen, setMobileOpen }) => {
 
   const primaryNavItems = [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, exact: true },
+    { label: 'Queries', path: '/queries', icon: MessagesSquare, exact: true },
+    { label: 'Chat', path: '/chat', icon: MessageCircle, exact: true },
   ];
 
   const workflowNavItems = [];
