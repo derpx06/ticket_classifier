@@ -1,4 +1,4 @@
-import { testDbConnection, pool } from "../config/db";
+import { closeDbConnection, testDbConnection } from "../config/db";
 
 const run = async (): Promise<void> => {
   try {
@@ -8,7 +8,7 @@ const run = async (): Promise<void> => {
     console.error("Database test query failed:", error);
     process.exitCode = 1;
   } finally {
-    await pool.end();
+    await closeDbConnection();
   }
 };
 

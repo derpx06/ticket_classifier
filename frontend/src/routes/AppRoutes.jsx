@@ -4,6 +4,8 @@ import AuthLayout from '../layouts/AuthLayout';
 import DashboardLayout from '../layouts/DashboardLayout';
 import Login from '../pages/auth/Login';
 import Signup from '../pages/auth/Signup';
+import Chat from '../pages/dashboard/Chat';
+import Queries from '../pages/dashboard/Queries';
 import RoleBasedDashboard from '../pages/dashboard/RoleBasedDashboard';
 import Landing from '../pages/public/Landing';
 import Unauthorized from '../pages/system/Unauthorized';
@@ -30,6 +32,8 @@ const AppRoutes = () => {
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<DashboardLayout />}>
             <Route path="dashboard" element={<RoleBasedDashboard />} />
+            <Route path="queries" element={<Queries />} />
+            <Route path="chat" element={<Chat />} />
 
             <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
               <Route path="teams" element={<Teams />} />

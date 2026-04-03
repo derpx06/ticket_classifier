@@ -1,18 +1,35 @@
-import type { PoolClient } from "pg";
+import { getCollections, nextSequence } from "../config/db";
 import {
   defaultEmployeePermissions,
   mergePermissions,
   type RolePermissions,
 } from "./permissions";
 
-export async function insertDefaultCompanyRoles(client: PoolClient, companyId: number): Promise<void> {
-  const emp = JSON.stringify(defaultEmployeePermissions());
-  await client.query(
-    `INSERT INTO company_roles (company_id, name, base_role, permissions) VALUES
-       ($1, 'Employee', 'employee', $2::jsonb)
-     ON CONFLICT ON CONSTRAINT company_roles_company_name_unique DO NOTHING`,
-    [companyId, emp],
-  );
+export async function insertDefaultCompanyRoles(companyId: number): Promise<void> {
+  const { companyRoles } = await getCollections();
+  const existing = await companyRoles.findOne({ companyId, name: "Employee" });
+  if (existing) {
+    return;
+  }
+
+  const roleId = await nextSequence("company_roles");
+  try {
+    await companyRoles.insertOne({
+      id: roleId,
+      companyId,
+      name: "Employee",
+      baseRole: "employee",
+      description: null,
+      permissions: defaultEmployeePermissions(),
+      createdAt: new Date(),
+    });
+  } catch (error) {
+    const err = error as { code?: number };
+    if (err.code === 11000) {
+      return;
+    }
+    throw error;
+  }
 }
 
 export function permissionsFromInput(
