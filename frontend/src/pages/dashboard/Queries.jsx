@@ -47,10 +47,19 @@ const Queries = () => {
   const [pendingAcceptId, setPendingAcceptId] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [newTicketForm, setNewTicketForm] = useState({
+    apiKey: '',
     message: '',
     category: 'billing',
     priority: 'medium',
   });
+
+  useEffect(() => {
+    if (companyUuid) {
+      setNewTicketForm((previous) =>
+        previous.apiKey === '' ? { ...previous, apiKey: companyUuid } : previous
+      );
+    }
+  }, [companyUuid]);
 
   useEffect(() => {
     const loadTickets = async () => {
@@ -137,25 +146,49 @@ const Queries = () => {
       toast.error('Enter a message to raise a test ticket.');
       return;
     }
-    if (!companyUuid) {
-      toast.error('Company UUID not available in your session.');
+    const apiKey = newTicketForm.apiKey.trim();
+    if (!apiKey) {
+      toast.error('Enter a company API key (UUID).');
       return;
     }
     try {
       setIsCreating(true);
       const created = await createTicket({
-        apiKey: companyUuid,
+        apiKey,
         message,
         category: newTicketForm.category,
         priority: newTicketForm.priority,
         customerName: 'Test Customer',
       });
-      if (created) {
-        setTickets((previous) => [created, ...previous]);
-        setSelectedId(created._id || created.id || '');
-      }
       setNewTicketForm((previous) => ({ ...previous, message: '' }));
-      toast.success('Test ticket raised.');
+
+      const result = await getTickets();
+      const list = Array.isArray(result) ? result : [];
+      setTickets(list);
+
+      const createdId = created?._id ?? created?.id;
+      const idStr = createdId != null ? String(createdId) : '';
+      const inList = idStr && list.some((t) => String(t._id ?? t.id) === idStr);
+      if (inList) {
+        setSelectedId(createdId);
+      } else if (list.length > 0) {
+        setSelectedId(list[0]._id || list[0].id || '');
+      } else {
+        setSelectedId('');
+      }
+
+      const myCompanyId = user?.companyId;
+      const raisedForOther =
+        created != null
+        && myCompanyId != null
+        && Number(created.companyId) !== Number(myCompanyId);
+      if (raisedForOther) {
+        toast.success(
+          'Ticket raised for that company. It is not shown here because this list is only for your organization.',
+        );
+      } else {
+        toast.success('Test ticket raised.');
+      }
     } catch (error) {
       toast.error(error?.response?.data?.message || 'Unable to raise test ticket.');
     } finally {
@@ -206,9 +239,12 @@ const Queries = () => {
                   Company API Key (UUID)
                 </span>
                 <input
-                  value={companyUuid}
-                  readOnly
-                  className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-700 outline-none"
+                  value={newTicketForm.apiKey}
+                  onChange={(event) =>
+                    setNewTicketForm((previous) => ({ ...previous, apiKey: event.target.value }))
+                  }
+                  placeholder="Company UUID"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
               </label>
               <label className="md:col-span-2">

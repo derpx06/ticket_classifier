@@ -37,7 +37,6 @@ export async function createTicket(req: Request, res: Response): Promise<void> {
       res.status(401).json({ message: "Authentication required." });
       return;
     }
-    const auth = req.auth;
 
     const parsed = createTicketSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -51,18 +50,17 @@ export async function createTicket(req: Request, res: Response): Promise<void> {
     const { companies, users } = await getCollections();
     const db = users.db;
 
-    const company = await companies.findOne({ id: auth.companyId }, { projection: { _id: 0, id: 1, uuid: 1 } });
+    const uuidNorm = apiKey.trim().toLowerCase();
+    const company = await companies.findOne({ uuid: uuidNorm }, { projection: { _id: 0, id: 1, uuid: 1 } });
     if (!company) {
-      res.status(404).json({ message: "Company not found." });
-      return;
-    }
-    if (company.uuid !== apiKey) {
-      res.status(403).json({ message: "Invalid company API key." });
+      res.status(404).json({ message: "No company found for that API key (UUID)." });
       return;
     }
 
+    const targetCompanyId = company.id;
+
     const ticketDoc = {
-      companyId: auth.companyId,
+      companyId: targetCompanyId,
       message,
       category: category ?? "other",
       priority: priority ?? "medium",
@@ -83,7 +81,7 @@ export async function createTicket(req: Request, res: Response): Promise<void> {
             const createdAt = new Date(now.getTime() + index);
             return {
               ticketId,
-              companyId: auth.companyId,
+              companyId: targetCompanyId,
               sender: entry.role,
               text: entry.text,
               createdAt,
@@ -93,7 +91,7 @@ export async function createTicket(req: Request, res: Response): Promise<void> {
         : [
             {
               ticketId,
-              companyId: auth.companyId,
+              companyId: targetCompanyId,
               sender: "user",
               text: message,
               createdAt: now,
