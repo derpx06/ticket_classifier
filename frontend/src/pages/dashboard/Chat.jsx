@@ -1,117 +1,143 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-
-const initialConversations = [
-  {
-    id: 'TCK-1001',
-    customer: 'Aisha Khan',
-    topic: 'Payment failed',
-    status: 'Pending',
-    messages: [
-      { sender: 'customer', text: 'My payment keeps failing at checkout.' },
-      {
-        sender: 'agent',
-        text: 'I can help with that. Did you try another card or UPI account?',
-      },
-    ],
-  },
-  {
-    id: 'TCK-1002',
-    customer: 'Omar N.',
-    topic: 'App not loading',
-    status: 'Escalated',
-    messages: [
-      { sender: 'customer', text: 'The app is stuck on the loading screen.' },
-      {
-        sender: 'agent',
-        text: 'Please clear cache once. I have also escalated this for tech review.',
-      },
-    ],
-  },
-  {
-    id: 'TCK-1003',
-    customer: 'Sara Lee',
-    topic: 'Unable to login',
-    status: 'Pending',
-    messages: [
-      { sender: 'customer', text: 'I cannot login to my account.' },
-      { sender: 'agent', text: 'I sent a password reset link and validated account status.' },
-    ],
-  },
-];
+import toast from 'react-hot-toast';
+import {
+  getMessagesByTicket,
+  getMyTickets,
+  sendMessage,
+  updateTicket,
+} from '../../services/api';
 
 const statusStyles = {
-  Pending: 'bg-amber-100 text-amber-700',
-  Resolved: 'bg-emerald-100 text-emerald-700',
-  Escalated: 'bg-rose-100 text-rose-700',
+  pending: 'bg-amber-100 text-amber-700',
+  assigned: 'bg-blue-100 text-blue-700',
+  resolved: 'bg-emerald-100 text-emerald-700',
+  escalated: 'bg-rose-100 text-rose-700',
+};
+
+const formatLabel = (value = '') => {
+  if (!value) return 'Unknown';
+  return value.charAt(0).toUpperCase() + value.slice(1);
 };
 
 const Chat = () => {
-  const [conversations, setConversations] = useState(initialConversations);
-  const [activeId, setActiveId] = useState(initialConversations[0].id);
+  const [conversations, setConversations] = useState([]);
+  const [activeId, setActiveId] = useState('');
+  const [messagesByTicket, setMessagesByTicket] = useState({});
   const [draft, setDraft] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [isLoadingConversations, setIsLoadingConversations] = useState(true);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const bottomRef = useRef(null);
 
   const activeConversation = useMemo(
-    () => conversations.find((conversation) => conversation.id === activeId),
+    () => conversations.find((conversation) => (conversation._id || conversation.id) === activeId),
     [activeId, conversations]
   );
+  const activeMessages = messagesByTicket[activeId] || [];
+
+  useEffect(() => {
+    const loadConversations = async () => {
+      try {
+        setIsLoadingConversations(true);
+        const result = await getMyTickets();
+        const list = Array.isArray(result) ? result : [];
+        setConversations(list);
+        if (list.length > 0) {
+          setActiveId(list[0]._id || list[0].id || '');
+        }
+      } catch (error) {
+        toast.error(error?.response?.data?.message || 'Failed to load conversations.');
+      } finally {
+        setIsLoadingConversations(false);
+      }
+    };
+
+    loadConversations();
+  }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [activeConversation?.messages.length]);
+  }, [activeMessages.length]);
 
-  const updateConversation = (ticketId, updater) => {
-    setConversations((previous) =>
-      previous.map((conversation) =>
-        conversation.id === ticketId ? updater(conversation) : conversation
-      )
-    );
-  };
+  useEffect(() => {
+    const loadMessages = async () => {
+      if (!activeId) return;
 
-  const addMessage = (ticketId, message) => {
-    updateConversation(ticketId, (conversation) => ({
-      ...conversation,
-      messages: [...conversation.messages, message],
-    }));
-  };
+      try {
+        setIsLoadingMessages(true);
+        const result = await getMessagesByTicket(activeId);
+        const list = Array.isArray(result) ? result : [];
+        setMessagesByTicket((previous) => ({ ...previous, [activeId]: list }));
+      } catch (error) {
+        toast.error(error?.response?.data?.message || 'Failed to load messages.');
+      } finally {
+        setIsLoadingMessages(false);
+      }
+    };
+
+    loadMessages();
+  }, [activeId]);
 
   const handleSend = async (event) => {
     event.preventDefault();
-    if (!activeConversation || !draft.trim() || isSending) return;
+    if (!activeConversation || !activeId || !draft.trim() || isSending) return;
 
     const text = draft.trim();
-    setDraft('');
     setIsSending(true);
 
-    addMessage(activeConversation.id, { sender: 'agent', text });
-
-    window.setTimeout(() => {
-      addMessage(activeConversation.id, {
-        sender: 'customer',
-        text: 'Thanks. I will check and get back if I still need help.',
+    try {
+      const created = await sendMessage({
+        ticketId: activeId,
+        text,
+        sender: 'agent',
       });
+
+      const fallback = {
+        _id: `${Date.now()}`,
+        ticketId: activeId,
+        text,
+        sender: 'agent',
+        createdAt: new Date().toISOString(),
+      };
+
+      setMessagesByTicket((previous) => ({
+        ...previous,
+        [activeId]: [...(previous[activeId] || []), created || fallback],
+      }));
+      setDraft('');
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Failed to send message.');
+    } finally {
       setIsSending(false);
-    }, 550);
+    }
   };
 
-  const updateStatus = (nextStatus) => {
-    if (!activeConversation) return;
+  const updateStatus = async (nextStatus) => {
+    if (!activeConversation || !activeId) return;
 
-    updateConversation(activeConversation.id, (conversation) => ({
-      ...conversation,
-      status: nextStatus,
-      messages: [
-        ...conversation.messages,
-        {
-          sender: 'system',
-          text:
-            nextStatus === 'Resolved'
-              ? 'Ticket marked as resolved.'
-              : 'Ticket escalated to technical support.',
-        },
-      ],
-    }));
+    try {
+      await updateTicket(activeId, { status: nextStatus });
+      setConversations((previous) =>
+        previous.filter((conversation) => (conversation._id || conversation.id) !== activeId)
+      );
+      setMessagesByTicket((previous) => {
+        const next = { ...previous };
+        delete next[activeId];
+        return next;
+      });
+      setActiveId((previousActiveId) => {
+        if (previousActiveId !== activeId) return previousActiveId;
+        const remaining = conversations.filter(
+          (conversation) => (conversation._id || conversation.id) !== activeId
+        );
+        return remaining[0]?._id || remaining[0]?.id || '';
+      });
+      toast.success(
+        nextStatus === 'resolved' ? 'Ticket marked as resolved.' : 'Ticket escalated.'
+      );
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Failed to update ticket status.');
+    }
   };
 
   return (
@@ -124,36 +150,46 @@ const Chat = () => {
 
         <div className="max-h-[640px] space-y-2 overflow-y-auto p-3">
           {conversations.map((conversation) => {
-            const lastMessage = conversation.messages[conversation.messages.length - 1];
+            const conversationId = conversation._id || conversation.id;
+            const lastMessage = (messagesByTicket[conversationId] || []).at(-1);
             return (
               <button
-                key={conversation.id}
+                key={conversationId}
                 type="button"
-                onClick={() => setActiveId(conversation.id)}
+                onClick={() => setActiveId(conversationId)}
                 className={`w-full rounded-xl border p-3 text-left transition ${
-                  conversation.id === activeId
+                  conversationId === activeId
                     ? 'border-blue-300 bg-blue-50 shadow-sm'
                     : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
                 }`}
               >
                 <div className="mb-1 flex items-center justify-between gap-2">
                   <p className="truncate text-sm font-semibold text-slate-900">
-                    {conversation.topic}
+                    {conversation.message}
                   </p>
                   <span
                     className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                      statusStyles[conversation.status]
+                      statusStyles[conversation.status] || 'bg-slate-100 text-slate-700'
                     }`}
                   >
-                    {conversation.status}
+                    {formatLabel(conversation.status)}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500">{conversation.customer}</p>
-                <p className="mt-2 truncate text-xs text-slate-600">{lastMessage.text}</p>
-                <p className="mt-2 text-[11px] text-slate-400">{conversation.id}</p>
+                <p className="text-xs text-slate-500">{conversation.customerName || '-'}</p>
+                <p className="mt-2 truncate text-xs text-slate-600">
+                  {lastMessage?.text || 'No messages yet'}
+                </p>
+                <p className="mt-2 text-[11px] text-slate-400">
+                  {conversation.ticketCode || conversationId}
+                </p>
               </button>
             );
           })}
+          {!isLoadingConversations && conversations.length === 0 && (
+            <p className="rounded-xl border border-dashed border-slate-300 p-3 text-xs text-slate-500">
+              No assigned conversations.
+            </p>
+          )}
         </div>
       </aside>
 
@@ -162,22 +198,22 @@ const Chat = () => {
           <>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
               <div>
-                <h2 className="text-lg font-semibold text-slate-900">{activeConversation.topic}</h2>
-                <p className="text-sm text-slate-500">{activeConversation.customer}</p>
+                <h2 className="text-lg font-semibold text-slate-900">{activeConversation.message}</h2>
+                <p className="text-sm text-slate-500">{activeConversation.customerName || '-'}</p>
               </div>
               <span
                 className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                  statusStyles[activeConversation.status]
+                  statusStyles[activeConversation.status] || 'bg-slate-100 text-slate-700'
                 }`}
               >
-                {activeConversation.status}
+                {formatLabel(activeConversation.status)}
               </span>
             </div>
 
             <div className="mb-4 h-[440px] space-y-3 overflow-y-auto rounded-xl border border-slate-200 bg-gradient-to-b from-slate-50 to-white p-4">
-              {activeConversation.messages.map((entry, index) => (
+              {activeMessages.map((entry, index) => (
                 <div
-                  key={`${activeConversation.id}-${index}`}
+                  key={`${activeId}-${entry._id || index}`}
                   className={`max-w-[86%] rounded-2xl px-4 py-2 text-sm shadow-sm ${
                     entry.sender === 'agent'
                       ? 'ml-auto bg-blue-600 text-white'
@@ -189,9 +225,14 @@ const Chat = () => {
                   {entry.text}
                 </div>
               ))}
+              {isLoadingMessages && (
+                <div className="mr-auto max-w-[86%] rounded-2xl bg-white px-4 py-2 text-sm text-slate-500 shadow-sm">
+                  Loading messages...
+                </div>
+              )}
               {isSending && (
                 <div className="mr-auto max-w-[86%] rounded-2xl bg-white px-4 py-2 text-sm text-slate-500 shadow-sm">
-                  Customer is typing...
+                  Sending...
                 </div>
               )}
               <div ref={bottomRef} />
@@ -217,21 +258,21 @@ const Chat = () => {
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={() => updateStatus('Pending')}
+                onClick={() => updateStatus('pending')}
                 className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
               >
                 Mark Pending
               </button>
               <button
                 type="button"
-                onClick={() => updateStatus('Resolved')}
+                onClick={() => updateStatus('resolved')}
                 className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700"
               >
                 Mark as Resolved
               </button>
               <button
                 type="button"
-                onClick={() => updateStatus('Escalated')}
+                onClick={() => updateStatus('escalated')}
                 className="rounded-lg bg-rose-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-rose-700"
               >
                 Escalate
