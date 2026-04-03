@@ -9,13 +9,8 @@ import {
   unwrapResponseData,
 } from './widget/utils'
 import { resolveHistoryKey, loadHistory, pushHistory, clearHistory } from './widget/history'
-import {
-  buildBody,
-  buildFooter,
-  buildHeader,
-  buildHumanContainer,
-  createBubble,
-} from './widget/ui'
+import { buildBody, buildFooter, buildHeader, buildHumanContainer } from './widget/ui'
+import { createBubble, createTypingBubble } from './widget/chatBubble'
 import type {
   ChatbotWidgetInstance,
   ChatbotWidgetOptions,
@@ -495,7 +490,20 @@ export const createChatbotWidget = (
     }
     input.value = ''
     body.scrollTop = body.scrollHeight
-    await appendBotReply(cleaned)
+
+    const typingBubble = !isHumanChatActive ? createTypingBubble() : null
+    if (typingBubble) {
+      messages.appendChild(typingBubble)
+      body.scrollTop = body.scrollHeight
+    }
+
+    try {
+      await appendBotReply(cleaned)
+    } finally {
+      if (typingBubble?.isConnected) {
+        typingBubble.remove()
+      }
+    }
   }
 
   launcherButton.addEventListener('click', () => {

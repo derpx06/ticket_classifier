@@ -1,4 +1,5 @@
 import { STYLE_ID } from './constants'
+import { CHAT_BUBBLE_CSS } from './chatBubble/styles'
 
 export const WIDGET_CSS = `
 .chatbot-widget-root {
@@ -303,76 +304,7 @@ export const WIDGET_CSS = `
   display: flex;
 }
 
-.chatbot-bubble {
-  max-width: 86%;
-  border-radius: 12px;
-  padding: 8px 10px;
-  line-height: 1.45;
-  font-size: 13px;
-  white-space: pre-wrap;
-}
-
-.chatbot-bubble.user {
-  align-self: flex-end;
-  background: linear-gradient(135deg, var(--chatbot-primary), #1d4ed8);
-  color: #ffffff;
-  border-bottom-right-radius: 4px;
-}
-
-.chatbot-bubble.bot {
-  align-self: flex-start;
-  background: #ffffff;
-  color: #0f172a;
-  border: 1px solid #dbe4f5;
-  border-bottom-left-radius: 4px;
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
-}
-
-.chatbot-bubble.system {
-  align-self: center;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-  font-weight: 700;
-  font-size: 10px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: #dbeafe;
-  color: #1e3a8a;
-}
-
-.chatbot-md-h1 {
-  font-size: 16px;
-  font-weight: 700;
-  margin: 0 0 6px;
-}
-.chatbot-md-h2 {
-  font-size: 15px;
-  font-weight: 700;
-  margin: 0 0 6px;
-}
-.chatbot-md-h3 {
-  font-size: 14px;
-  font-weight: 700;
-  margin: 0 0 6px;
-}
-.chatbot-bubble a {
-  color: #2563eb;
-  text-decoration: underline;
-}
-.chatbot-bubble code {
-  font-family: "SFMono-Regular", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    "Liberation Mono", "Courier New", monospace;
-  font-size: 12px;
-  background: #eff6ff;
-  padding: 2px 4px;
-  border-radius: 6px;
-}
-.chatbot-bubble pre {
-  background: #eff6ff;
-  border-radius: 10px;
-  padding: 8px;
-  overflow-x: auto;
-}
+${CHAT_BUBBLE_CSS}
 
 .chatbot-footer {
   border-top: 1px solid #dbe4f5;
@@ -631,31 +563,6 @@ export const WIDGET_CSS = `
   display: none;
 }
 
-.chatbot-typing {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: #475569;
-  font-weight: 500;
-}
-
-.chatbot-typing span {
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: #94a3b8;
-  animation: typing-bounce 1.2s infinite ease-in-out;
-}
-
-.chatbot-typing span:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.chatbot-typing span:nth-child(3) {
-  animation-delay: 0.4s;
-}
-
 .chatbot-error {
   color: #dc2626;
   font-size: 12px;
@@ -676,16 +583,6 @@ export const WIDGET_CSS = `
 
 .chatbot-human-note span {
   font-weight: 600;
-}
-
-@keyframes typing-bounce {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-5px);
-  }
 }
 
 @media (max-width: 520px) {
