@@ -41,6 +41,31 @@ This creates:
 - `zIndex?: number`
 - `onUserMessage?: (message: string) => string | Promise<string> | void`
 
+## CLI
+
+Use CLI like this:
+
+```bash
+npm run cli -- <command>
+```
+
+Interactive commands:
+
+```bash
+npm run cli -- crawl
+npm run cli -- config
+npm run cli -- ingest
+npm run cli -- classify
+npm run cli -- ask
+npm run cli -- navigate
+npm run cli -- act
+npm run cli -- status
+npm run cli -- hello
+```
+
+Each command asks for required parameters after command trigger.
+Example: `npm run cli -- crawl` will ask URL and crawl depth interactively.
+
 ## Build
 
 ```bash
