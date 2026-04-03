@@ -105,6 +105,28 @@ const Chat = () => {
         })();
       }
     };
+    const onTicketStatus = (payload) => {
+      const ticketId = String(payload?.ticketId || '');
+      if (!ticketId) return;
+      const nextStatus = String(payload?.status || '').trim().toLowerCase();
+      const assignedTo = payload?.assignedTo ?? null;
+      setConversations((previous) =>
+        previous.map((conversation) => {
+          const conversationId = String(conversation._id || conversation.id || '');
+          if (conversationId !== ticketId) return conversation;
+          return {
+            ...conversation,
+            status: nextStatus || conversation.status,
+            assignedTo:
+              typeof assignedTo === 'number'
+                ? assignedTo
+                : assignedTo === null
+                  ? null
+                  : conversation.assignedTo ?? null,
+          };
+        }),
+      );
+    };
 
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
@@ -112,6 +134,7 @@ const Chat = () => {
     socket.on('chat:error', onSocketError);
     socket.on('chat:message', onIncomingMessage);
     socket.on('chat:handoff_requested', onHandoff);
+    socket.on('chat:ticket_status', onTicketStatus);
 
     return () => {
       socket.off('connect', onConnect);
@@ -120,6 +143,7 @@ const Chat = () => {
       socket.off('chat:error', onSocketError);
       socket.off('chat:message', onIncomingMessage);
       socket.off('chat:handoff_requested', onHandoff);
+      socket.off('chat:ticket_status', onTicketStatus);
       socket.close();
       socketRef.current = null;
     };

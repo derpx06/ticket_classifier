@@ -455,3 +455,25 @@ export function emitRealtimeMessageFromHttp(input: {
   }
 }
 
+export function emitRealtimeTicketStatusFromHttp(input: {
+  companyId: number;
+  ticketId: string;
+  sessionId?: string | null;
+  status: "pending" | "assigned" | "resolved" | "escalated";
+  assignedTo?: number | null;
+}): void {
+  if (!ioRef) return;
+  const payload = {
+    ticketId: input.ticketId,
+    companyId: input.companyId,
+    sessionId: input.sessionId ?? null,
+    status: input.status,
+    assignedTo: input.assignedTo ?? null,
+  };
+
+  ioRef.to(ticketRoom(input.ticketId)).emit("chat:ticket_status", payload);
+  if (input.sessionId) {
+    ioRef.to(sessionRoom(input.sessionId)).emit("chat:ticket_status", payload);
+  }
+  ioRef.to(companyAgentsRoom(input.companyId)).emit("chat:ticket_status", payload);
+}

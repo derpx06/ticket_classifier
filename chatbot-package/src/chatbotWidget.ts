@@ -898,6 +898,7 @@ export const createChatbotWidget = (
   let isOpen = false
   let isDestroyed = false
   let isHumanChatActive = false
+  let isHumanAgentConnected = false
   let widgetSocket: Socket | null = null
   let widgetSessionId: string | null = null
   let widgetTicketId: string | null = null
@@ -1035,7 +1036,7 @@ export const createChatbotWidget = (
     widgetSocket = socket
 
     socket.on('connect', () => {
-      statusText.textContent = 'Connected with human support'
+      statusText.textContent = 'Connecting to a human agent...'
     })
 
     socket.on('disconnect', () => {
@@ -1054,6 +1055,33 @@ export const createChatbotWidget = (
       },
     )
 
+    socket.on(
+      'chat:ticket_status',
+      (event: {
+        sessionId?: string | null
+        ticketId?: string | null
+        status?: string
+      }) => {
+        const sameSession =
+          (event.sessionId && event.sessionId === widgetSessionId) ||
+          (event.ticketId && event.ticketId === widgetTicketId)
+        if (!sameSession) return
+
+        if (event.status === 'assigned') {
+          if (!isHumanAgentConnected) {
+            appendBotBubble('A human agent has accepted your chat. You are now connected.')
+          }
+          isHumanAgentConnected = true
+          statusText.textContent = 'Connected with human support'
+          return
+        }
+
+        if (event.status === 'pending') {
+          statusText.textContent = 'Connecting to a human agent...'
+        }
+      },
+    )
+
     socket.on('chat:error', (event: { message?: string }) => {
       appendBotBubble(event.message || 'Support connection error. Please try again.')
     })
@@ -1063,6 +1091,7 @@ export const createChatbotWidget = (
       email: payload.email,
       issue: payload.issue,
     })
+    statusText.textContent = 'Connecting to a human agent...'
   }
 
   const sendMessage = async (message: string): Promise<void> => {
@@ -1088,6 +1117,15 @@ export const createChatbotWidget = (
   })
 
   humanButton.addEventListener('click', async () => {
+    if (isHumanChatActive) {
+      appendBotBubble(
+        isHumanAgentConnected
+          ? 'You are already connected with a human agent in this chat.'
+          : 'Your request is already in queue. An agent will join shortly.',
+      )
+      return
+    }
+
     if (options.onTalkToHumanClick) {
       humanButton.disabled = true
       humanButton.textContent = 'Creating ticket...'
@@ -1126,9 +1164,22 @@ export const createChatbotWidget = (
         email: emailInput.value.trim(),
         issue: issueTextarea.value.trim(),
       })
-      root.classList.add('show-human-success')
-      successTitle.textContent = 'Connected to Support'
-      successMsg.textContent = 'You can now continue chatting with a human support agent.'
+      root.classList.remove('show-human-form')
+      root.classList.remove('show-human-success')
+      humanForm.reset()
+      body.classList.add('has-messages')
+      messages.appendChild(
+        createBubble(
+          widgetTicketId
+            ? `Ticket ${widgetTicketId.slice(-6)} created. Connecting you to a human agent now...`
+            : 'Your request is submitted. Connecting you to a human agent now...',
+          'bot',
+        ),
+      )
+      body.scrollTop = body.scrollHeight
+      humanButton.disabled = true
+      humanButton.innerHTML = '<i data-lucide="check-circle" aria-hidden="true"></i><span>Human Support Requested</span>'
+      hydrateIcons()
       submitBtn.textContent = 'Send Message'
     } catch (error) {
       appendBotBubble(
@@ -1149,7 +1200,9 @@ export const createChatbotWidget = (
     messages.appendChild(
       createBubble(
         isHumanChatActive && widgetTicketId
-          ? `You are now connected with our support team (ticket ${widgetTicketId.slice(-6)}).`
+          ? isHumanAgentConnected
+            ? `You are now connected with our support team (ticket ${widgetTicketId.slice(-6)}).`
+            : `Your ticket ${widgetTicketId.slice(-6)} is waiting for an available human agent.`
           : 'Your issue has been submitted. A human agent will contact you soon.',
         'bot',
       ),
