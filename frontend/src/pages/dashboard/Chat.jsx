@@ -278,9 +278,9 @@ const Chat = () => {
   };
 
   return (
-    <div className="rounded-[32px] bg-[linear-gradient(145deg,rgba(186,230,253,0.62),rgba(191,219,254,0.38),rgba(226,232,240,0.72))] p-[1px]">
-      <div className="grid grid-cols-1 gap-5 rounded-[31px] bg-slate-50/85 p-3 sm:p-4 lg:grid-cols-10 lg:p-5">
-      <aside className={`${panelClass} lg:col-span-3`}>
+    <div className="rounded-[32px] bg-[linear-gradient(145deg,rgba(186,230,253,0.62),rgba(191,219,254,0.38),rgba(226,232,240,0.72))] p-[1px] lg:h-[calc(100dvh-8rem)]">
+      <div className="grid grid-cols-1 gap-5 rounded-[31px] bg-slate-50/85 p-3 sm:p-4 lg:h-full lg:min-h-0 lg:grid-cols-10 lg:p-5">
+      <aside className={`${panelClass} flex min-h-0 flex-col lg:col-span-3`}>
         <div
           aria-hidden="true"
           className="pointer-events-none absolute -left-16 top-24 h-40 w-40 rounded-full bg-sky-200/45 blur-3xl"
@@ -316,7 +316,7 @@ const Chat = () => {
           </div>
         </div>
 
-        <div className="relative max-h-[640px] space-y-2.5 overflow-y-auto bg-slate-50/65 p-3 lg:max-h-[calc(100vh-250px)]">
+        <div className="relative flex-1 min-h-0 space-y-2.5 overflow-y-auto bg-slate-50/65 p-3">
           {filteredConversations.map((conversation) => {
             const conversationId = conversation._id || conversation.id;
             return (
@@ -356,14 +356,14 @@ const Chat = () => {
         </div>
       </aside>
 
-      <section className={`${panelClass} p-4 sm:p-5 lg:col-span-7 lg:min-h-[640px]`}>
+      <section className={`${panelClass} flex min-h-0 flex-col p-4 sm:p-5 lg:col-span-7`}>
         <div
           aria-hidden="true"
           className="pointer-events-none absolute -right-20 top-10 h-56 w-56 rounded-full bg-indigo-100/45 blur-3xl"
         />
         {activeConversation ? (
           <>
-            <div className="relative flex min-h-[520px] flex-col">
+            <div className="relative flex min-h-0 flex-1 flex-col">
               <div className="relative mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-3">
                 <div className="min-w-0">
                   <h2 className="truncate text-lg font-semibold text-slate-900">{activeConversation.message}</h2>
@@ -378,7 +378,7 @@ const Chat = () => {
                 </span>
               </div>
 
-              <div className="relative mb-4 h-[440px] min-h-0 space-y-3 overflow-y-auto overflow-x-hidden rounded-2xl border border-slate-200/90 bg-[linear-gradient(180deg,rgba(248,250,252,0.96),rgba(255,255,255,0.98))] p-4">
+              <div className="relative mb-4 flex-1 min-h-0 space-y-3 overflow-y-auto overflow-x-hidden rounded-2xl border border-slate-200/90 bg-[linear-gradient(180deg,rgba(248,250,252,0.96),rgba(255,255,255,0.98))] p-4">
                 <div
                   aria-hidden="true"
                   className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(147,197,253,0.14),transparent_55%)]"
@@ -453,7 +453,7 @@ const Chat = () => {
             </div>
           </>
         ) : (
-          <div className="grid h-[240px] place-items-center rounded-2xl border border-dashed border-slate-300 bg-white text-sm text-slate-500">
+          <div className="grid flex-1 place-items-center rounded-2xl border border-dashed border-slate-300 bg-white text-sm text-slate-500">
             Select a conversation to start chatting.
           </div>
         )}

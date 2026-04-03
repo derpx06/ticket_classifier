@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import { ArrowUpDown, Search, SlidersHorizontal, Sparkles } from 'lucide-react';
 import { acceptTicket, getTickets, searchTickets, updateTicket } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
 
 const priorityWeight = {
+  critical: 4,
   high: 3,
   medium: 2,
   low: 1,
@@ -35,6 +37,9 @@ const formatLabel = (value = '') => {
   return value.charAt(0).toUpperCase() + value.slice(1);
 };
 
+const filterControlClass =
+  'w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100';
+
 const Queries = () => {
   const { user } = useAuth();
   const userRoleId = user?.companyRole?.id ?? null;
@@ -45,6 +50,7 @@ const Queries = () => {
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [sortBy, setSortBy] = useState('Newest');
   const [selectedId, setSelectedId] = useState('');
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [teamView, setTeamView] = useState('my-team');
   const [smartSearch, setSmartSearch] = useState(false);
   const [smartResults, setSmartResults] = useState(null);
@@ -58,11 +64,7 @@ const Queries = () => {
       try {
         setIsLoading(true);
         const result = await getTickets();
-        const list = Array.isArray(result) ? result : [];
-        setTickets(list);
-        if (list.length > 0) {
-          setSelectedId(list[0]._id || list[0].id || '');
-        }
+        setTickets(Array.isArray(result) ? result : []);
       } catch (error) {
         toast.error(error?.response?.data?.message || 'Failed to load tickets.');
       } finally {
@@ -111,17 +113,18 @@ const Queries = () => {
         if (!userRoleId) return false;
         return Number(ticket.assignedRoleId) === Number(userRoleId);
       }
+
       const matchesSearch =
         (ticket.ticketCode || ticket._id || ticket.id || '').toLowerCase().includes(searchText.toLowerCase()) ||
         (ticket.message || '').toLowerCase().includes(searchText.toLowerCase());
       const matchesStatus =
         statusFilter === 'All' || (ticket.status || '').toLowerCase() === statusFilter.toLowerCase();
       const matchesPriority =
-        priorityFilter === 'All'
-        || (ticket.priority || '').toLowerCase() === priorityFilter.toLowerCase();
+        priorityFilter === 'All' ||
+        (ticket.priority || '').toLowerCase() === priorityFilter.toLowerCase();
       const matchesCategory =
-        categoryFilter === 'All'
-        || (ticket.category || '').toLowerCase() === categoryFilter.toLowerCase();
+        categoryFilter === 'All' ||
+        (ticket.category || '').toLowerCase() === categoryFilter.toLowerCase();
       return matchesSearch && matchesStatus && matchesPriority && matchesCategory;
     });
 
@@ -130,7 +133,7 @@ const Queries = () => {
         return Number(b.similarity ?? 0) - Number(a.similarity ?? 0);
       }
       if (sortBy === 'Priority') {
-        return priorityWeight[b.priority] - priorityWeight[a.priority];
+        return (priorityWeight[b.priority] || 0) - (priorityWeight[a.priority] || 0);
       }
       return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
     });
@@ -149,7 +152,25 @@ const Queries = () => {
   ]);
 
   const selectedTicket =
-    filteredTickets.find((ticket) => (ticket._id || ticket.id) === selectedId) || filteredTickets[0] || null;
+    tickets.find((ticket) => (ticket._id || ticket.id) === selectedId) || null;
+
+  useEffect(() => {
+    if (selectedId && !selectedTicket) {
+      setIsDetailsOpen(false);
+      setSelectedId('');
+    }
+  }, [selectedId, selectedTicket]);
+
+  useEffect(() => {
+    const onEscape = (event) => {
+      if (event.key === 'Escape') {
+        setIsDetailsOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', onEscape);
+    return () => window.removeEventListener('keydown', onEscape);
+  }, []);
 
   const updateTicketState = (ticketId, updates) => {
     setTickets((previous) =>
@@ -157,6 +178,11 @@ const Queries = () => {
         (ticket._id || ticket.id) === ticketId ? { ...ticket, ...updates } : ticket
       )
     );
+  };
+
+  const openTicketDetails = (ticketId) => {
+    setSelectedId(ticketId);
+    setIsDetailsOpen(true);
   };
 
   const handleAccept = async (ticketId) => {
@@ -173,6 +199,7 @@ const Queries = () => {
         return;
       }
     }
+
     try {
       setPendingAcceptId(ticketId);
       const accepted = await acceptTicket(ticketId);
@@ -201,6 +228,7 @@ const Queries = () => {
         return;
       }
     }
+
     try {
       const updated = await updateTicket(ticketId, { status: 'escalated' });
       updateTicketState(ticketId, updated || { status: 'escalated' });
@@ -210,169 +238,169 @@ const Queries = () => {
     }
   };
 
-
   return (
     <div className="space-y-5">
-      {/* <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-blue-900 px-6 py-6 text-white">
-          <h1 className="text-2xl font-semibold tracking-tight">Queries Workspace</h1>
-          <p className="mt-1 text-sm text-slate-200">
-            Track, filter, and resolve support tickets faster.
-          </p>
+      {user?.role !== 'admin' && (
+        <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
+          <button
+            type="button"
+            onClick={() => setTeamView('my-team')}
+            className={`flex-1 rounded-xl px-3 py-2 text-sm font-semibold transition ${
+              teamView === 'my-team'
+                ? 'bg-blue-600 text-white'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            My Team
+          </button>
+          <button
+            type="button"
+            onClick={() => setTeamView('all')}
+            className={`flex-1 rounded-xl px-3 py-2 text-sm font-semibold transition ${
+              teamView === 'all'
+                ? 'bg-blue-600 text-white'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            All Queries
+          </button>
         </div>
+      )}
 
-        <div className="grid gap-3 border-t border-slate-200 bg-slate-50 p-4 sm:grid-cols-2 lg:grid-cols-4">
-          <article className="rounded-xl border border-slate-200 bg-white p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Total</p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">{ticketStats.total}</p>
-          </article>
-          <article className="rounded-xl border border-amber-200 bg-white p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-amber-600">Pending</p>
-            <p className="mt-2 text-2xl font-bold text-amber-700">{ticketStats.pending}</p>
-          </article>
-          <article className="rounded-xl border border-rose-200 bg-white p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-rose-600">Escalated</p>
-            <p className="mt-2 text-2xl font-bold text-rose-700">{ticketStats.escalated}</p>
-          </article>
-          <article className="rounded-xl border border-emerald-200 bg-white p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600">Resolved</p>
-            <p className="mt-2 text-2xl font-bold text-emerald-700">{ticketStats.resolved}</p>
-          </article>
-        </div>
-      </section> */}
-
-      <section className="grid grid-cols-1 gap-5 xl:grid-cols-12">
-        <div className="space-y-4 xl:col-span-8">
-          {user?.role !== 'admin' && (
-            <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
-              <button
-                type="button"
-                onClick={() => setTeamView('my-team')}
-                className={`flex-1 rounded-xl px-3 py-2 text-sm font-semibold transition ${
-                  teamView === 'my-team'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                My Team
-              </button>
-              <button
-                type="button"
-                onClick={() => setTeamView('all')}
-                className={`flex-1 rounded-xl px-3 py-2 text-sm font-semibold transition ${
-                  teamView === 'all'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                All Queries
-              </button>
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-200 bg-[linear-gradient(120deg,_rgba(239,246,255,1),_rgba(255,255,255,1),_rgba(241,245,249,1))] px-4 py-4 sm:px-5">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <h1 className="text-xl font-semibold tracking-tight text-slate-900">Queries Workspace</h1>
+              <p className="mt-1 text-sm text-slate-600">Click any ticket card to open full details in a popup.</p>
             </div>
-          )}
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+              {filteredTickets.length} Ticket{filteredTickets.length === 1 ? '' : 's'}
+            </span>
+          </div>
+        </div>
+
+        <div className="border-b border-slate-200 bg-slate-50 p-4">
+          <div className="rounded-2xl border border-slate-200 bg-[linear-gradient(180deg,_#ffffff_0%,_#f8fafc_100%)] p-3 shadow-sm sm:p-4">
+            <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
+                <SlidersHorizontal size={14} />
+              </span>
+              Refine Tickets
+            </div>
+
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
-              <label className="xl:col-span-2">
-                <div className="mb-1 flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Search
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSmartSearch((prev) => {
-                        const next = !prev;
-                        if (next) {
-                          setSortBy('Similarity');
-                        } else if (sortBy === 'Similarity') {
-                          setSortBy('Newest');
-                        }
-                        return next;
-                      });
-                    }}
-                    className={`rounded-full px-2.5 py-1 text-[10px] font-semibold transition ${
-                      smartSearch
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
-                  >
-                    Smart search
-                  </button>
-                </div>
+            <label className="xl:col-span-2">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  <Search size={13} />
+                  Search
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSmartSearch((prev) => {
+                      const next = !prev;
+                      if (next) {
+                        setSortBy('Similarity');
+                      } else if (sortBy === 'Similarity') {
+                        setSortBy('Newest');
+                      }
+                      return next;
+                    });
+                  }}
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-semibold transition ${
+                    smartSearch
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  <Sparkles size={12} />
+                  Smart search
+                </button>
+              </div>
+              <div className="group relative">
+                <Search
+                  size={16}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 transition group-focus-within:text-blue-500"
+                />
                 <input
                   value={searchText}
                   onChange={(event) => setSearchText(event.target.value)}
                   placeholder="Ticket ID, customer, message..."
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  className={`${filterControlClass} pl-10`}
                 />
-                {smartSearch && searchText.trim() && (
-                  <p className="mt-1 text-[11px] text-slate-400">
-                    {isSmartSearching ? 'Searching by similarity…' : 'Smart similarity search enabled'}
-                  </p>
-                )}
-              </label>
+              </div>
+              {smartSearch && searchText.trim() && (
+                <p className="mt-1 text-[11px] text-slate-400">
+                  {isSmartSearching ? 'Searching by similarity...' : 'Smart similarity search enabled'}
+                </p>
+              )}
+            </label>
 
-              <label>
-                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Status
-                </span>
-                <select
-                  value={statusFilter}
-                  onChange={(event) => setStatusFilter(event.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                >
-                  <option>All</option>
-                  <option>Pending</option>
-                  <option>Assigned</option>
-                  <option>Escalated</option>
-                  <option>Resolved</option>
-                </select>
-              </label>
+            <label>
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Status
+              </span>
+              <select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+                className={filterControlClass}
+              >
+                <option>All</option>
+                <option>Pending</option>
+                <option>Assigned</option>
+                <option>Escalated</option>
+                <option>Resolved</option>
+              </select>
+            </label>
 
-              <label>
-                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Priority
-                </span>
-                <select
-                  value={priorityFilter}
-                  onChange={(event) => setPriorityFilter(event.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                >
-                  <option>All</option>
-                  <option>Critical</option>
-                  <option>High</option>
-                  <option>Medium</option>
-                  <option>Low</option>
-                </select>
-              </label>
+            <label>
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Priority
+              </span>
+              <select
+                value={priorityFilter}
+                onChange={(event) => setPriorityFilter(event.target.value)}
+                className={filterControlClass}
+              >
+                <option>All</option>
+                <option>Critical</option>
+                <option>High</option>
+                <option>Medium</option>
+                <option>Low</option>
+              </select>
+            </label>
 
-              <label>
-                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Category
-                </span>
-                <select
-                  value={categoryFilter}
-                  onChange={(event) => setCategoryFilter(event.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                >
-                  <option>All</option>
-                  <option>Billing</option>
-                  <option>Technical</option>
-                  <option>Login</option>
-                </select>
-              </label>
+            <label>
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Category
+              </span>
+              <select
+                value={categoryFilter}
+                onChange={(event) => setCategoryFilter(event.target.value)}
+                className={filterControlClass}
+              >
+                <option>All</option>
+                <option>Billing</option>
+                <option>Technical</option>
+                <option>Login</option>
+              </select>
+            </label>
             </div>
 
-            <div className="mt-3 flex items-center justify-between">
+            <div className="mt-3 flex items-center justify-between border-t border-slate-200 pt-3">
               <p className="text-xs text-slate-500">
                 Showing <span className="font-semibold text-slate-700">{filteredTickets.length}</span>{' '}
                 result{filteredTickets.length === 1 ? '' : 's'}
               </p>
-              <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <label className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <ArrowUpDown size={13} />
                 Sort
                 <select
                   value={sortBy}
                   onChange={(event) => setSortBy(event.target.value)}
-                  className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs text-slate-700 outline-none focus:border-blue-500"
+                  className="rounded-xl border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:border-blue-500"
                 >
                   <option>Newest</option>
                   <option>Priority</option>
@@ -381,253 +409,221 @@ const Queries = () => {
               </label>
             </div>
           </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="hidden overflow-x-auto md:block">
-              <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Ticket
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Sentiment
-                    </th>
-                    {smartSearch && (
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                        Similarity
-                      </th>
-                    )}
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Category
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Priority
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Status
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Date
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
-                  {filteredTickets.map((ticket) => (
-                    <tr
-                      key={ticket._id || ticket.id}
-                      onClick={() => setSelectedId(ticket._id || ticket.id)}
-                      className={`cursor-pointer transition-colors ${
-                        (selectedTicket?._id || selectedTicket?.id) === (ticket._id || ticket.id)
-                          ? 'bg-blue-50'
-                          : 'hover:bg-slate-50'
-                      }`}
-                    >
-                      <td className="px-4 py-3">
-                        <p className="max-w-[280px] truncate text-sm font-semibold text-slate-800">
-                          {ticket.message || 'No description provided.'}
-                        </p>
-                        <p className="mt-1 max-w-[260px] break-all text-xs text-blue-700">
-                          {ticket.ticketCode || ticket._id || ticket.id}
-                        </p>
-                        <p className="mt-1 text-xs text-slate-400">{ticket.customerName || '-'}</p>
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        {ticket.sentimentEmoji ? (
-                          <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
-                            <span className="text-base">{ticket.sentimentEmoji}</span>
-                            {formatLabel(ticket.sentiment || 'neutral')}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-slate-400">—</span>
-                        )}
-                      </td>
-                      {smartSearch && (
-                        <td className="px-4 py-3 text-xs text-slate-600">
-                          {typeof ticket.similarity === 'number'
-                            ? ticket.similarity.toFixed(3)
-                            : '—'}
-                        </td>
-                      )}
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                            categoryStyles[ticket.category] || 'bg-slate-100 text-slate-700'
-                          }`}
-                        >
-                          {formatLabel(ticket.category)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                            priorityStyles[ticket.priority] || 'bg-slate-100 text-slate-700'
-                          }`}
-                        >
-                          {formatLabel(ticket.priority)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                            statusStyles[ticket.status] || 'bg-slate-100 text-slate-700'
-                          }`}
-                        >
-                          {formatLabel(ticket.status)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-600">
-                        {ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString() : '-'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="space-y-3 p-3 md:hidden">
-              {filteredTickets.map((ticket) => (
-                <button
-                  key={ticket._id || ticket.id}
-                  type="button"
-                  onClick={() => setSelectedId(ticket._id || ticket.id)}
-                  className={`w-full rounded-xl border p-3 text-left ${
-                    (selectedTicket?._id || selectedTicket?.id) === (ticket._id || ticket.id)
-                      ? 'border-blue-300 bg-blue-50'
-                      : 'border-slate-200 bg-white'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm font-semibold text-slate-800">
-                      {ticket.message || 'No description provided.'}
-                    </p>
-                    <span
-                      className={`inline-flex rounded-full px-2 py-1 text-[10px] font-semibold ${
-                        statusStyles[ticket.status] || 'bg-slate-100 text-slate-700'
-                      }`}
-                    >
-                      {formatLabel(ticket.status)}
-                    </span>
-                  </div>
-                  <p className="mt-1 break-all text-xs text-blue-700">
-                    {ticket.ticketCode || ticket._id || ticket.id}
-                  </p>
-                  <p className="mt-1 text-xs text-slate-500">{ticket.customerName || '-'}</p>
-                  <div className="mt-2 flex gap-2">
-                    <span
-                      className={`inline-flex rounded-full px-2 py-1 text-[10px] font-semibold ${
-                        categoryStyles[ticket.category] || 'bg-slate-100 text-slate-700'
-                      }`}
-                    >
-                      {formatLabel(ticket.category)}
-                    </span>
-                    <span
-                      className={`inline-flex rounded-full px-2 py-1 text-[10px] font-semibold ${
-                        priorityStyles[ticket.priority] || 'bg-slate-100 text-slate-700'
-                      }`}
-                    >
-                      {formatLabel(ticket.priority)}
-                    </span>
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            {filteredTickets.length === 0 && (
-              <div className="grid h-36 place-items-center text-sm text-slate-500">
-                No tickets match your filters.
-              </div>
-            )}
-          </div>
         </div>
 
-        <aside className="xl:col-span-4">
-          <div className="sticky top-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-              Ticket Details
-            </h2>
+        <div className="p-4 sm:p-5">
+          {filteredTickets.length > 0 ? (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
+              {filteredTickets.map((ticket) => {
+                const ticketId = ticket._id || ticket.id;
+                return (
+                  <button
+                    key={ticketId}
+                    type="button"
+                    onClick={() => openTicketDetails(ticketId)}
+                    className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-[linear-gradient(160deg,_#ffffff_0%,_#f8fafc_100%)] p-4 text-left transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_20px_32px_-24px_rgba(37,99,235,0.8)]"
+                  >
+                    <span className="pointer-events-none absolute right-0 top-0 h-20 w-20 rounded-bl-full bg-blue-50/80 transition group-hover:bg-blue-100/90" />
 
-            {selectedTicket ? (
-              <div className="mt-3 space-y-4">
-                <div>
-                  <p className="break-all text-lg font-semibold text-slate-900">
+                    <div className="relative flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold text-slate-900">
+                          {ticket.ticketCode || ticketId}
+                        </p>
+                        <p className="mt-0.5 truncate text-xs text-slate-500">
+                          {ticket.customerName || '-'}
+                        </p>
+                      </div>
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold ${
+                          statusStyles[ticket.status] || 'bg-slate-100 text-slate-700'
+                        }`}
+                      >
+                        {formatLabel(ticket.status)}
+                      </span>
+                    </div>
+
+                    <p className="relative mt-3 max-h-[4.5rem] overflow-hidden text-sm leading-6 text-slate-700">
+                      {ticket.message || 'No description provided.'}
+                    </p>
+
+                    <div className="relative mt-3 flex flex-wrap gap-1.5">
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold ${
+                          categoryStyles[ticket.category] || 'bg-slate-100 text-slate-700'
+                        }`}
+                      >
+                        {formatLabel(ticket.category)}
+                      </span>
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold ${
+                          priorityStyles[ticket.priority] || 'bg-slate-100 text-slate-700'
+                        }`}
+                      >
+                        {formatLabel(ticket.priority)}
+                      </span>
+                      {ticket.sentimentEmoji ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-700">
+                          <span>{ticket.sentimentEmoji}</span>
+                          {formatLabel(ticket.sentiment || 'neutral')}
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div className="relative mt-3 flex items-center justify-between text-[11px] text-slate-500">
+                      <span>{ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString() : '-'}</span>
+                      {smartSearch && typeof ticket.similarity === 'number' ? (
+                        <span className="rounded-full bg-blue-50 px-2 py-0.5 font-semibold text-blue-700">
+                          Similarity {ticket.similarity.toFixed(3)}
+                        </span>
+                      ) : (
+                        <span className="font-semibold text-blue-600">Open details</span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="grid h-40 place-items-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">
+              {isLoading ? 'Loading tickets...' : 'No tickets match your filters.'}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {isDetailsOpen && selectedTicket && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 px-4 py-6 backdrop-blur-[2px]"
+          onClick={() => setIsDetailsOpen(false)}
+        >
+          <div
+            className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-slate-200 bg-white shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="border-b border-slate-200 bg-[linear-gradient(135deg,_rgba(30,58,138,1),_rgba(30,64,175,1),_rgba(37,99,235,1))] p-5 text-white">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-100">Ticket Details</p>
+                  <h2 className="mt-1 break-all text-lg font-semibold">
                     {selectedTicket.ticketCode || selectedTicket._id || selectedTicket.id}
-                  </p>
-                  <p className="text-sm text-slate-500">{selectedTicket.customerName || '-'}</p>
+                  </h2>
+                  <p className="mt-1 text-sm text-blue-100">{selectedTicket.customerName || '-'}</p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setIsDetailsOpen(false)}
+                  className="rounded-lg border border-white/40 bg-white/10 px-2 py-1 text-xs font-semibold text-white transition hover:bg-white/20"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
 
-                <p className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-                  {selectedTicket.message}
+            <div className="space-y-4 p-5">
+              <div className="flex flex-wrap gap-2">
+                <span
+                  className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                    statusStyles[selectedTicket.status] || 'bg-slate-100 text-slate-700'
+                  }`}
+                >
+                  {formatLabel(selectedTicket.status)}
+                </span>
+                <span
+                  className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                    categoryStyles[selectedTicket.category] || 'bg-slate-100 text-slate-700'
+                  }`}
+                >
+                  {formatLabel(selectedTicket.category)}
+                </span>
+                <span
+                  className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                    priorityStyles[selectedTicket.priority] || 'bg-slate-100 text-slate-700'
+                  }`}
+                >
+                  {formatLabel(selectedTicket.priority)}
+                </span>
+                {selectedTicket.sentimentEmoji ? (
+                  <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                    <span>{selectedTicket.sentimentEmoji}</span>
+                    {formatLabel(selectedTicket.sentiment || 'neutral')}
+                  </span>
+                ) : null}
+                {smartSearch && typeof selectedTicket.similarity === 'number' ? (
+                  <span className="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                    Similarity {selectedTicket.similarity.toFixed(3)}
+                  </span>
+                ) : null}
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Customer Message</p>
+                <p className="text-sm leading-relaxed text-slate-700">
+                  {selectedTicket.message || 'No description provided.'}
                 </p>
+              </div>
 
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="rounded-lg border border-slate-200 p-2">
-                    <p className="text-slate-400">Category</p>
-                    <p className="mt-1 font-semibold text-slate-700">
-                      {formatLabel(selectedTicket.category)}
-                    </p>
-                  </div>
-                  <div className="rounded-lg border border-slate-200 p-2">
-                    <p className="text-slate-400">Created</p>
-                    <p className="mt-1 font-semibold text-slate-700">
-                      {selectedTicket.createdAt
-                        ? new Date(selectedTicket.createdAt).toLocaleString()
-                        : '-'}
-                    </p>
-                  </div>
-                </div>
-
-                <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Actions
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-slate-200 bg-white p-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Created</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-800">
+                    {selectedTicket.createdAt
+                      ? new Date(selectedTicket.createdAt).toLocaleString()
+                      : '-'}
                   </p>
-                  <div className="grid grid-cols-1 gap-2">
-                    <button
-                      type="button"
-                      disabled={
-                        pendingAcceptId === (selectedTicket._id || selectedTicket.id) ||
-                        ['assigned', 'resolved'].includes(
-                          String(selectedTicket.status || '').toLowerCase(),
-                        ) ||
-                        (user?.role !== 'admin' &&
-                          (!userRoleId ||
-                            !selectedTicket.assignedRoleId ||
-                            Number(selectedTicket.assignedRoleId) !== Number(userRoleId)))
-                      }
-                      onClick={() => handleAccept(selectedTicket._id || selectedTicket.id)}
-                      className="rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-left text-xs font-semibold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-70"
-                    >
-                      {pendingAcceptId === (selectedTicket._id || selectedTicket.id)
-                        ? 'Accepting...'
-                        : 'Accept Ticket'}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={
-                        ['assigned', 'resolved'].includes(
-                          String(selectedTicket.status || '').toLowerCase(),
-                        ) ||
-                        user?.role !== 'admin' &&
-                        (!userRoleId ||
-                          !selectedTicket.assignedRoleId ||
-                          Number(selectedTicket.assignedRoleId) !== Number(userRoleId))
-                      }
-                      onClick={() => handleReject(selectedTicket._id || selectedTicket.id)}
-                      className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-left text-xs font-semibold text-rose-700 transition hover:bg-rose-100"
-                    >
-                      Reject Ticket
-                    </button>
-                  </div>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-white p-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Assigned Role</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-800">
+                    {selectedTicket.assignedRoleId ? `#${selectedTicket.assignedRoleId}` : '-'}
+                  </p>
                 </div>
               </div>
-            ) : (
-              <p className="mt-3 text-sm text-slate-500">
-                {isLoading ? 'Loading tickets...' : 'No ticket selected.'}
-              </p>
-            )}
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-3">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Actions</p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    disabled={
+                      pendingAcceptId === (selectedTicket._id || selectedTicket.id) ||
+                      ['assigned', 'resolved'].includes(
+                        String(selectedTicket.status || '').toLowerCase(),
+                      ) ||
+                      (user?.role !== 'admin' &&
+                        (!userRoleId ||
+                          !selectedTicket.assignedRoleId ||
+                          Number(selectedTicket.assignedRoleId) !== Number(userRoleId)))
+                    }
+                    onClick={() => handleAccept(selectedTicket._id || selectedTicket.id)}
+                    className="rounded-xl border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {pendingAcceptId === (selectedTicket._id || selectedTicket.id)
+                      ? 'Accepting...'
+                      : 'Accept Ticket'}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={
+                      ['assigned', 'resolved'].includes(
+                        String(selectedTicket.status || '').toLowerCase(),
+                      ) ||
+                      (user?.role !== 'admin' &&
+                        (!userRoleId ||
+                          !selectedTicket.assignedRoleId ||
+                          Number(selectedTicket.assignedRoleId) !== Number(userRoleId)))
+                    }
+                    onClick={() => handleReject(selectedTicket._id || selectedTicket.id)}
+                    className="rounded-xl border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    Reject Ticket
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-        </aside>
-      </section>
+        </div>
+      )}
     </div>
   );
 };
