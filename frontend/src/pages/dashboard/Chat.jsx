@@ -35,6 +35,7 @@ const Chat = () => {
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const bottomRef = useRef(null);
   const socketRef = useRef(null);
+  const activeIdRef = useRef(activeId);
 
   const activeConversation = useMemo(
     () => conversations.find((conversation) => (conversation._id || conversation.id) === activeId),
@@ -69,10 +70,20 @@ const Chat = () => {
   }, [isAdmin]);
 
   useEffect(() => {
+    activeIdRef.current = activeId;
+  });
+
+  useEffect(() => {
     const socket = createAgentSocket();
     socketRef.current = socket;
 
-    const onConnect = () => setIsSocketConnected(true);
+    const onConnect = () => {
+      setIsSocketConnected(true);
+      const currentActiveId = activeIdRef.current;
+      if (currentActiveId) {
+        socket.emit('agent:join_ticket', { ticketId: currentActiveId });
+      }
+    };
     const onDisconnect = () => setIsSocketConnected(false);
     const onSocketError = (payload) => {
       const message = payload?.message || 'Real-time chat connection error.';

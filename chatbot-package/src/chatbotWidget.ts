@@ -902,6 +902,7 @@ export const createChatbotWidget = (
   let widgetSocket: Socket | null = null
   let widgetSessionId: string | null = null
   let widgetTicketId: string | null = null
+  const seenMessageIds = new Set<string>()
   const aiSessionId =
     options.aiSupport?.sessionId ||
     (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
@@ -1047,8 +1048,10 @@ export const createChatbotWidget = (
 
     socket.on(
       'chat:message',
-      (event: { sessionId?: string | null; sender?: string; text?: string }) => {
+      (event: { _id?: string; sessionId?: string | null; sender?: string; text?: string }) => {
         if (event.sessionId !== widgetSessionId) return
+        if (event._id && seenMessageIds.has(event._id)) return
+        if (event._id) seenMessageIds.add(event._id)
         if (event.sender === 'agent' && typeof event.text === 'string') {
           appendBotBubble(event.text)
         }
