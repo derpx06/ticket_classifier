@@ -62,8 +62,7 @@ export default function TabLayout() {
         tabBarButton: HapticTab,
         tabBarStyle: {
           backgroundColor: colors.surface,
-          borderTopWidth: StyleSheet.hairlineWidth,
-          borderTopColor: colors.border,
+          borderTopWidth: 0,
           paddingTop: Spacing.sm,
           paddingBottom: tabPadBottom,
           elevation: 0,
@@ -110,6 +109,7 @@ export default function TabLayout() {
         name="queries"
         options={{
           title: 'Queries',
+          headerShown: false,
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon
               outline="file-tray-stacked-outline"

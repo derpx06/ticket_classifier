@@ -10,72 +10,47 @@ import {
   Alert,
   Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatDistanceToNow } from 'date-fns';
 import { Feather } from '@expo/vector-icons';
-import {
-  getTickets,
-  acceptTicket,
-  updateTicketConfig,
-  formatTicketCardDetails,
-  Ticket,
-} from '@/services/ticket-service';
+import { getTickets, acceptTicket, updateTicketConfig, Ticket, TicketPriority, TicketStatus } from '@/services/ticket-service';
 import { TicketDetailsModal } from '@/components/ticket-details-modal';
-import { Colors, Spacing, Radius, Palette } from '@/constants/theme';
+import { Spacing, Radius, Palette, Layout } from '@/constants/theme';
 import { Font } from '@/constants/typography';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
+const OUTER_BG = '#2f3036';
+const CARD_SHEET = '#f1f5f9';
+const CARD_INNER = '#ffffff';
+const BRAND_NAVY = '#1e3a5f';
+const BRAND_BLUE = '#2563eb';
+
+type FilterFacet = 'status' | 'priority' | 'category';
+
 function ticketCode(id: string): string {
-  const tail = id.replace(/\s/g, '').slice(-6);
-  return tail ? `#TK-${tail.toUpperCase()}` : '#TK-XXXX';
+  const tail = id.replace(/\s/g, '').slice(-4);
+  return tail ? `NX-${tail.toUpperCase()}` : 'NX-XXXX';
 }
 
-function statusTheme(status: string, dark: boolean) {
+function titleCaseWord(s: string): string {
+  const t = s.trim();
+  if (!t) return '';
+  return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
+}
+
+function statusAccent(status: Ticket['status']) {
   switch (status) {
+    case 'escalated':
+      return { accent: '#9f1239', badgeBg: '#9f1239', badgeFg: '#ffffff', label: 'ESCALATED' };
+    case 'resolved':
+      return { accent: '#4ade80', badgeBg: '#22c55e', badgeFg: '#ffffff', label: 'RESOLVED' };
+    case 'assigned':
+      return { accent: '#38bdf8', badgeBg: '#e5e7eb', badgeFg: '#374151', label: 'IN PROGRESS' };
+    case 'closed':
+      return { accent: '#94a3b8', badgeBg: '#64748b', badgeFg: '#ffffff', label: 'CLOSED' };
     case 'pending':
-      return {
-        chipBg: dark ? '#4b2e07' : '#fef3c7',
-        chipFg: dark ? '#fcd34d' : '#b45309',
-      };
-    case 'assigned':
-      return {
-        chipBg: dark ? '#1e3a5f' : '#dbeafe',
-        chipFg: dark ? '#93c5fd' : '#1d4ed8',
-      };
-    case 'resolved':
-      return {
-        chipBg: dark ? '#14532d' : '#dcfce7',
-        chipFg: dark ? '#86efac' : '#166534',
-      };
-    case 'escalated':
-      return {
-        chipBg: dark ? '#451a03' : '#fee2e2',
-        chipFg: dark ? '#fca5a5' : '#b91c1c',
-      };
-    case 'closed':
-      return {
-        chipBg: dark ? '#374151' : '#e2e8f0',
-        chipFg: dark ? '#cbd5e1' : '#475569',
-      };
     default:
-      return {
-        chipBg: dark ? '#374151' : '#e2e8f0',
-        chipFg: dark ? '#cbd5e1' : '#475569',
-      };
-  }
-}
-
-function urgencyCopy(status: Ticket['status']) {
-  switch (status) {
-    case 'escalated':
-      return 'Escalated';
-    case 'assigned':
-      return 'Assigned';
-    case 'resolved':
-      return 'Resolved';
-    case 'closed':
-      return 'Closed';
-    default:
-      return 'Pending';
+      return { accent: '#f59e0b', badgeBg: '#fef3c7', badgeFg: '#92400e', label: 'PENDING' };
   }
 }
 
@@ -83,15 +58,22 @@ function isTerminalStatus(status: Ticket['status']): boolean {
   return status === 'resolved' || status === 'escalated' || status === 'closed';
 }
 
+const STATUS_OPTIONS: (TicketStatus | 'all')[] = ['all', 'pending', 'assigned', 'resolved', 'escalated'];
+const PRIORITY_OPTIONS: (TicketPriority | 'all')[] = ['all', 'low', 'medium', 'high', 'critical'];
+
 export default function QueriesScreen() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [detailTicket, setDetailTicket] = useState<Ticket | null>(null);
+  const [facet, setFacet] = useState<FilterFacet>('status');
+  const [statusFilter, setStatusFilter] = useState<TicketStatus | 'all'>('all');
+  const [priorityFilter, setPriorityFilter] = useState<TicketPriority | 'all'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
+  const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const c = Colors[colorScheme ?? 'light'];
 
   const fetchData = async () => {
     try {
@@ -115,6 +97,17 @@ export default function QueriesScreen() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const categoryOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    tickets.forEach((t) => {
+      const raw = t.category?.trim();
+      if (!raw) return;
+      const key = raw.toLowerCase();
+      if (!map.has(key)) map.set(key, raw);
+    });
+    return ['all', ...Array.from(map.values()).sort((a, b) => a.localeCompare(b))];
+  }, [tickets]);
 
   const handleAccept = async (id: string) => {
     try {
@@ -157,16 +150,22 @@ export default function QueriesScreen() {
     fetchData();
   };
 
-  const filteredTickets = useMemo(
-    () =>
-      tickets.filter(
-        (t) =>
-          t.subject.toLowerCase().includes(search.toLowerCase()) ||
-          t.status.toLowerCase().includes(search.toLowerCase()) ||
-          t.category.toLowerCase().includes(search.toLowerCase()),
-      ),
-    [tickets, search],
-  );
+  const filteredTickets = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    return tickets.filter((t) => {
+      if (q) {
+        const hay = `${t.subject} ${t.status} ${t.category} ${t.customerName ?? ''} ${t.assignedRoleName ?? ''} ${t.urgency ?? ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      if (statusFilter !== 'all' && t.status !== statusFilter) return false;
+      if (priorityFilter !== 'all' && t.priority !== priorityFilter) return false;
+      if (categoryFilter !== 'all') {
+        const cat = t.category?.trim().toLowerCase() ?? '';
+        if (cat !== categoryFilter.toLowerCase()) return false;
+      }
+      return true;
+    });
+  }, [tickets, search, statusFilter, priorityFilter, categoryFilter]);
 
   const activeHighPriority = useMemo(
     () =>
@@ -179,161 +178,309 @@ export default function QueriesScreen() {
     [tickets],
   );
 
-  const renderHeader = () => (
-    <View>
-      <View style={[styles.searchWrap, { marginBottom: Spacing.lg }]}> 
-        <View style={[styles.searchInner, { backgroundColor: c.surfaceMuted, borderColor: c.border }]}> 
-          <Feather name="search" size={18} color={c.icon} style={styles.searchIcon} />
-          <TextInput
-            style={[styles.searchInput, { color: c.text, fontFamily: Font.regular }]}
-            placeholder="Search across all active tickets..."
-            placeholderTextColor={c.icon}
-            value={search}
-            onChangeText={setSearch}
-          />
-        </View>
-      </View>
+  const facetChipStyle = (active: boolean) => ({
+    backgroundColor: active ? '#dbeafe' : '#e5e7eb',
+    borderColor: active ? BRAND_BLUE : 'transparent',
+  });
+  const facetChipText = (active: boolean) => ({
+    color: active ? '#1e40af' : '#475569',
+  });
 
-      <View
-        style={[
-          styles.heroCard,
-          {
-            backgroundColor: isDark ? '#1d4e89' : '#2b5fb5',
-          },
-        ]}
-      >
-        <Text style={[styles.heroGreeting, { fontFamily: Font.medium }]}>Morning, Specialist</Text>
-        <Text style={[styles.heroTitle, { fontFamily: Font.bold }]}> 
-          You have {activeHighPriority} priority queries waiting for resolution.
-        </Text>
-        <TouchableOpacity
-          style={[styles.heroButton, { backgroundColor: '#e8f0ff' }]}
-          activeOpacity={0.85}
-          onPress={() => {}}
-        >
-          <Text style={[styles.heroButtonText, { fontFamily: Font.semibold }]}>Review Queue</Text>
+  const renderFacetValuePills = () => {
+    if (facet === 'status') {
+      return (
+        <View style={styles.valuePillRow}>
+          {STATUS_OPTIONS.map((opt) => {
+            const active = statusFilter === opt;
+            const label = opt === 'all' ? 'All' : titleCaseWord(opt);
+            return (
+              <TouchableOpacity
+                key={String(opt)}
+                onPress={() => setStatusFilter(opt)}
+                style={[styles.valuePill, active ? styles.valuePillOn : styles.valuePillOff]}
+                activeOpacity={0.85}
+              >
+                <Text style={[styles.valuePillText, { color: active ? '#fff' : '#475569', fontFamily: Font.semibold }]}>
+                  {label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      );
+    }
+    if (facet === 'priority') {
+      return (
+        <View style={styles.valuePillRow}>
+          {PRIORITY_OPTIONS.map((opt) => {
+            const active = priorityFilter === opt;
+            const label = opt === 'all' ? 'All' : titleCaseWord(opt);
+            return (
+              <TouchableOpacity
+                key={String(opt)}
+                onPress={() => setPriorityFilter(opt)}
+                style={[styles.valuePill, active ? styles.valuePillOn : styles.valuePillOff]}
+                activeOpacity={0.85}
+              >
+                <Text style={[styles.valuePillText, { color: active ? '#fff' : '#475569', fontFamily: Font.semibold }]}>
+                  {label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      );
+    }
+    return (
+      <View style={styles.valuePillRow}>
+        {categoryOptions.map((opt) => {
+          const active = categoryFilter === opt;
+          const label = opt === 'all' ? 'All' : titleCaseWord(opt);
+          return (
+            <TouchableOpacity
+              key={opt}
+              onPress={() => setCategoryFilter(opt)}
+              style={[styles.valuePill, active ? styles.valuePillOn : styles.valuePillOff]}
+              activeOpacity={0.85}
+            >
+              <Text style={[styles.valuePillText, { color: active ? '#fff' : '#475569', fontFamily: Font.semibold }]}>
+                {label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    );
+  };
+
+  const renderHeader = () => (
+    <View style={styles.headerBlock}>
+      <View style={styles.brandRow}>
+        <View style={styles.logoMark}>
+          <View style={styles.logoDot} />
+          <View style={styles.logoDot} />
+          <View style={styles.logoDot} />
+        </View>
+        <Text style={[styles.brandName, { fontFamily: Font.bold }]}>Support Hub</Text>
+        <TouchableOpacity style={styles.bellBtn} hitSlop={12} activeOpacity={0.7}>
+          <Feather name="bell" size={20} color={BRAND_NAVY} />
         </TouchableOpacity>
       </View>
+
+      <Text style={[styles.pageTitle, { fontFamily: Font.bold }]}>Queries</Text>
+      {activeHighPriority > 0 ? (
+        <Text style={[styles.pageSub, { fontFamily: Font.medium }]}>
+          {activeHighPriority} high-priority {activeHighPriority === 1 ? 'query' : 'queries'} need attention
+        </Text>
+      ) : null}
+
+      <View style={styles.searchInner}>
+        <Feather name="search" size={18} color="#64748b" style={styles.searchIcon} />
+        <TextInput
+          style={[styles.searchInput, { fontFamily: Font.regular }]}
+          placeholder="Search ticket archives..."
+          placeholderTextColor="#94a3b8"
+          value={search}
+          onChangeText={setSearch}
+        />
+      </View>
+
+      <View style={styles.facetRow}>
+        <TouchableOpacity
+          style={[styles.facetChip, facetChipStyle(facet === 'status')]}
+          onPress={() => setFacet('status')}
+          activeOpacity={0.85}
+        >
+          <Feather name="filter" size={14} color={facet === 'status' ? '#1e40af' : '#64748b'} style={styles.facetIcon} />
+          <Text style={[styles.facetChipText, facetChipText(facet === 'status'), { fontFamily: Font.semibold }]}>
+            Status
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.facetChip, facetChipStyle(facet === 'priority')]}
+          onPress={() => setFacet('priority')}
+          activeOpacity={0.85}
+        >
+          <Text style={[styles.facetChipText, facetChipText(facet === 'priority'), { fontFamily: Font.semibold }]}>
+            Priority
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.facetChip, facetChipStyle(facet === 'category')]}
+          onPress={() => setFacet('category')}
+          activeOpacity={0.85}
+        >
+          <Text style={[styles.facetChipText, facetChipText(facet === 'category'), { fontFamily: Font.semibold }]}>
+            Category
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {renderFacetValuePills()}
     </View>
   );
 
   const renderItem = ({ item }: { item: Ticket }) => {
-    const status = statusTheme(item.status, isDark);
+    const vis = statusAccent(item.status);
     const ago = formatDistanceToNow(new Date(item.updatedAt), { addSuffix: false });
-    const detailsLine = formatTicketCardDetails(item);
+    const customerLabel = item.customerName?.trim() || 'AI Chat User';
+    const metaMuted = '#64748b';
+
+    const metaPills = (
+      <View style={styles.metaPillRow}>
+        <View style={[styles.metaPill, { backgroundColor: '#f1f5f9' }]}>
+          <Text style={[styles.metaPillText, { color: '#475569', fontFamily: Font.semibold }]} numberOfLines={1}>
+            {customerLabel}
+          </Text>
+        </View>
+        <View style={[styles.metaPill, { backgroundColor: '#ede9fe' }]}>
+          <Text style={[styles.metaPillText, { color: '#5b21b6', fontFamily: Font.semibold }]}>
+            {titleCaseWord(item.category)}
+          </Text>
+        </View>
+        <View style={[styles.metaPill, { backgroundColor: '#ffedd5' }]}>
+          <Text style={[styles.metaPillText, { color: '#c2410c', fontFamily: Font.semibold }]}>
+            {titleCaseWord(item.priority)}
+          </Text>
+        </View>
+        {item.urgency ? (
+          <View style={[styles.metaPill, { backgroundColor: '#fee2e2' }]}>
+            <Text style={[styles.metaPillText, { color: '#b91c1c', fontFamily: Font.semibold }]}>
+              Urgency {titleCaseWord(item.urgency)}
+            </Text>
+          </View>
+        ) : null}
+        {item.assignedRoleName?.trim() ? (
+          <View style={[styles.metaPill, { backgroundColor: '#e0f2fe' }]}>
+            <Text
+              style={[styles.metaPillText, { color: '#0369a1', fontFamily: Font.semibold }]}
+              numberOfLines={1}
+            >
+              {item.assignedRoleName.trim()}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+    );
 
     return (
       <View
         style={[
           styles.ticketCard,
           {
-            backgroundColor: c.surface,
-            borderColor: c.border,
+            backgroundColor: CARD_INNER,
+            borderColor: '#e2e8f0',
           },
         ]}
       >
-        <View style={styles.ticketMetaRow}>
-          <View style={[styles.chip, { backgroundColor: status.chipBg }]}>
-            <Text style={[styles.chipText, { color: status.chipFg, fontFamily: Font.semibold }]}>{urgencyCopy(item.status)}</Text>
+        <View style={[styles.accentBar, { backgroundColor: vis.accent }]} />
+
+        <View style={styles.ticketCardBody}>
+          <View style={styles.ticketTopRow}>
+            <Text style={[styles.ticketId, { fontFamily: Font.semibold }]}>{ticketCode(item.id)}</Text>
+            <View style={[styles.statusBadge, { backgroundColor: vis.badgeBg }]}>
+              <Text style={[styles.statusBadgeText, { color: vis.badgeFg, fontFamily: Font.bold }]}>{vis.label}</Text>
+            </View>
           </View>
-          <Text style={[styles.metaText, { color: c.textSecondary, fontFamily: Font.medium }]}> 
-            {ticketCode(item.id)} • {ago} ago
+
+          <Text style={[styles.ticketSubjectTitle, { color: '#0f172a', fontFamily: Font.bold }]} numberOfLines={2}>
+            {item.subject}
           </Text>
-        </View>
 
-        <Text
-          style={[
-            styles.ticketTitle,
-            { color: c.text, fontFamily: Font.bold },
-            !detailsLine ? { marginBottom: Spacing.lg } : null,
-          ]}
-          numberOfLines={4}
-        >
-          {item.subject}
-        </Text>
+          {metaPills}
 
-        {detailsLine ? (
-          <Text style={[styles.ticketDetails, { color: c.textSecondary, fontFamily: Font.medium }]} numberOfLines={2}>
-            {detailsLine}
-          </Text>
-        ) : null}
+          <View style={styles.ticketFooter}>
+            <Text style={[styles.updatedLabel, { color: metaMuted, fontFamily: Font.medium }]}>
+              Updated {ago} ago
+            </Text>
+          </View>
 
-        <View style={styles.actions}>
-          {item.status === 'pending' && (
-            <>
-              <TouchableOpacity
-                style={[styles.btn, { backgroundColor: isDark ? '#1d4ed8' : '#1d4ed8' }]}
-                onPress={() => handleAccept(item.id)}
-                activeOpacity={0.9}
-              >
-                <Text style={[styles.btnText, { fontFamily: Font.semibold }]}>Accept</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.btn, styles.btnSecondary, { backgroundColor: c.surfaceMuted, borderColor: c.border }]}
-                onPress={() => openTicketDetails(item)}
-                activeOpacity={0.9}
-              >
-                <Text style={[styles.btnTextSecondary, { color: c.text, fontFamily: Font.semibold }]}>View Details</Text>
-              </TouchableOpacity>
-            </>
-          )}
-
-          {item.status === 'assigned' && (
-            <View style={styles.actionsCol}>
-              <View style={styles.actions}>
+          <View style={styles.actions}>
+            {item.status === 'pending' && (
+              <>
                 <TouchableOpacity
-                  style={[styles.btn, { backgroundColor: '#1d4ed8' }]}
-                  onPress={() => handleStatusChange(item.id, 'resolved')}
+                  style={[styles.btn, { backgroundColor: BRAND_BLUE }]}
+                  onPress={() => handleAccept(item.id)}
                   activeOpacity={0.9}
                 >
-                  <Text style={[styles.btnText, { fontFamily: Font.semibold }]}>Resolve</Text>
+                  <Text style={[styles.btnText, { fontFamily: Font.semibold }]}>Accept</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.btn, { backgroundColor: '#dc2626' }]}
-                  onPress={() => handleStatusChange(item.id, 'escalated')}
+                  style={[styles.btn, styles.btnSecondary, { backgroundColor: '#f8fafc', borderColor: '#e2e8f0' }]}
+                  onPress={() => openTicketDetails(item)}
                   activeOpacity={0.9}
                 >
-                  <Text style={[styles.btnText, { fontFamily: Font.semibold }]}>Escalate</Text>
+                  <Text style={[styles.btnTextSecondary, { color: '#0f172a', fontFamily: Font.semibold }]}>
+                    View Details
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
+
+            {item.status === 'assigned' && (
+              <View style={styles.actionsCol}>
+                <View style={styles.actions}>
+                  <TouchableOpacity
+                    style={[styles.btn, { backgroundColor: BRAND_BLUE }]}
+                    onPress={() => handleStatusChange(item.id, 'resolved')}
+                    activeOpacity={0.9}
+                  >
+                    <Text style={[styles.btnText, { fontFamily: Font.semibold }]}>Resolve</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.btn, { backgroundColor: '#dc2626' }]}
+                    onPress={() => handleStatusChange(item.id, 'escalated')}
+                    activeOpacity={0.9}
+                  >
+                    <Text style={[styles.btnText, { fontFamily: Font.semibold }]}>Escalate</Text>
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity
+                  style={[
+                    styles.btn,
+                    styles.btnSecondary,
+                    styles.btnFullWidth,
+                    { backgroundColor: '#f8fafc', borderColor: '#e2e8f0', marginTop: Spacing.sm },
+                  ]}
+                  onPress={() => openTicketDetails(item)}
+                  activeOpacity={0.9}
+                >
+                  <Text style={[styles.btnTextSecondary, { color: '#0f172a', fontFamily: Font.semibold }]}>
+                    View Details
+                  </Text>
                 </TouchableOpacity>
               </View>
-              <TouchableOpacity
-                style={[
-                  styles.btn,
-                  styles.btnSecondary,
-                  styles.btnFullWidth,
-                  { backgroundColor: c.surfaceMuted, borderColor: c.border, marginTop: Spacing.sm },
-                ]}
-                onPress={() => openTicketDetails(item)}
-                activeOpacity={0.9}
-              >
-                <Text style={[styles.btnTextSecondary, { color: c.text, fontFamily: Font.semibold }]}>View Details</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+            )}
 
-          {isTerminalStatus(item.status) && (
-            <View style={styles.actionsCol}>
-              <TouchableOpacity
-                style={[
-                  styles.btn,
-                  styles.btnSecondary,
-                  styles.btnFullWidth,
-                  { backgroundColor: c.surfaceMuted, borderColor: c.border },
-                ]}
-                onPress={() => openTicketDetails(item)}
-                activeOpacity={0.9}
-              >
-                <Text style={[styles.btnTextSecondary, { color: c.text, fontFamily: Font.semibold }]}>View Details</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+            {isTerminalStatus(item.status) && (
+              <View style={styles.actionsCol}>
+                <TouchableOpacity
+                  style={[
+                    styles.btn,
+                    styles.btnSecondary,
+                    styles.btnFullWidth,
+                    { backgroundColor: '#f8fafc', borderColor: '#e2e8f0' },
+                  ]}
+                  onPress={() => openTicketDetails(item)}
+                  activeOpacity={0.9}
+                >
+                  <Text style={[styles.btnTextSecondary, { color: '#0f172a', fontFamily: Font.semibold }]}>
+                    View Details
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
         </View>
       </View>
     );
   };
 
+  /* Light Support Hub shell; honor dark mode only for refresh tint */
+  const refreshTint = isDark ? Palette.primary : BRAND_BLUE;
+
   return (
-    <View style={[styles.container, { backgroundColor: c.background }]}>
+    <View style={[styles.outer, { paddingTop: insets.top, backgroundColor: OUTER_BG }]}>
       <TicketDetailsModal
         ticket={detailTicket}
         visible={detailTicket != null}
@@ -343,44 +490,114 @@ export default function QueriesScreen() {
         onResolve={modalResolve}
         onEscalate={modalEscalate}
       />
-      <FlatList
-        data={filteredTickets}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        ListHeaderComponent={renderHeader}
-        contentContainerStyle={styles.listContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Palette.primary} />}
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <Feather name="folder" size={40} color={c.icon} />
-            <Text style={[styles.emptyTitle, { color: c.text, fontFamily: Font.semibold }]}>No queries</Text>
-            <Text style={[styles.emptySub, { color: c.textSecondary, fontFamily: Font.regular }]}> 
-              Try adjusting your search or pull to refresh
-            </Text>
-          </View>
-        }
-      />
+
+      <View style={[styles.sheet, { maxWidth: Layout.maxContentWidth, alignSelf: 'center', width: '100%' }]}>
+        <FlatList
+          data={filteredTickets}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          ListHeaderComponent={renderHeader}
+          contentContainerStyle={[styles.listContent, { paddingBottom: Spacing.xxxl + insets.bottom }]}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={refreshTint} />}
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Feather name="folder" size={40} color="#94a3b8" />
+              <Text style={[styles.emptyTitle, { fontFamily: Font.semibold }]}>No queries</Text>
+              <Text style={[styles.emptySub, { fontFamily: Font.regular }]}>
+                Try adjusting search or filters, or pull to refresh
+              </Text>
+            </View>
+          }
+        />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  outer: {
     flex: 1,
+  },
+  sheet: {
+    flex: 1,
+    marginHorizontal: Spacing.md,
+    marginBottom: 0,
+    marginTop: Spacing.sm,
+    backgroundColor: CARD_SHEET,
+    borderRadius: 0,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.35,
+        shadowRadius: 24,
+      },
+      android: { elevation: 8 },
+    }),
   },
   listContent: {
     padding: Spacing.lg,
-    paddingBottom: Spacing.xxxl * 2,
     gap: Spacing.md,
   },
-  searchWrap: {},
+  headerBlock: {
+    marginBottom: Spacing.md,
+  },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
+  },
+  logoMark: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: BRAND_BLUE,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 3,
+    marginRight: Spacing.sm,
+  },
+  logoDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#fff',
+  },
+  brandName: {
+    flex: 1,
+    fontSize: 16,
+    color: BRAND_NAVY,
+    letterSpacing: -0.3,
+  },
+  bellBtn: {
+    padding: Spacing.xs,
+  },
+  pageTitle: {
+    fontSize: 28,
+    color: '#0f172a',
+    letterSpacing: -0.5,
+    marginBottom: Spacing.xs,
+  },
+  pageSub: {
+    fontSize: 13,
+    color: '#64748b',
+    marginBottom: Spacing.md,
+  },
   searchInner: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: Radius.sm,
     borderWidth: 1,
-    borderRadius: Radius.lg,
-    paddingHorizontal: Spacing.lg,
+    borderColor: '#e2e8f0',
+    paddingHorizontal: Spacing.md,
     minHeight: 46,
+    marginBottom: Spacing.md,
   },
   searchIcon: {
     marginRight: Spacing.sm,
@@ -388,83 +605,133 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 14,
+    color: '#0f172a',
     paddingVertical: Spacing.sm,
   },
-  heroCard: {
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
-    marginBottom: Spacing.lg,
+  facetRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+    marginBottom: Spacing.sm,
   },
-  heroGreeting: {
-    color: '#dbeafe',
-    fontSize: 11,
-    marginBottom: Spacing.xs,
-  },
-  heroTitle: {
-    color: '#ffffff',
-    fontSize: 28,
-    lineHeight: 34,
-    letterSpacing: -0.4,
-    marginBottom: Spacing.lg,
-  },
-  heroButton: {
-    alignSelf: 'flex-start',
-    borderRadius: Radius.sm,
-    paddingHorizontal: Spacing.lg,
+  facetChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
   },
-  heroButtonText: {
-    color: '#1d4ed8',
+  facetIcon: {
+    marginRight: 6,
+  },
+  facetChipText: {
     fontSize: 13,
   },
-  ticketCard: {
-    borderRadius: Radius.lg,
+  valuePillRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+    marginBottom: Spacing.lg,
+  },
+  valuePill: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 6,
+    borderRadius: Radius.pill,
     borderWidth: 1,
-    padding: Spacing.lg,
+    borderColor: '#e2e8f0',
+  },
+  valuePillOn: {
+    backgroundColor: BRAND_BLUE,
+    borderColor: BRAND_BLUE,
+  },
+  valuePillOff: {
+    backgroundColor: '#ffffff',
+  },
+  valuePillText: {
+    fontSize: 11,
+  },
+  ticketCard: {
+    borderRadius: 0,
+    borderWidth: 1,
     marginBottom: Spacing.sm,
+    flexDirection: 'row',
+    overflow: 'hidden',
     ...Platform.select({
       ios: {
         shadowColor: '#0f172a',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
+        shadowOpacity: 0.06,
+        shadowRadius: 10,
       },
-      android: { elevation: 1 },
+      android: { elevation: 2 },
     }),
   },
-  ticketMetaRow: {
+  accentBar: {
+    width: 5,
+    alignSelf: 'stretch',
+  },
+  ticketCardBody: {
+    flex: 1,
+    padding: Spacing.lg,
+    paddingLeft: Spacing.md,
+  },
+  ticketTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.sm,
     gap: Spacing.sm,
-    marginBottom: Spacing.md,
   },
-  chip: {
+  ticketId: {
+    fontSize: 11,
+    color: '#94a3b8',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    flex: 1,
+  },
+  statusBadge: {
     borderRadius: Radius.pill,
     paddingHorizontal: Spacing.sm,
-    paddingVertical: 3,
+    paddingVertical: 4,
   },
-  chipText: {
-    fontSize: 10,
-    textTransform: 'capitalize',
+  statusBadgeText: {
+    fontSize: 9,
+    letterSpacing: 0.6,
   },
-  metaText: {
-    fontSize: 11,
-  },
-  ticketTitle: {
+  ticketSubjectTitle: {
     fontSize: 16,
-    lineHeight: 23,
+    lineHeight: 22,
     letterSpacing: -0.2,
+    marginBottom: Spacing.md,
+  },
+  metaPillRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
     marginBottom: Spacing.sm,
   },
-  ticketDetails: {
-    fontSize: 12,
-    lineHeight: 17,
-    marginTop: Spacing.sm,
+  metaPill: {
+    borderRadius: Radius.pill,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
+    maxWidth: '100%',
+  },
+  metaPillText: {
+    fontSize: 10,
+    letterSpacing: 0.2,
+  },
+  ticketFooter: {
+    alignItems: 'flex-end',
     marginBottom: Spacing.lg,
+  },
+  updatedLabel: {
+    fontSize: 12,
   },
   actions: {
     flexDirection: 'row',
     gap: Spacing.sm,
+    flexWrap: 'wrap',
   },
   actionsCol: {
     width: '100%',
@@ -495,16 +762,18 @@ const styles = StyleSheet.create({
   empty: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: Spacing.xxxl * 1.5,
+    marginTop: Spacing.xxxl,
     paddingHorizontal: Spacing.xl,
     gap: Spacing.sm,
   },
   emptyTitle: {
     fontSize: 18,
+    color: '#0f172a',
   },
   emptySub: {
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
+    color: '#64748b',
   },
 });
