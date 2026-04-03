@@ -21,12 +21,12 @@ export interface ChatbotWidgetInstance {
 const STYLE_ID = 'chatbot-package-styles'
 
 const DEFAULT_OPTIONS: Required<Omit<ChatbotWidgetOptions, 'onUserMessage'>> = {
-  botName: 'Assistant',
-  title: 'Chat Support',
-  subtitle: 'We usually reply in a few minutes',
-  welcomeMessage: 'Hi! How can I help you today?',
-  placeholder: 'Type your message...',
-  primaryColor: '#2563eb',
+  botName: 'Support Assistant',
+  title: 'Support Assistant',
+  subtitle: 'Online',
+  welcomeMessage: 'Hi there! I am your support assistant. Ask me anything.',
+  placeholder: 'Type your question...',
+  primaryColor: '#ea7d80',
   position: 'bottom-right',
   zIndex: 9999,
 }
@@ -38,7 +38,7 @@ const WIDGET_CSS = `
   display: flex;
   flex-direction: column;
   gap: 12px;
-  font-family: "Inter", "Segoe UI", Tahoma, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .chatbot-widget-root.right {
@@ -50,34 +50,34 @@ const WIDGET_CSS = `
 }
 
 .chatbot-launcher {
-  width: 56px;
-  height: 56px;
+  width: 58px;
+  height: 58px;
   border-radius: 9999px;
   border: 0;
   background: var(--chatbot-primary);
   color: #ffffff;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 12px 26px rgba(22, 28, 45, 0.25);
   cursor: pointer;
   display: grid;
   place-items: center;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
 .chatbot-launcher:hover {
   transform: translateY(-2px);
-  box-shadow: 0 14px 24px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 16px 30px rgba(22, 28, 45, 0.3);
 }
 
 .chatbot-panel {
-  width: min(360px, calc(100vw - 40px));
-  height: min(520px, calc(100vh - 110px));
-  border-radius: 18px;
-  border: 1px solid #e2e8f0;
+  width: min(500px, calc(100vw - 30px));
+  height: min(720px, calc(100vh - 100px));
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
   overflow: hidden;
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.25);
-  background: #ffffff;
+  box-shadow: 0 22px 50px rgba(15, 23, 42, 0.22);
+  background: #f9fafb;
   display: none;
   flex-direction: column;
 }
@@ -90,43 +90,141 @@ const WIDGET_CSS = `
   background: var(--chatbot-primary);
   color: #ffffff;
   padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.chatbot-header h2 {
-  margin: 0;
-  font-size: 16px;
+.chatbot-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chatbot-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 9999px;
+  background: #ffffff;
+  color: var(--chatbot-primary);
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  display: grid;
+  place-items: center;
+  font-size: 18px;
   font-weight: 700;
 }
 
-.chatbot-header p {
-  margin: 4px 0 0;
-  font-size: 12px;
-  opacity: 0.92;
+.chatbot-header-info h2 {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.chatbot-status {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.chatbot-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  background: #22c55e;
+}
+
+.chatbot-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chatbot-controls button {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+}
+
+.chatbot-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 22px 16px 12px;
+  background: #f3f4f6;
+}
+
+.chatbot-intro {
+  text-align: center;
+  color: #334155;
+}
+
+.chatbot-intro-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 9999px;
+  background: #f3ced2;
+  color: var(--chatbot-primary);
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 auto 18px;
+}
+
+.chatbot-intro h3 {
+  margin: 0;
+  font-size: 42px;
+  color: #0f172a;
+}
+
+.chatbot-intro p {
+  margin: 14px auto 0;
+  max-width: 420px;
+  font-size: 17px;
+  line-height: 1.45;
+  color: #475569;
+}
+
+.chatbot-intro .chatbot-human-note {
+  margin-top: 20px;
+  font-style: italic;
+  color: #7c8697;
 }
 
 .chatbot-messages {
-  flex: 1;
-  padding: 14px;
-  overflow-y: auto;
-  display: flex;
+  display: none;
   flex-direction: column;
   gap: 10px;
-  background: #f8fafc;
+  margin-top: 18px;
+}
+
+.chatbot-body.has-messages .chatbot-intro {
+  display: none;
+}
+
+.chatbot-body.has-messages .chatbot-messages {
+  display: flex;
 }
 
 .chatbot-bubble {
-  max-width: 85%;
+  max-width: 86%;
   border-radius: 12px;
   padding: 10px 12px;
-  line-height: 1.35;
+  line-height: 1.4;
   font-size: 14px;
   white-space: pre-wrap;
-}
-
-.chatbot-bubble.bot {
-  align-self: flex-start;
-  background: #e2e8f0;
-  color: #0f172a;
 }
 
 .chatbot-bubble.user {
@@ -135,36 +233,94 @@ const WIDGET_CSS = `
   color: #ffffff;
 }
 
+.chatbot-bubble.bot {
+  align-self: flex-start;
+  background: #e6e9ee;
+  color: #1e293b;
+}
+
+.chatbot-footer {
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+  padding: 12px 14px 14px;
+}
+
 .chatbot-input-row {
-  border-top: 1px solid #e2e8f0;
-  padding: 10px;
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 8px;
-  background: #ffffff;
+  margin-bottom: 10px;
 }
 
 .chatbot-input-row input {
-  border: 1px solid #cbd5e1;
-  border-radius: 10px;
-  padding: 10px 12px;
+  border: 2px solid #f39da4;
+  border-radius: 12px;
+  padding: 12px 14px;
   outline: none;
-  font-size: 14px;
+  font-size: 16px;
+  background: #ffffff;
 }
 
 .chatbot-input-row input:focus {
   border-color: var(--chatbot-primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--chatbot-primary) 20%, transparent);
+  box-shadow: 0 0 0 3px rgba(234, 125, 128, 0.16);
 }
 
 .chatbot-input-row button {
+  width: 56px;
   border: 0;
-  border-radius: 10px;
-  background: var(--chatbot-primary);
+  border-radius: 12px;
+  background: #efc0c4;
   color: #ffffff;
-  padding: 0 14px;
-  font-weight: 600;
+  font-size: 22px;
   cursor: pointer;
+}
+
+.chatbot-human-button {
+  width: 100%;
+  border: 1px solid #d4d8df;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #334155;
+  padding: 11px 12px;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.chatbot-powered {
+  margin: 10px 0 0;
+  text-align: center;
+  font-size: 12px;
+  color: #98a2b3;
+}
+
+.chatbot-powered strong {
+  color: #5f6d85;
+}
+
+@media (max-width: 640px) {
+  .chatbot-widget-root.right,
+  .chatbot-widget-root.left {
+    right: 10px;
+    left: 10px;
+  }
+
+  .chatbot-panel {
+    width: 100%;
+    height: min(700px, calc(100vh - 90px));
+  }
+
+  .chatbot-header-info h2 {
+    font-size: 24px;
+  }
+
+  .chatbot-status {
+    font-size: 18px;
+  }
+
+  .chatbot-intro h3 {
+    font-size: 34px;
+  }
 }
 `
 
@@ -184,6 +340,21 @@ const createBubble = (text: string, role: 'user' | 'bot'): HTMLDivElement => {
   bubble.className = `chatbot-bubble ${role}`
   bubble.textContent = text
   return bubble
+}
+
+const createControlButton = (
+  label: string,
+  ariaLabel: string,
+  onClick?: () => void,
+): HTMLButtonElement => {
+  const button = document.createElement('button')
+  button.type = 'button'
+  button.textContent = label
+  button.setAttribute('aria-label', ariaLabel)
+  if (onClick) {
+    button.addEventListener('click', onClick)
+  }
+  return button
 }
 
 export const createChatbotWidget = (
@@ -206,7 +377,7 @@ export const createChatbotWidget = (
   const launcherButton = document.createElement('button')
   launcherButton.type = 'button'
   launcherButton.className = 'chatbot-launcher'
-  launcherButton.ariaLabel = 'Open chatbot'
+  launcherButton.setAttribute('aria-label', 'Open chatbot')
   launcherButton.setAttribute('aria-expanded', 'false')
   launcherButton.textContent = 'Chat'
 
@@ -217,15 +388,81 @@ export const createChatbotWidget = (
 
   const header = document.createElement('header')
   header.className = 'chatbot-header'
+
+  const headerLeft = document.createElement('div')
+  headerLeft.className = 'chatbot-header-left'
+
+  const avatar = document.createElement('div')
+  avatar.className = 'chatbot-avatar'
+  avatar.textContent = 'A'
+
+  const headerInfo = document.createElement('div')
+  headerInfo.className = 'chatbot-header-info'
+
   const title = document.createElement('h2')
   title.textContent = config.title
-  const subtitle = document.createElement('p')
-  subtitle.textContent = config.subtitle
-  header.append(title, subtitle)
+
+  const status = document.createElement('div')
+  status.className = 'chatbot-status'
+
+  const statusDot = document.createElement('span')
+  statusDot.className = 'chatbot-status-dot'
+
+  const statusText = document.createElement('span')
+  statusText.textContent = config.subtitle
+
+  status.append(statusDot, statusText)
+  headerInfo.append(title, status)
+  headerLeft.append(avatar, headerInfo)
+
+  const controls = document.createElement('div')
+  controls.className = 'chatbot-controls'
+
+  const helpControl = createControlButton('o', 'Help')
+  const minimizeControl = createControlButton('-', 'Minimize chat', () => {
+    root.classList.remove('open')
+    launcherButton.setAttribute('aria-expanded', 'false')
+  })
+  const closeControl = createControlButton('x', 'Close chat', () => {
+    root.classList.remove('open')
+    launcherButton.setAttribute('aria-expanded', 'false')
+  })
+
+  controls.append(helpControl, minimizeControl, closeControl)
+  header.append(headerLeft, controls)
+
+  const body = document.createElement('div')
+  body.className = 'chatbot-body'
+
+  const intro = document.createElement('section')
+  intro.className = 'chatbot-intro'
+
+  const introIcon = document.createElement('div')
+  introIcon.className = 'chatbot-intro-icon'
+  introIcon.textContent = '?'
+
+  const introTitle = document.createElement('h3')
+  introTitle.textContent = 'Hi there!'
+
+  const introDescription = document.createElement('p')
+  introDescription.textContent =
+    'I am your hopefully not annoying AI support assistant. Ask me anything!'
+
+  const introHumanNote = document.createElement('p')
+  introHumanNote.className = 'chatbot-human-note'
+  introHumanNote.textContent =
+    "If I cannot help, you can connect with our human support team."
+
+  intro.append(introIcon, introTitle, introDescription, introHumanNote)
 
   const messages = document.createElement('div')
   messages.className = 'chatbot-messages'
   messages.appendChild(createBubble(config.welcomeMessage, 'bot'))
+
+  body.append(intro, messages)
+
+  const footer = document.createElement('div')
+  footer.className = 'chatbot-footer'
 
   const inputRow = document.createElement('form')
   inputRow.className = 'chatbot-input-row'
@@ -236,10 +473,22 @@ export const createChatbotWidget = (
 
   const sendButton = document.createElement('button')
   sendButton.type = 'submit'
-  sendButton.textContent = 'Send'
+  sendButton.textContent = '>'
 
   inputRow.append(input, sendButton)
-  panel.append(header, messages, inputRow)
+
+  const humanButton = document.createElement('button')
+  humanButton.type = 'button'
+  humanButton.className = 'chatbot-human-button'
+  humanButton.textContent = 'Talk to a real human'
+
+  const poweredText = document.createElement('p')
+  poweredText.className = 'chatbot-powered'
+  poweredText.innerHTML = 'Powered by <strong>AI assistant</strong>'
+
+  footer.append(inputRow, humanButton, poweredText)
+
+  panel.append(header, body, footer)
   root.append(panel, launcherButton)
   document.body.appendChild(root)
 
@@ -272,7 +521,8 @@ export const createChatbotWidget = (
       )
     }
 
-    messages.scrollTop = messages.scrollHeight
+    body.classList.add('has-messages')
+    body.scrollTop = body.scrollHeight
   }
 
   const sendMessage = async (message: string): Promise<void> => {
@@ -281,9 +531,10 @@ export const createChatbotWidget = (
       return
     }
 
+    body.classList.add('has-messages')
     messages.appendChild(createBubble(cleaned, 'user'))
     input.value = ''
-    messages.scrollTop = messages.scrollHeight
+    body.scrollTop = body.scrollHeight
     await appendBotReply(cleaned)
   }
 

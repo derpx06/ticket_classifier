@@ -28,6 +28,9 @@ lerna-debug.log*
 # Cache / tooling
 .cache/
 .turbo/
+node_modules
+dist-ssr
+*.local
 
 # OS / editor files
 .vscode/*
