@@ -4,6 +4,8 @@ import {
   SendHorizontal,
   UserRound,
   X,
+  CheckCircle,
+  ArrowLeft,
   createIcons,
 } from 'lucide'
 
@@ -399,6 +401,189 @@ const WIDGET_CSS = `
   color: #64748b;
 }
 
+/* --- Human Form Styles --- */
+.chatbot-widget-root.show-human-form .chatbot-body,
+.chatbot-widget-root.show-human-form .chatbot-footer {
+  display: none !important;
+}
+
+.chatbot-human-container {
+  display: none;
+  flex: 1;
+  flex-direction: column;
+  background: #f8fbff;
+  overflow-y: auto;
+}
+
+.chatbot-widget-root.show-human-form .chatbot-human-container {
+  display: flex;
+}
+
+.chatbot-human-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chatbot-human-container::-webkit-scrollbar-thumb {
+  background: #bfdbfe;
+  border-radius: 999px;
+}
+
+.chatbot-human-header {
+  padding: 20px 16px 12px;
+  text-align: center;
+}
+
+.chatbot-human-header h3 {
+  margin: 0 0 6px;
+  color: #0f172a;
+  font-size: 18px;
+}
+
+.chatbot-human-header p {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.chatbot-human-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 16px 20px;
+}
+
+.chatbot-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.chatbot-form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.chatbot-form-group input,
+.chatbot-form-group textarea {
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 13px;
+  outline: none;
+  background: #ffffff;
+  color: #1e293b;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.chatbot-form-group input:focus,
+.chatbot-form-group textarea:focus {
+  border-color: var(--chatbot-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.chatbot-form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.chatbot-form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.chatbot-btn-primary {
+  flex: 1;
+  background: linear-gradient(135deg, var(--chatbot-primary), #1d4ed8);
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.chatbot-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.chatbot-btn-secondary {
+  flex: 1;
+  background: #e2e8f0;
+  color: #334155;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.chatbot-btn-secondary:hover {
+  background: #cbd5e1;
+}
+
+.chatbot-human-success {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px 24px;
+  height: 100%;
+}
+
+.chatbot-widget-root.show-human-success .chatbot-human-success {
+  display: flex;
+}
+.chatbot-widget-root.show-human-success .chatbot-human-form,
+.chatbot-widget-root.show-human-success .chatbot-human-header {
+  display: none !important;
+}
+
+.chatbot-success-icon {
+  width: 56px;
+  height: 56px;
+  background: #dcfce7;
+  color: #16a34a;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.chatbot-success-icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.chatbot-human-success h3 {
+  margin: 0 0 8px;
+  color: #0f172a;
+  font-size: 20px;
+}
+
+.chatbot-human-success p {
+  margin: 0 0 24px;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
 @media (max-width: 640px) {
   .chatbot-widget-root.right,
   .chatbot-widget-root.left {
@@ -462,6 +647,8 @@ const hydrateIcons = (): void => {
       SendHorizontal,
       UserRound,
       X,
+      CheckCircle,
+      ArrowLeft,
     },
   })
 }
@@ -596,7 +783,87 @@ export const createChatbotWidget = (
 
   footer.append(inputRow, humanButton, poweredText)
 
-  panel.append(header, body, footer)
+  const humanContainer = document.createElement('div')
+  humanContainer.className = 'chatbot-human-container'
+
+  const humanHeader = document.createElement('div')
+  humanHeader.className = 'chatbot-human-header'
+  const humanTitle = document.createElement('h3')
+  humanTitle.textContent = 'Contact Support'
+  const humanSubtitle = document.createElement('p')
+  humanSubtitle.textContent = 'Please provide your details and we will get back to you shortly.'
+  humanHeader.append(humanTitle, humanSubtitle)
+
+  const humanForm = document.createElement('form')
+  humanForm.className = 'chatbot-human-form'
+
+  const createFormGroup = (labelStr: string, inputEl: HTMLElement) => {
+    const group = document.createElement('div')
+    group.className = 'chatbot-form-group'
+    const label = document.createElement('label')
+    label.textContent = labelStr
+    group.append(label, inputEl)
+    return group
+  }
+
+  const nameInput = document.createElement('input')
+  nameInput.type = 'text'
+  nameInput.placeholder = 'John Doe'
+  nameInput.required = true
+
+  const emailInput = document.createElement('input')
+  emailInput.type = 'email'
+  emailInput.placeholder = 'john@example.com'
+  emailInput.required = true
+
+  const issueTextarea = document.createElement('textarea')
+  issueTextarea.placeholder = 'How can we help you?'
+  issueTextarea.required = true
+
+  const formActions = document.createElement('div')
+  formActions.className = 'chatbot-form-actions'
+
+  const cancelBtn = document.createElement('button')
+  cancelBtn.type = 'button'
+  cancelBtn.className = 'chatbot-btn-secondary'
+  cancelBtn.innerHTML = '<i data-lucide="arrow-left" aria-hidden="true" style="width: 16px; height: 16px;"></i> Back'
+
+  const submitBtn = document.createElement('button')
+  submitBtn.type = 'submit'
+  submitBtn.className = 'chatbot-btn-primary'
+  submitBtn.textContent = 'Send Message'
+
+  formActions.append(cancelBtn, submitBtn)
+  humanForm.append(
+    createFormGroup('Name', nameInput),
+    createFormGroup('Email', emailInput),
+    createFormGroup('Description', issueTextarea),
+    formActions
+  )
+
+  const humanSuccess = document.createElement('div')
+  humanSuccess.className = 'chatbot-human-success'
+  
+  const successIcon = document.createElement('div')
+  successIcon.className = 'chatbot-success-icon'
+  successIcon.innerHTML = '<i data-lucide="check-circle" aria-hidden="true"></i>'
+  
+  const successTitle = document.createElement('h3')
+  successTitle.textContent = 'Message Sent!'
+  
+  const successMsg = document.createElement('p')
+  successMsg.textContent = 'Our support team will reach out to you via email shortly.'
+  
+  const successBackBtn = document.createElement('button')
+  successBackBtn.type = 'button'
+  successBackBtn.className = 'chatbot-btn-primary'
+  successBackBtn.textContent = 'Back to Chat'
+  
+  humanSuccess.append(successIcon, successTitle, successMsg, successBackBtn)
+
+  humanContainer.append(humanHeader, humanForm, humanSuccess)
+
+  panel.append(header, body, footer, humanContainer)
   root.append(panel, launcherButton)
   document.body.appendChild(root)
   hydrateIcons()
@@ -657,9 +924,27 @@ export const createChatbotWidget = (
   })
 
   humanButton.addEventListener('click', () => {
+    root.classList.add('show-human-form')
+    root.classList.remove('show-human-success')
+  })
+
+  cancelBtn.addEventListener('click', () => {
+    root.classList.remove('show-human-form')
+  })
+
+  humanForm.addEventListener('submit', (event) => {
+    event.preventDefault()
+    root.classList.add('show-human-success')
+  })
+
+  successBackBtn.addEventListener('click', () => {
+    root.classList.remove('show-human-form')
+    root.classList.remove('show-human-success')
+    humanForm.reset()
+    
     body.classList.add('has-messages')
     messages.appendChild(
-      createBubble('Sure - we will connect you with a human support teammate.', 'bot'),
+      createBubble('Your issue has been submitted. A human agent will contact you soon.', 'bot')
     )
     body.scrollTop = body.scrollHeight
   })
