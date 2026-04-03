@@ -5,6 +5,7 @@ import { indexerService } from '../services/Indexer';
 import { aiCleaner } from '../services/AICleaner';
 import { getCollections, nextSequence, ApiKeyDoc } from '../config/db';
 import { ragEngine } from '../services/RAGEngine';
+import { createRouteMap, routeMapToSitemapPages, summarizeRouteMap } from '../utils/mapNextRoutes';
 import crypto from 'crypto';
 
 const router = Router();
@@ -51,7 +52,7 @@ router.post('/chat', authenticateApiKey, async (req: Request, res: Response) => 
  * POST /api/rag/crawl
  */
 router.post('/crawl', async (req: Request, res: Response) => {
-    const { url, maxPages, depthLimit, useAdvanced, useAI, auth, excludePatterns, privacyPatterns } = req.body;
+    const { url, maxPages, depthLimit, useAdvanced, useAI, auth, excludePatterns, privacyPatterns, seedUrls } = req.body;
 
     if (!url) {
         return res.status(400).json({ error: 'URL is required' });
@@ -61,36 +62,84 @@ router.post('/crawl', async (req: Request, res: Response) => {
         console.log(`Starting crawl for ${url}...`);
         let pages;
 
-        // Wrapper for parallel indexing
-        const onPageCrawled = async (page: any) => {
-            console.log(`[Route] Stream-indexing page: ${page.url}`);
-            await indexerService.indexPages([page]);
-        };
-
         if (useAdvanced) {
-            pages = await advancedCrawler.crawl(url, maxPages || 10, 2, auth || {}, {
+            pages = await advancedCrawler.crawl(url, maxPages || 10, depthLimit ?? 2, auth || {}, {
                 excludePatterns: excludePatterns || [],
                 privacyPatterns: privacyPatterns || [],
                 useAI: useAI || false,
-                onPageCrawled
+                seedUrls: seedUrls || []
             });
         } else {
-            pages = await crawlerService.crawl(url, maxPages || 20, 2, auth || {}, {
+            pages = await crawlerService.crawl(url, maxPages || 20, depthLimit ?? 2, auth || {}, {
                 excludePatterns: excludePatterns || [],
                 privacyPatterns: privacyPatterns || [],
                 useAI: useAI || false,
-                onPageCrawled
+                seedUrls: seedUrls || []
             });
         }
 
+        console.log(`Indexing ${pages.length} pages...`);
+        const chunksCreated = await indexerService.indexPages(pages);
+
         return res.status(200).json({
             message: 'Crawl and indexing complete',
-            pagesCrawl: pages.length
+            pagesCrawl: pages.length,
+            chunksCreated
         });
     } catch (error) {
         console.error('Crawl/Index error:', error);
         return res.status(500).json({
             error: 'Failed to complete crawl/index',
+            details: error instanceof Error ? error.message : String(error),
+        });
+    }
+});
+
+/**
+ * Build a sitemap from a Next.js codebase and optionally store it for chat navigation.
+ * POST /api/rag/sitemap/codebase
+ */
+router.post('/sitemap/codebase', async (req: Request, res: Response) => {
+    const { projectPath, baseUrl, saveToCompany = true } = req.body || {};
+    const companyId = (req as any).user?.companyId || 1;
+
+    if (!projectPath) {
+        return res.status(400).json({ error: 'projectPath is required' });
+    }
+
+    try {
+        const routeMap = createRouteMap(projectPath);
+        const sitemapPages = routeMapToSitemapPages(routeMap, baseUrl);
+        const description = summarizeRouteMap(routeMap);
+
+        if (saveToCompany) {
+            const { sitemaps } = await getCollections();
+            await sitemaps.updateOne(
+                { companyId },
+                {
+                    $set: {
+                        pages: sitemapPages.map((p) => ({ url: p.url, title: p.title })),
+                        routeMap,
+                        description,
+                        source: 'codebase',
+                        updatedAt: new Date(),
+                    },
+                },
+                { upsert: true },
+            );
+        }
+
+        return res.status(200).json({
+            message: 'Codebase sitemap generated',
+            description,
+            counts: routeMap.counts,
+            totalPages: sitemapPages.length,
+            sitemapPages,
+            routeMap,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            error: 'Failed to generate codebase sitemap',
             details: error instanceof Error ? error.message : String(error),
         });
     }

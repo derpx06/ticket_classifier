@@ -7,13 +7,39 @@ const QDRANT_API_KEY = process.env.QDRANT_API_KEY || undefined;
 
 export const COLLECTION_NAME = process.env.QDRANT_COLLECTION || 'ticket_knowledge';
 export const VECTOR_SIZE = 384; // BAAI/bge-small-en-v1.5 dimension
-const AUTO_RECREATE_ON_DIM_MISMATCH = (process.env.QDRANT_AUTO_RECREATE_ON_DIM_MISMATCH || 'true') === 'true';
+const AUTO_RECREATE_ON_DIM_MISMATCH =
+    (process.env.QDRANT_AUTO_RECREATE_ON_DIM_MISMATCH || 'true').toLowerCase() !== 'false';
 
 
 export const qdrant = new QdrantClient({
     url: QDRANT_URL,
     ...(QDRANT_API_KEY ? { apiKey: QDRANT_API_KEY } : {}),
 });
+
+function extractVectorSize(vectorsConfig: any): number | null {
+    if (!vectorsConfig) return null;
+    // Single-vector collection shape: { size, distance }
+    if (typeof vectorsConfig.size === 'number') return vectorsConfig.size;
+    // Named vectors shape: { default: { size, distance }, ... }
+    if (typeof vectorsConfig === 'object') {
+        for (const val of Object.values(vectorsConfig)) {
+            if (val && typeof (val as any).size === 'number') {
+                return (val as any).size;
+            }
+        }
+    }
+    return null;
+}
+
+async function createCollectionWithExpectedDim() {
+    await qdrant.createCollection(COLLECTION_NAME, {
+        vectors: {
+            size: VECTOR_SIZE,
+            distance: 'Cosine',
+        },
+    });
+    console.log(`[Qdrant] Created collection "${COLLECTION_NAME}" (dim=${VECTOR_SIZE})`);
+}
 
 /**
  * Ensure the collection exists in Qdrant, creating it if not.
@@ -22,38 +48,25 @@ export async function ensureCollection(): Promise<void> {
     const { collections } = await qdrant.getCollections();
     const exists = collections.some(c => c.name === COLLECTION_NAME);
 
-    if (exists) {
-        const info = await qdrant.getCollection(COLLECTION_NAME);
-        const vectors: any = info?.config?.params?.vectors as any;
-        const currentSize =
-            typeof vectors?.size === 'number'
-                ? vectors.size
-                : typeof vectors?.default?.size === 'number'
-                    ? vectors.default.size
-                    : null;
-
-        if (currentSize !== null && currentSize !== VECTOR_SIZE) {
-            const msg = `[Qdrant] Dimension mismatch: expected ${VECTOR_SIZE}, found ${currentSize}`;
-            if (!AUTO_RECREATE_ON_DIM_MISMATCH) {
-                throw new Error(`${msg}. Recreate collection manually or set QDRANT_AUTO_RECREATE_ON_DIM_MISMATCH=true`);
-            }
-            console.warn(`${msg}. Recreating collection...`);
-            await qdrant.deleteCollection(COLLECTION_NAME);
-            await createNewCollection();
-        } else {
-            console.log(`[Qdrant] Collection "${COLLECTION_NAME}" already exists with correct dimensions.`);
-        }
-    } else {
-        await createNewCollection();
+    if (!exists) {
+        await createCollectionWithExpectedDim();
+        return;
     }
-}
 
-async function createNewCollection() {
-    await qdrant.createCollection(COLLECTION_NAME, {
-        vectors: {
-            size: VECTOR_SIZE,
-            distance: 'Cosine',
-        },
-    });
-    console.log(`[Qdrant] Created collection "${COLLECTION_NAME}" with size ${VECTOR_SIZE}`);
+    const info = await qdrant.getCollection(COLLECTION_NAME);
+    const existingSize = extractVectorSize((info as any)?.config?.params?.vectors);
+
+    if (existingSize === VECTOR_SIZE) {
+        console.log(`[Qdrant] Collection "${COLLECTION_NAME}" already exists (dim=${existingSize})`);
+        return;
+    }
+
+    const msg = `[Qdrant] Dimension mismatch for "${COLLECTION_NAME}": existing=${existingSize}, expected=${VECTOR_SIZE}`;
+    if (!AUTO_RECREATE_ON_DIM_MISMATCH) {
+        throw new Error(`${msg}. Set QDRANT_AUTO_RECREATE_ON_DIM_MISMATCH=true to auto-fix.`);
+    }
+
+    console.warn(`${msg}. Recreating collection...`);
+    await qdrant.deleteCollection(COLLECTION_NAME);
+    await createCollectionWithExpectedDim();
 }

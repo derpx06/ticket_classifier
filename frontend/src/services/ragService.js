@@ -8,11 +8,18 @@ const ragService = {
      * Send a query to the RAG engine
      */
     async chat(query, sessionId = 'default', companyId = null) {
-        const response = await apiClient.post('/rag/chat', {
-            query,
-            sessionId,
-            companyId
-        });
+        const response = await apiClient.post(
+            '/rag/chat',
+            {
+                query,
+                sessionId,
+                companyId
+            },
+            {
+                // RAG chat may take longer on first request (embedding/model warm-up).
+                timeout: 0,
+            },
+        );
         return response.data;
     },
 
@@ -24,16 +31,32 @@ const ragService = {
      * @param {boolean} useAI - Use Gemini to clean crawled content
      * @param {object} auth - Authentication credentials
      */
-    async startCrawl(url, maxPages = 20, useAdvanced = false, useAI = false, auth = {}, options = {}) {
-        const response = await apiClient.post('/rag/crawl', {
-            url,
-            maxPages,
-            useAdvanced,
-            useAI,
-            auth,
-            excludePatterns: options.excludePatterns || [],
-            privacyPatterns: options.privacyPatterns || [],
-        });
+    async startCrawl(
+        url,
+        maxPages = 20,
+        depthLimit = 2,
+        useAdvanced = false,
+        useAI = false,
+        auth = {},
+        options = {}
+    ) {
+        const response = await apiClient.post(
+            '/rag/crawl',
+            {
+                url,
+                maxPages,
+                depthLimit,
+                useAdvanced,
+                useAI,
+                auth,
+                excludePatterns: options.excludePatterns || [],
+                privacyPatterns: options.privacyPatterns || [],
+            },
+            {
+                // Crawls can take several minutes for JS-heavy sites.
+                timeout: 0,
+            },
+        );
         return response.data;
     },
 

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import ragService from '../../services/ragService';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
     Globe, Upload, Zap, BrainCircuit, CheckCircle2, AlertCircle,
     Loader2, FileText, Settings2, ChevronDown, ChevronUp, KeyRound, Lock, Shield,
-    Code, Copy, Plus, Trash2
+    Code, Copy, Plus, Trash2, MessageSquare, Send, RotateCcw
 } from 'lucide-react';
 
 /* ─── tiny helpers ─── */
@@ -33,6 +35,7 @@ const KnowledgeBase = () => {
     /* crawl state */
     const [crawlUrl, setCrawlUrl] = useState('');
     const [maxPages, setMaxPages] = useState(20);
+    const [depthLimit, setDepthLimit] = useState(2);
     const [useAdvanced, setUseAdvanced] = useState(false);
     const [useAI, setUseAI] = useState(false);
     const [crawlStatus, setCrawlStatus] = useState(null);
@@ -67,6 +70,18 @@ const KnowledgeBase = () => {
     const [newKeyLabel, setNewKeyLabel] = useState('');
     const [isCreatingKey, setIsCreatingKey] = useState(false);
     const [activeTab, setActiveTab] = useState('crawl');
+    const [chatInput, setChatInput] = useState('');
+    const [chatLoading, setChatLoading] = useState(false);
+    const [chatError, setChatError] = useState('');
+    const [chatSessionId, setChatSessionId] = useState(`demo-${Date.now()}`);
+    const [chatMessages, setChatMessages] = useState([
+        {
+            id: `assistant-welcome-${Date.now()}`,
+            role: 'assistant',
+            content: 'Hi! I am your support assistant demo. Ask me anything about the crawled website or uploaded documents.',
+            sources: [],
+        },
+    ]);
 
     /* effects */
     React.useEffect(() => {
@@ -110,19 +125,32 @@ const KnowledgeBase = () => {
             const body = {
                 url: crawlUrl,
                 maxPages,
+                depthLimit,
                 useAdvanced,
                 useAI,
                 auth: buildAuth(),
                 excludePatterns: excludePatterns.split(',').map(s => s.trim()).filter(Boolean),
                 privacyPatterns: privacyPatterns.split(',').map(s => s.trim()).filter(Boolean),
             };
-            const result = await ragService.startCrawl(body.url, body.maxPages, body.useAdvanced, body.useAI, body.auth, {
+            const result = await ragService.startCrawl(
+                body.url,
+                body.maxPages,
+                body.depthLimit,
+                body.useAdvanced,
+                body.useAI,
+                body.auth,
+                {
                 excludePatterns: body.excludePatterns,
                 privacyPatterns: body.privacyPatterns
             });
             setCrawlResult(result); setCrawlStatus('success');
         } catch (err) {
-            setCrawlError(err?.response?.data?.details || err?.message || 'Unknown error');
+            const isTimeout = err?.code === 'ECONNABORTED' || String(err?.message || '').toLowerCase().includes('timeout');
+            if (isTimeout) {
+                setCrawlError('Crawl is taking longer than usual. Please wait; the backend may still be processing.');
+            } else {
+                setCrawlError(err?.response?.data?.details || err?.message || 'Unknown error');
+            }
             setCrawlStatus('error');
         }
     };
@@ -193,6 +221,71 @@ const KnowledgeBase = () => {
 </script>
 <script src="${window.location.origin}/widget.js" async></script>`;
 
+    const handleSendMessage = async (e) => {
+        e?.preventDefault?.();
+        const trimmed = chatInput.trim();
+        if (!trimmed || chatLoading) return;
+
+        const userMessage = {
+            id: `user-${Date.now()}`,
+            role: 'user',
+            content: trimmed,
+        };
+        setChatMessages((prev) => [...prev, userMessage]);
+        setChatInput('');
+        setChatError('');
+        setChatLoading(true);
+
+        try {
+            const res = await ragService.chat(trimmed, chatSessionId);
+            const answer =
+                res?.answer ||
+                res?.response ||
+                res?.message ||
+                'I processed your query, but no final answer text was returned.';
+            const sources = Array.isArray(res?.sources) ? res.sources : [];
+            setChatMessages((prev) => [
+                ...prev,
+                {
+                    id: `assistant-${Date.now()}`,
+                    role: 'assistant',
+                    content: answer,
+                    sources,
+                    needsHandoff: Boolean(res?.needs_handoff),
+                    confidence: typeof res?.confidence === 'number' ? res.confidence : null,
+                    supportContact: res?.support_contact || null,
+                },
+            ]);
+        } catch (err) {
+            const isTimeout = err?.code === 'ECONNABORTED' || String(err?.message || '').toLowerCase().includes('timeout');
+            if (isTimeout) {
+                setChatError('Response is taking longer than usual. Please wait; request is still being processed.');
+            } else {
+                setChatError(err?.response?.data?.error || err?.message || 'Failed to send message');
+            }
+        } finally {
+            setChatLoading(false);
+        }
+    };
+
+    const handleResetChat = () => {
+        const newSessionId = `demo-${Date.now()}`;
+        setChatSessionId(newSessionId);
+        setChatError('');
+        setChatLoading(false);
+        setChatMessages([
+            {
+                id: `assistant-reset-${Date.now()}`,
+                role: 'assistant',
+                content: 'New chat session started. Ask your next question to test context-aware replies.',
+                sources: [],
+                needsHandoff: false,
+                confidence: null,
+                supportContact: null,
+            },
+        ]);
+    };
+
     return (
         <div className="p-8 max-w-6xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Header */}
@@ -216,6 +309,12 @@ const KnowledgeBase = () => {
                         className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 ${activeTab === 'developer' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
                     >
                         <Code size={16} /> Deployment
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('demo')}
+                        className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 ${activeTab === 'demo' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                    >
+                        <MessageSquare size={16} /> Demo
                     </button>
                 </div>
             </div>
@@ -265,8 +364,25 @@ const KnowledgeBase = () => {
                                         <span className="text-sm font-semibold text-slate-600 group-hover:text-slate-900 transition-colors">AI Content Cleaning</span>
                                     </label>
                                     <div className="flex items-center gap-2">
+                                        <span className="text-sm font-semibold text-slate-600">Max Pages:</span>
+                                        <input
+                                            type="number"
+                                            min={1}
+                                            value={maxPages}
+                                            onChange={(e) => setMaxPages(parseInt(e.target.value, 10) || 1)}
+                                            className="w-20 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs outline-none focus:border-indigo-500"
+                                        />
+                                    </div>
+                                    <div className="flex items-center gap-2">
                                         <span className="text-sm font-semibold text-slate-600">Depth Limit:</span>
-                                        <input type="number" value={maxPages} onChange={(e) => setMaxPages(parseInt(e.target.value))} className="w-16 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs outline-none focus:border-indigo-500" />
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            max={10}
+                                            value={depthLimit}
+                                            onChange={(e) => setDepthLimit(parseInt(e.target.value, 10) || 0)}
+                                            className="w-16 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs outline-none focus:border-indigo-500"
+                                        />
                                     </div>
                                     <SectionToggle open={showAdvOpts} onToggle={() => setShowAdvOpts(!showAdvOpts)} label="Advanced & Privacy" icon={<Settings2 size={13} />} />
                                 </div>
@@ -346,7 +462,7 @@ const KnowledgeBase = () => {
                         </div>
                     </div>
                 </div>
-            ) : (
+            ) : activeTab === 'developer' ? (
                 /* --- DEVELOPER TOOLS TAB --- */
                 <div className="grid grid-cols-1 gap-10">
                     {/* API Keys */}
@@ -416,6 +532,128 @@ const KnowledgeBase = () => {
                                     <p className="text-xs text-indigo-700 mt-1">Ensure you whitelist your domain in the dashboard (coming soon) to prevent unauthorized usage of your API keys.</p>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                /* --- DEMO CHAT TAB --- */
+                <div className="grid grid-cols-1 gap-10">
+                    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                        <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/60 px-6 py-4">
+                            <div className="flex items-center gap-3">
+                                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-fuchsia-600 text-white"><MessageSquare size={18} /></span>
+                                <div>
+                                    <p className="font-semibold text-slate-900">Chatbot Demo</p>
+                                    <p className="text-xs text-slate-500">Test complete context-aware chatbot behavior in this dashboard</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={handleResetChat}
+                                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                            >
+                                <RotateCcw size={14} /> New Session
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-4">
+                            <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
+                                Session ID: <span className="font-mono text-slate-700">{chatSessionId}</span>
+                            </div>
+
+                            <div className="h-[420px] overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+                                {chatMessages.map((msg) => (
+                                    <div
+                                        key={msg.id}
+                                        className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${msg.role === 'user'
+                                            ? 'ml-auto bg-indigo-600 text-white'
+                                            : 'mr-auto bg-slate-100 text-slate-800 border border-slate-200'
+                                            }`}
+                                    >
+                                        <div className="prose prose-sm max-w-none whitespace-pre-wrap prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-table:my-2 prose-th:border prose-th:border-slate-300 prose-th:px-2 prose-th:py-1 prose-td:border prose-td:border-slate-300 prose-td:px-2 prose-td:py-1">
+                                            <ReactMarkdown
+                                                remarkPlugins={[remarkGfm]}
+                                                components={{
+                                                    a: ({ node, ...props }) => (
+                                                        <a
+                                                            {...props}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            className="text-indigo-700 underline break-all"
+                                                        />
+                                                    ),
+                                                }}
+                                            >
+                                                {msg.content || ''}
+                                            </ReactMarkdown>
+                                        </div>
+                                        {msg.role === 'assistant' && Array.isArray(msg.sources) && msg.sources.length > 0 && (
+                                            <div className="mt-3">
+                                                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Sources</p>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {msg.sources.slice(0, 5).map((src, i) => (
+                                                        <a
+                                                            key={`${src.url}-${i}`}
+                                                            href={src.url}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            className="inline-flex max-w-[260px] items-center rounded-full border border-slate-300 bg-white px-3 py-1 text-xs text-slate-700 hover:border-indigo-400 hover:text-indigo-700"
+                                                            title={src.url}
+                                                        >
+                                                            <span className="truncate">{src.title || src.url || 'Source'}</span>
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {msg.role === 'assistant' && (msg.needsHandoff || (typeof msg.confidence === 'number' && msg.confidence < 0.62)) && (
+                                            <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                                                <p className="font-semibold">Need verified help?</p>
+                                                <p className="mt-1">This answer may be incomplete. Use customer support for a guaranteed response.</p>
+                                                {msg.supportContact?.url && (
+                                                    <a
+                                                        href={msg.supportContact.url}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="mt-2 inline-flex rounded-full border border-amber-400 bg-white px-3 py-1 font-semibold text-amber-800 hover:bg-amber-100"
+                                                    >
+                                                        {msg.supportContact.title || 'Contact Support'}
+                                                    </a>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+
+                                {chatLoading && (
+                                    <div className="mr-auto inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-100 px-4 py-2.5 text-sm text-slate-700">
+                                        <Loader2 size={14} className="animate-spin" /> Thinking...
+                                    </div>
+                                )}
+                            </div>
+
+                            {chatError && (
+                                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                                    {chatError}
+                                </div>
+                            )}
+
+                            <form onSubmit={handleSendMessage} className="flex gap-3">
+                                <input
+                                    type="text"
+                                    value={chatInput}
+                                    onChange={(e) => setChatInput(e.target.value)}
+                                    placeholder="Ask: Where is billing? How can I update profile? What is pricing?"
+                                    className="flex-1 rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={chatLoading || !chatInput.trim()}
+                                    className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-50"
+                                >
+                                    {chatLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                                    Send
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
