@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt, { type SignOptions } from "jsonwebtoken";
+import { randomUUID } from "crypto";
 import { ZodError } from "zod";
 import { getCollections, nextSequence, type UserDoc } from "../config/db";
 import { env } from "../config/env";
@@ -25,6 +26,7 @@ function sendZodError(res: Response, err: ZodError): void {
 function buildUserResponse(
   row: UserDoc,
   company: {
+    uuid: string;
     name: string;
     countryCode: string | null;
     about: string | null;
@@ -40,7 +42,9 @@ function buildUserResponse(
     email: row.email,
     role: row.role,
     companyId: row.companyId,
+    companyUuid: company.uuid,
     company: {
+      uuid: company.uuid,
       name: company.name,
       countryCode: company.countryCode,
       about: company.about,
@@ -69,8 +73,10 @@ export async function register(req: Request, res: Response): Promise<void> {
     }
 
     const companyId = await nextSequence("companies");
+    const companyUuid = randomUUID();
     await companies.insertOne({
       id: companyId,
+      uuid: companyUuid,
       name: companyDisplayName,
       countryCode: body.countryCode,
       about: body.companyAbout ?? null,
@@ -121,6 +127,7 @@ export async function register(req: Request, res: Response): Promise<void> {
       user: buildUserResponse(
         userRow,
         {
+          uuid: companyUuid,
           name: companyDisplayName,
           countryCode: body.countryCode,
           about: body.companyAbout ?? null,
@@ -187,6 +194,7 @@ export async function login(req: Request, res: Response): Promise<void> {
       user: buildUserResponse(
         row,
         {
+          uuid: company.uuid,
           name: company.name,
           countryCode: company.countryCode,
           about: company.about,

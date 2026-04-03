@@ -4,12 +4,14 @@ import { useAuth } from '../../hooks/useAuth';
 import {
   Building2,
   ChevronRight,
+  DatabaseZap,
   LayoutDashboard,
   MessageCircle,
   MessagesSquare,
   UsersRound,
   X,
 } from 'lucide-react';
+
 
 const Sidebar = ({ isMobileOpen, setMobileOpen }) => {
   const { role } = useAuth();
@@ -28,7 +30,9 @@ const Sidebar = ({ isMobileOpen, setMobileOpen }) => {
 
   if (isAdmin) {
     adminNavItems.push({ label: 'Teams', path: '/teams', icon: UsersRound, exact: true });
+    adminNavItems.push({ label: 'Knowledge Base', path: '/knowledge-base', icon: DatabaseZap, exact: true });
   }
+
 
   const handleMobileClose = () => {
     if (setMobileOpen) setMobileOpen(false);
@@ -42,17 +46,15 @@ const Sidebar = ({ isMobileOpen, setMobileOpen }) => {
           to={item.path}
           end={!!item.exact}
           onClick={handleMobileClose}
-          className={({ isActive }) => `group relative flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-all ${
-            isActive
-              ? 'border-primary/35 bg-[linear-gradient(120deg,_rgba(219,234,254,0.75)_0%,_rgba(255,255,255,0.92)_100%)] text-slate-900 shadow-sm'
-              : 'border-transparent text-slate-600 hover:border-slate-200 hover:bg-white hover:text-slate-900'
-          }`}
+          className={({ isActive }) => `group relative flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-all ${isActive
+            ? 'border-primary/35 bg-[linear-gradient(120deg,_rgba(219,234,254,0.75)_0%,_rgba(255,255,255,0.92)_100%)] text-slate-900 shadow-sm'
+            : 'border-transparent text-slate-600 hover:border-slate-200 hover:bg-white hover:text-slate-900'
+            }`}
         >
           {({ isActive }) => (
             <>
-              <span className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${
-                isActive ? 'bg-primary text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'
-              }`}>
+              <span className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${isActive ? 'bg-primary text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'
+                }`}>
                 {React.createElement(item.icon, { size: 16 })}
               </span>
               <span className="flex-1">{item.label}</span>

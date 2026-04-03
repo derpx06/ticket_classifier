@@ -20,6 +20,7 @@
     "dist"
   ],
   "ts-node": {
-    "files": true
+    "files": true,
+    "transpileOnly": true
   }
 }
