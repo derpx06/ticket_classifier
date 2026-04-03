@@ -24,6 +24,7 @@ export interface ChatbotWidgetOptions {
     widgetKey: string
   }
   onUserMessage?: (message: string) => string | Promise<string> | void
+  onTalkToHumanClick?: () => string | Promise<string> | void
 }
 
 export interface ChatbotWidgetInstance {
@@ -37,7 +38,7 @@ export interface ChatbotWidgetInstance {
 const STYLE_ID = 'chatbot-package-styles'
 
 const DEFAULT_OPTIONS: Required<
-  Omit<ChatbotWidgetOptions, 'onUserMessage' | 'humanSupport'>
+  Omit<ChatbotWidgetOptions, 'onUserMessage' | 'onTalkToHumanClick' | 'humanSupport'>
 > = {
   botName: 'Support Assistant',
   title: 'Support Assistant',
@@ -792,8 +793,9 @@ export const createChatbotWidget = (
   const humanButton = document.createElement('button')
   humanButton.type = 'button'
   humanButton.className = 'chatbot-human-button'
-  humanButton.innerHTML =
+  const humanButtonMarkup =
     '<i data-lucide="user-round" aria-hidden="true"></i><span>Talk to a real human</span>'
+  humanButton.innerHTML = humanButtonMarkup
 
   const poweredText = document.createElement('p')
   poweredText.className = 'chatbot-powered'
@@ -1031,7 +1033,27 @@ export const createChatbotWidget = (
     await sendMessage(input.value)
   })
 
-  humanButton.addEventListener('click', () => {
+  humanButton.addEventListener('click', async () => {
+    if (options.onTalkToHumanClick) {
+      humanButton.disabled = true
+      humanButton.textContent = 'Creating ticket...'
+      try {
+        const result = await options.onTalkToHumanClick()
+        if (typeof result === 'string' && result.trim()) {
+          appendBotBubble(result)
+        }
+      } catch (error) {
+        appendBotBubble(
+          error instanceof Error ? error.message : 'Unable to create support ticket right now.',
+        )
+      } finally {
+        humanButton.disabled = false
+        humanButton.innerHTML = humanButtonMarkup
+        hydrateIcons()
+      }
+      return
+    }
+
     root.classList.add('show-human-form')
     root.classList.remove('show-human-success')
   })

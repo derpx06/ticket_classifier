@@ -12,6 +12,7 @@ export interface ChatbotWidgetOptions {
         widgetKey: string;
     };
     onUserMessage?: (message: string) => string | Promise<string> | void;
+    onTalkToHumanClick?: () => string | Promise<string> | void;
 }
 export interface ChatbotWidgetInstance {
     open: () => void;

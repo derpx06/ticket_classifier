@@ -5,9 +5,11 @@ import { createTicketSchema } from "../schemas/ticketSchemas";
 
 type TicketStatus = "pending" | "assigned" | "resolved" | "escalated";
 type TicketPriority = "low" | "medium" | "high";
+type TicketCategory = "billing" | "technical" | "login" | "other";
 
 const STATUS_VALUES: TicketStatus[] = ["pending", "assigned", "resolved", "escalated"];
 const PRIORITY_VALUES: TicketPriority[] = ["low", "medium", "high"];
+const CATEGORY_VALUES: TicketCategory[] = ["billing", "technical", "login", "other"];
 
 function parseObjectId(id: string): ObjectId | null {
   if (!ObjectId.isValid(id)) return null;
@@ -31,74 +33,92 @@ function normalizePriority(value: unknown): TicketPriority | null {
     : null;
 }
 
+function normalizeCategory(value: unknown): TicketCategory | null {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  return CATEGORY_VALUES.includes(normalized as TicketCategory)
+    ? (normalized as TicketCategory)
+    : null;
+}
+
+type CreateTicketInput = {
+  apiKey: string;
+  message: string;
+  category?: string;
+  priority?: string;
+  urgency?: string;
+  chatHistory?: Array<{ role: "user" | "bot"; text: string }>;
+};
+
+async function insertTicketFromInput(
+  input: CreateTicketInput,
+  customerNameRaw: unknown,
+): Promise<{ ticketId: ObjectId; ticketDoc: Record<string, unknown> }> {
+  const now = new Date();
+  const { companies, users } = await getCollections();
+  const db = users.db;
+
+  const uuidNorm = input.apiKey.trim().toLowerCase();
+  const company = await companies.findOne({ uuid: uuidNorm }, { projection: { _id: 0, id: 1, uuid: 1 } });
+  if (!company) {
+    throw new Error("No company found for that API key (UUID).");
+  }
+
+  const targetCompanyId = company.id;
+
+  const ticketDoc = {
+    companyId: targetCompanyId,
+    message: input.message,
+    category: normalizeCategory(input.category) ?? "other",
+    priority: normalizePriority(input.priority) ?? "medium",
+    urgency: normalizePriority(input.urgency) ?? "medium",
+    status: "pending" as TicketStatus,
+    assignedTo: null as number | null,
+    customerName: String(customerNameRaw ?? "Test Customer").trim() || "Test Customer",
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const inserted = await db.collection("tickets").insertOne(ticketDoc);
+  const ticketId = inserted.insertedId;
+
+  const seedMessages =
+    Array.isArray(input.chatHistory) && input.chatHistory.length > 0
+      ? input.chatHistory.map((entry, index) => {
+          const createdAt = new Date(now.getTime() + index);
+          return {
+            ticketId,
+            companyId: targetCompanyId,
+            sender: entry.role,
+            text: entry.text,
+            createdAt,
+            updatedAt: createdAt,
+          };
+        })
+      : [
+          {
+            ticketId,
+            companyId: targetCompanyId,
+            sender: "user",
+            text: input.message,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ];
+
+  await db.collection("messages").insertMany(seedMessages);
+
+  return { ticketId, ticketDoc };
+}
+
 export async function createTicket(req: Request, res: Response): Promise<void> {
   try {
-    if (!req.auth) {
-      res.status(401).json({ message: "Authentication required." });
-      return;
-    }
-
     const parsed = createTicketSchema.safeParse(req.body);
     if (!parsed.success) {
       const first = parsed.error.issues[0];
       res.status(400).json({ message: first?.message ?? "Invalid ticket payload." });
       return;
     }
-    const { apiKey, message, category, priority, urgency, chatHistory } = parsed.data;
-
-    const now = new Date();
-    const { companies, users } = await getCollections();
-    const db = users.db;
-
-    const uuidNorm = apiKey.trim().toLowerCase();
-    const company = await companies.findOne({ uuid: uuidNorm }, { projection: { _id: 0, id: 1, uuid: 1 } });
-    if (!company) {
-      res.status(404).json({ message: "No company found for that API key (UUID)." });
-      return;
-    }
-
-    const targetCompanyId = company.id;
-
-    const ticketDoc = {
-      companyId: targetCompanyId,
-      message,
-      category: category ?? "other",
-      priority: priority ?? "medium",
-      urgency: urgency ?? "medium",
-      status: "pending" as TicketStatus,
-      assignedTo: null as number | null,
-      customerName: String(req.body?.customerName ?? "Test Customer").trim() || "Test Customer",
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    const inserted = await db.collection("tickets").insertOne(ticketDoc);
-    const ticketId = inserted.insertedId;
-
-    const seedMessages =
-      Array.isArray(chatHistory) && chatHistory.length > 0
-        ? chatHistory.map((entry, index) => {
-            const createdAt = new Date(now.getTime() + index);
-            return {
-              ticketId,
-              companyId: targetCompanyId,
-              sender: entry.role,
-              text: entry.text,
-              createdAt,
-              updatedAt: createdAt,
-            };
-          })
-        : [
-            {
-              ticketId,
-              companyId: targetCompanyId,
-              sender: "user",
-              text: message,
-              createdAt: now,
-              updatedAt: now,
-            },
-          ];
-    await db.collection("messages").insertMany(seedMessages);
+    const { ticketId, ticketDoc } = await insertTicketFromInput(parsed.data, req.body?.customerName);
 
     res.status(201).json({
       data: {
