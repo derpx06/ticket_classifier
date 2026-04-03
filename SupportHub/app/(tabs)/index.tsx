@@ -7,12 +7,18 @@ import {
   RefreshControl,
   TouchableOpacity,
   Pressable,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { formatDistanceToNow } from 'date-fns';
 import { Feather } from '@expo/vector-icons';
-import { getTickets, formatTicketCardDetails, Ticket } from '@/services/ticket-service';
+import {
+  getTickets,
+  formatTicketCardDetails,
+  Ticket,
+  type TicketPriority,
+} from '@/services/ticket-service';
 import { useAuth } from '@/context/AuthContext';
 import { Colors, Spacing, Radius, Palette } from '@/constants/theme';
 import { Font } from '@/constants/typography';
@@ -28,6 +34,47 @@ function initials(name?: string | null): string {
   const parts = name.trim().split(/\s+/);
   if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
   return name.slice(0, 2).toUpperCase();
+}
+
+function firstName(name?: string | null): string {
+  if (!name?.trim()) return 'there';
+  return name.trim().split(/\s+/)[0] ?? 'there';
+}
+
+function greetingLabel(): string {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+function elevatedCard(isDark: boolean): object {
+  if (isDark) {
+    return { elevation: 0 };
+  }
+  return Platform.select({
+    ios: {
+      shadowColor: '#0f172a',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.07,
+      shadowRadius: 14,
+    },
+    android: { elevation: 3 },
+    default: {},
+  });
+}
+
+function priorityAccentColor(p: TicketPriority): string {
+  if (p === 'critical') return Palette.danger;
+  if (p === 'high') return Palette.warning;
+  if (p === 'medium') return Palette.info;
+  return Palette.primary;
+}
+
+function titleCaseWord(s: string): string {
+  const t = s.trim();
+  if (!t) return '';
+  return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
 }
 
 export default function DashboardScreen() {
@@ -98,7 +145,10 @@ export default function DashboardScreen() {
     [tickets],
   );
 
+  const openWorkload = assigned.length + pending.length;
   const subtleText = c.textSecondary;
+  const heroTint = isDark ? `${Palette.primary}22` : `${Palette.primary}12`;
+  const cardLift = elevatedCard(isDark);
 
   return (
     <View style={[styles.screenRoot, { backgroundColor: c.background }]}>
@@ -106,36 +156,54 @@ export default function DashboardScreen() {
         style={[
           styles.headerBar,
           {
-            paddingTop: insets.top + Spacing.sm,
+            paddingTop: insets.top + Spacing.md,
             backgroundColor: c.surface,
             borderBottomColor: c.border,
           },
         ]}
       >
+        <View style={[styles.headerAccent, { backgroundColor: Palette.primary }]} />
         <View style={[styles.headerInner, { paddingHorizontal: Spacing.xl }]}>
           <View style={styles.topBarText}>
             <Text
-              style={[styles.screenTitle, { color: c.text, fontFamily: Font.semibold }]}
+              style={[styles.greetingLine, { color: subtleText, fontFamily: Font.medium }]}
               numberOfLines={1}
             >
-              Dashboard
+              {greetingLabel()}
+            </Text>
+            <Text
+              style={[styles.screenTitle, { color: c.text, fontFamily: Font.bold }]}
+              numberOfLines={1}
+            >
+              {firstName(user?.name)}
             </Text>
             <Text
               style={[styles.screenSubtitle, { color: subtleText, fontFamily: Font.regular }]}
-              numberOfLines={1}
+              numberOfLines={2}
             >
-              Live ticket metrics
+              Here is what needs attention across your queue.
             </Text>
           </View>
           <View style={styles.topBarActions}>
-            <View style={[styles.avatar, { borderColor: c.border, backgroundColor: c.surfaceMuted }]}>
-              <Text style={[styles.avatarText, { color: c.text, fontFamily: Font.medium }]}>
+            <View
+              style={[
+                styles.avatar,
+                {
+                  borderColor: `${Palette.primary}40`,
+                  backgroundColor: heroTint,
+                },
+              ]}
+            >
+              <Text style={[styles.avatarText, { color: Palette.primary, fontFamily: Font.semibold }]}>
                 {initials(user?.name)}
               </Text>
             </View>
             <Pressable
               onPress={() => void signOut()}
-              style={({ pressed }) => [styles.iconBtn, { opacity: pressed ? 0.5 : 1 }]}
+              style={({ pressed }) => [
+                styles.iconBtn,
+                { backgroundColor: c.surfaceMuted, opacity: pressed ? 0.5 : 1 },
+              ]}
               accessibilityRole="button"
               accessibilityLabel="Sign out"
               hitSlop={8}
@@ -150,143 +218,222 @@ export default function DashboardScreen() {
         style={styles.scrollFlex}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: insets.bottom + Spacing.xxl },
+          { paddingBottom: insets.bottom + Spacing.xxxl },
         ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Palette.primary} />
         }
       >
-      <Text style={[styles.sectionLabel, { color: subtleText, fontFamily: Font.medium }]}>Summary</Text>
-
-      <View style={styles.grid}>
-        <View style={styles.gridRow}>
-          <OverviewStatCard
-            icon="user"
-            iconColor={Palette.primary}
-            count={assigned.length}
-            label="Assigned"
-            activeTag
-            borderColor={c.border}
-            textColor={c.text}
-            subtleColor={subtleText}
-            surface={c.surface}
-            accentBorder={false}
-          />
-          <OverviewStatCard
-            icon="message-circle"
-            iconColor={Palette.primary}
-            count={pending.length}
-            label="Pending"
-            borderColor={c.border}
-            textColor={c.text}
-            subtleColor={subtleText}
-            surface={c.surface}
-            accentBorder={false}
-          />
-        </View>
-        <View style={styles.gridRow}>
-          <OverviewStatCard
-            icon="check"
-            iconColor={subtleText}
-            count={resolved.length}
-            label="Resolved"
-            borderColor={c.border}
-            textColor={c.text}
-            subtleColor={subtleText}
-            surface={c.surface}
-            accentBorder={false}
-          />
-          <OverviewStatCard
-            icon="alert-circle"
-            iconColor={Palette.danger}
-            count={escalated.length}
-            label="Escalated"
-            variant="danger"
-            borderColor={c.border}
-            textColor={c.text}
-            subtleColor={subtleText}
-            surface={c.surface}
-            accentBorder
-          />
-        </View>
-      </View>
-
-      <Text style={[styles.sectionHeading, { color: c.text, fontFamily: Font.semibold }]}>Shortcuts</Text>
-
-      <TouchableOpacity
-        style={[styles.actionRow, { backgroundColor: c.surface, borderColor: c.border }]}
-        activeOpacity={0.7}
-        onPress={() => router.push('/(tabs)/queries')}
-      >
-        <View style={[styles.actionIconWrap, { borderColor: c.border }]}>
-          <Feather name="inbox" size={20} color={Palette.primary} />
-        </View>
-        <View style={styles.actionTextWrap}>
-          <Text style={[styles.actionTitle, { color: c.text, fontFamily: Font.semibold }]}>Pending tickets</Text>
-          <Text style={[styles.actionSubtitle, { color: subtleText, fontFamily: Font.regular }]} numberOfLines={2}>
-            {pendingSubtitle}
-          </Text>
-        </View>
-        <Feather name="chevron-right" size={18} color={c.icon} />
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[
-          styles.actionRow,
-          styles.actionRowAlert,
-          { backgroundColor: c.surface, borderColor: c.border, marginTop: Spacing.sm },
-        ]}
-        activeOpacity={0.7}
-        onPress={() => router.push('/(tabs)/queries')}
-      >
-        <View style={[styles.actionIconWrap, { borderColor: `${Palette.danger}55` }]}>
-          <Feather name="alert-triangle" size={20} color={Palette.danger} />
-        </View>
-        <View style={styles.actionTextWrap}>
-          <Text style={[styles.actionTitle, { color: c.text, fontFamily: Font.semibold }]}>High priority</Text>
-          <Text style={[styles.actionSubtitle, { color: subtleText, fontFamily: Font.regular }]} numberOfLines={2}>
-            {highPrioritySubtitle}
-          </Text>
-        </View>
-        <Feather name="chevron-right" size={18} color={c.icon} />
-      </TouchableOpacity>
-
-      <View style={styles.recentHeader}>
-        <Text style={[styles.sectionHeading, { color: c.text, fontFamily: Font.semibold, marginTop: 0 }]}>
-          Recent
-        </Text>
-        <TouchableOpacity onPress={() => router.push('/(tabs)/queries')} hitSlop={12}>
-          <Text style={[styles.viewAll, { fontFamily: Font.medium }]}>View all</Text>
-        </TouchableOpacity>
-      </View>
-
-      {recentQueries.map((ticket) => (
-        <TouchableOpacity
-          key={ticket.id}
-          style={[styles.queryCard, { backgroundColor: c.surface, borderColor: c.border }]}
-          activeOpacity={0.7}
-          onPress={() => router.push(`/(tabs)/chat/${ticket.id}`)}
+        <View
+          style={[
+            styles.heroCard,
+            { backgroundColor: c.surface, borderColor: c.border },
+            cardLift,
+          ]}
         >
-          <View style={styles.queryCardTop}>
-            <Text style={[styles.queryId, { color: c.text, fontFamily: Font.semibold }]}>#{ticketCode(ticket.id)}</Text>
-            <StatusPill status={ticket.status} isDark={isDark} />
+          <View style={[styles.heroGlow, { backgroundColor: heroTint }]} />
+          <View style={styles.heroRow}>
+            <View style={styles.heroCopy}>
+              <Text style={[styles.heroEyebrow, { color: subtleText, fontFamily: Font.medium }]}>
+                Open workload
+              </Text>
+              <Text style={[styles.heroValue, { color: c.text, fontFamily: Font.extraBold }]}>{openWorkload}</Text>
+              <Text style={[styles.heroCaption, { color: subtleText, fontFamily: Font.regular }]}>
+                Assigned + pending tickets right now
+              </Text>
+            </View>
+            <View style={[styles.heroBadge, { backgroundColor: heroTint, borderColor: `${Palette.primary}33` }]}>
+              <Feather name="activity" size={22} color={Palette.primary} />
+            </View>
           </View>
-          <Text style={[styles.querySnippet, { color: subtleText, fontFamily: Font.regular }]} numberOfLines={2}>
-            {ticket.subject}
-          </Text>
-          <Text style={[styles.queryMeta, { color: subtleText, fontFamily: Font.medium }]} numberOfLines={1}>
-            {formatTicketCardDetails(ticket)}
-          </Text>
-        </TouchableOpacity>
-      ))}
+        </View>
 
-      {recentQueries.length === 0 && (
-        <Text style={[styles.emptyHint, { color: subtleText, fontFamily: Font.regular }]}>
-          No tickets yet. Pull to refresh.
-        </Text>
-      )}
+        <SectionTitle label="Summary" subtleColor={subtleText} accentColor={Palette.primary} />
+
+        <View style={styles.grid}>
+          <View style={styles.gridRow}>
+            <OverviewStatCard
+              icon="user-check"
+              iconColor={Palette.primary}
+              iconBg={`${Palette.primary}18`}
+              count={assigned.length}
+              label="Assigned"
+              activeTag
+              borderColor={c.border}
+              textColor={c.text}
+              subtleColor={subtleText}
+              surface={c.surface}
+              accentBorder={false}
+              cardLift={cardLift}
+            />
+            <OverviewStatCard
+              icon="clock"
+              iconColor={Palette.warning}
+              iconBg={`${Palette.warning}20`}
+              count={pending.length}
+              label="Pending"
+              borderColor={c.border}
+              textColor={c.text}
+              subtleColor={subtleText}
+              surface={c.surface}
+              accentBorder={false}
+              cardLift={cardLift}
+            />
+          </View>
+          <View style={styles.gridRow}>
+            <OverviewStatCard
+              icon="check-circle"
+              iconColor={Palette.success}
+              iconBg={`${Palette.success}18`}
+              count={resolved.length}
+              label="Resolved"
+              borderColor={c.border}
+              textColor={c.text}
+              subtleColor={subtleText}
+              surface={c.surface}
+              accentBorder={false}
+              cardLift={cardLift}
+            />
+            <OverviewStatCard
+              icon="alert-circle"
+              iconColor={Palette.danger}
+              iconBg={`${Palette.danger}20`}
+              count={escalated.length}
+              label="Escalated"
+              variant="danger"
+              borderColor={c.border}
+              textColor={c.text}
+              subtleColor={subtleText}
+              surface={c.surface}
+              accentBorder
+              cardLift={cardLift}
+            />
+          </View>
+        </View>
+
+        <SectionTitle label="Shortcuts" subtleColor={subtleText} accentColor={Palette.primary} />
+
+        <TouchableOpacity
+          style={[
+            styles.actionRow,
+            { backgroundColor: c.surface, borderColor: c.border },
+            cardLift,
+          ]}
+          activeOpacity={0.72}
+          onPress={() => router.push('/(tabs)/queries')}
+        >
+          <View style={[styles.actionIconWrap, { backgroundColor: `${Palette.primary}14`, borderWidth: 0 }]}>
+            <Feather name="inbox" size={20} color={Palette.primary} />
+          </View>
+          <View style={styles.actionTextWrap}>
+            <Text style={[styles.actionTitle, { color: c.text, fontFamily: Font.semibold }]}>Pending tickets</Text>
+            <Text style={[styles.actionSubtitle, { color: subtleText, fontFamily: Font.regular }]} numberOfLines={2}>
+              {pendingSubtitle}
+            </Text>
+          </View>
+          <View style={[styles.chevronCircle, { backgroundColor: c.surfaceMuted }]}>
+            <Feather name="chevron-right" size={18} color={c.icon} />
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.actionRow,
+            styles.actionRowAlert,
+            { backgroundColor: c.surface, borderColor: c.border, marginTop: Spacing.md },
+            cardLift,
+          ]}
+          activeOpacity={0.72}
+          onPress={() => router.push('/(tabs)/queries')}
+        >
+          <View style={[styles.actionIconWrap, { backgroundColor: `${Palette.danger}16`, borderWidth: 0 }]}>
+            <Feather name="alert-triangle" size={20} color={Palette.danger} />
+          </View>
+          <View style={styles.actionTextWrap}>
+            <Text style={[styles.actionTitle, { color: c.text, fontFamily: Font.semibold }]}>High priority</Text>
+            <Text style={[styles.actionSubtitle, { color: subtleText, fontFamily: Font.regular }]} numberOfLines={2}>
+              {highPrioritySubtitle}
+            </Text>
+          </View>
+          <View style={[styles.chevronCircle, { backgroundColor: c.surfaceMuted }]}>
+            <Feather name="chevron-right" size={18} color={c.icon} />
+          </View>
+        </TouchableOpacity>
+
+        <View
+          style={[
+            styles.recentPanel,
+            {
+              backgroundColor: c.surfaceMuted,
+              borderColor: c.border,
+            },
+            cardLift,
+          ]}
+        >
+          <View style={styles.recentPanelHeader}>
+            <SectionTitle label="Recent queries" subtleColor={subtleText} accentColor={Palette.primary} inline />
+            <TouchableOpacity
+              onPress={() => router.push('/(tabs)/queries')}
+              hitSlop={12}
+              style={[styles.viewAllPill, { backgroundColor: c.surface, borderColor: `${Palette.primary}35` }]}
+              activeOpacity={0.75}
+            >
+              <Text style={[styles.viewAllPillText, { fontFamily: Font.semibold }]}>View all</Text>
+              <Feather name="arrow-right" size={15} color={Palette.primary} />
+            </TouchableOpacity>
+          </View>
+
+          {recentQueries.length > 0 ? (
+            <View style={styles.recentList}>
+              {recentQueries.map((ticket) => (
+                <RecentQueryCard
+                  key={ticket.id}
+                  ticket={ticket}
+                  isDark={isDark}
+                  surface={c.surface}
+                  borderColor={c.border}
+                  textColor={c.text}
+                  subtleText={subtleText}
+                  mutedSurface={c.surfaceMuted}
+                  onPress={() => router.push(`/(tabs)/chat/${ticket.id}`)}
+                />
+              ))}
+            </View>
+          ) : (
+            <View style={[styles.recentEmptyInner, { borderColor: c.border, backgroundColor: c.surface }]}>
+              <View style={[styles.recentEmptyIcon, { backgroundColor: heroTint }]}>
+                <Feather name="inbox" size={26} color={Palette.primary} />
+              </View>
+              <Text style={[styles.recentEmptyTitle, { color: c.text, fontFamily: Font.semibold }]}>
+                Nothing recent yet
+              </Text>
+              <Text style={[styles.recentEmptySub, { color: subtleText, fontFamily: Font.regular }]}>
+                Pull down to refresh, or open Queries to browse everything.
+              </Text>
+            </View>
+          )}
+        </View>
       </ScrollView>
+    </View>
+  );
+}
+
+function SectionTitle({
+  label,
+  subtleColor,
+  accentColor,
+  inline,
+}: {
+  label: string;
+  subtleColor: string;
+  accentColor: string;
+  inline?: boolean;
+}) {
+  return (
+    <View style={[styles.sectionTitleRow, inline && styles.sectionTitleRowInline]}>
+      <View style={[styles.sectionAccent, { backgroundColor: accentColor }]} />
+      <Text style={[styles.sectionLabel, { color: subtleColor, fontFamily: Font.semibold }]}>{label}</Text>
     </View>
   );
 }
@@ -294,6 +441,7 @@ export default function DashboardScreen() {
 function OverviewStatCard({
   icon,
   iconColor,
+  iconBg,
   count,
   label,
   activeTag,
@@ -303,9 +451,11 @@ function OverviewStatCard({
   subtleColor,
   surface,
   accentBorder,
+  cardLift,
 }: {
   icon: keyof typeof Feather.glyphMap;
   iconColor: string;
+  iconBg: string;
   count: number;
   label: string;
   activeTag?: boolean;
@@ -315,6 +465,7 @@ function OverviewStatCard({
   subtleColor: string;
   surface: string;
   accentBorder?: boolean;
+  cardLift: object;
 }) {
   const countColor = variant === 'danger' ? Palette.danger : textColor;
   const labelColor = variant === 'danger' ? Palette.danger : subtleColor;
@@ -329,52 +480,131 @@ function OverviewStatCard({
           borderLeftWidth: accentBorder ? 3 : 1,
           borderLeftColor: accentBorder ? Palette.danger : borderColor,
         },
+        cardLift,
       ]}
     >
       <View style={styles.statCardTop}>
-        <View style={[styles.statIconCircle, { borderColor }]}>
+        <View style={[styles.statIconCircle, { backgroundColor: iconBg }]}>
           <Feather name={icon} size={18} color={iconColor} />
         </View>
         {activeTag ? (
-          <View style={[styles.activeTag, { borderColor: `${Palette.primary}66` }]}>
-            <Text style={[styles.activeTagText, { color: Palette.primary, fontFamily: Font.medium }]}>Active</Text>
+          <View style={[styles.activeTag, { backgroundColor: `${Palette.primary}14`, borderColor: `${Palette.primary}40` }]}>
+            <Text style={[styles.activeTagText, { color: Palette.primary, fontFamily: Font.semibold }]}>Live</Text>
           </View>
         ) : null}
       </View>
-      <Text style={[styles.statCount, { color: countColor, fontFamily: Font.semibold }]}>{count}</Text>
-      <Text style={[styles.statLabel, { color: labelColor, fontFamily: Font.regular }]}>{label}</Text>
+      <Text style={[styles.statCount, { color: countColor, fontFamily: Font.extraBold }]}>{count}</Text>
+      <Text style={[styles.statLabel, { color: labelColor, fontFamily: Font.medium }]}>{label}</Text>
     </View>
   );
 }
 
 function StatusPill({ status, isDark }: { status: string; isDark: boolean }) {
   const s = status.toLowerCase();
-  let bg = 'transparent';
+  let bg = isDark ? '#33415580' : '#f4f4f5';
   let fg = isDark ? '#94a3b8' : '#64748b';
-  let border = isDark ? '#475569' : '#e2e8f0';
+  let border = isDark ? '#475569' : '#e4e4e7';
 
   if (s === 'pending') {
-    bg = 'transparent';
-    fg = isDark ? '#94a3b8' : '#64748b';
+    bg = isDark ? '#33415599' : '#f4f4f5';
+    fg = isDark ? '#cbd5e1' : '#475569';
     border = isDark ? '#475569' : '#e2e8f0';
   } else if (s === 'assigned') {
-    bg = 'transparent';
+    bg = `${Palette.primary}18`;
     fg = Palette.primary;
-    border = `${Palette.primary}44`;
+    border = `${Palette.primary}35`;
   } else if (s === 'resolved') {
-    bg = 'transparent';
+    bg = `${Palette.success}16`;
     fg = Palette.success;
-    border = `${Palette.success}44`;
+    border = `${Palette.success}35`;
   } else if (s === 'escalated') {
-    bg = 'transparent';
+    bg = `${Palette.danger}18`;
     fg = Palette.danger;
-    border = `${Palette.danger}44`;
+    border = `${Palette.danger}40`;
   }
 
   return (
-    <View style={[styles.pill, { backgroundColor: bg, borderColor: border, borderWidth: 1 }]}>
-      <Text style={[styles.pillText, { color: fg, fontFamily: Font.medium }]}>{status.toUpperCase()}</Text>
+    <View style={[styles.pill, { backgroundColor: bg, borderColor: border }]}>
+      <Text style={[styles.pillText, { color: fg, fontFamily: Font.semibold }]}>{status.toUpperCase()}</Text>
     </View>
+  );
+}
+
+function RecentQueryCard({
+  ticket,
+  isDark,
+  surface,
+  borderColor,
+  textColor,
+  subtleText,
+  mutedSurface,
+  onPress,
+}: {
+  ticket: Ticket;
+  isDark: boolean;
+  surface: string;
+  borderColor: string;
+  textColor: string;
+  subtleText: string;
+  mutedSurface: string;
+  onPress: () => void;
+}) {
+  const pColor = priorityAccentColor(ticket.priority);
+  const details = formatTicketCardDetails(ticket);
+
+  return (
+    <TouchableOpacity
+      style={[styles.recentCard, { backgroundColor: surface, borderColor }]}
+      activeOpacity={0.72}
+      onPress={onPress}
+    >
+      <View style={[styles.recentStripe, { backgroundColor: pColor }]} />
+      <View style={[styles.recentLeadIcon, { backgroundColor: `${pColor}18`, borderColor: `${pColor}38` }]}>
+        <Feather name="message-square" size={19} color={pColor} />
+      </View>
+      <View style={styles.recentCardMain}>
+        <View style={styles.recentTopRow}>
+          <View style={styles.recentIdCol}>
+            <Text style={[styles.recentKicker, { color: subtleText, fontFamily: Font.medium }]}>Ticket</Text>
+            <Text style={[styles.recentIdMono, { color: textColor, fontFamily: Font.bold }]} numberOfLines={1}>
+              #{ticketCode(ticket.id)}
+            </Text>
+          </View>
+          <StatusPill status={ticket.status} isDark={isDark} />
+        </View>
+        <Text style={[styles.recentSubject, { color: textColor, fontFamily: Font.semibold }]} numberOfLines={2}>
+          {ticket.subject}
+        </Text>
+        <View style={styles.recentChipsRow}>
+          <View style={[styles.recentChip, { backgroundColor: mutedSurface, borderColor }]}>
+            <Feather name="layers" size={12} color={subtleText} />
+            <Text style={[styles.recentChipLabel, { color: subtleText, fontFamily: Font.medium }]} numberOfLines={1}>
+              {titleCaseWord(ticket.category)}
+            </Text>
+          </View>
+          <View style={[styles.recentChip, { backgroundColor: `${pColor}12`, borderColor: `${pColor}32` }]}>
+            <Feather name="flag" size={12} color={pColor} />
+            <Text style={[styles.recentChipLabel, { color: pColor, fontFamily: Font.semibold }]} numberOfLines={1}>
+              {titleCaseWord(ticket.priority)}
+            </Text>
+          </View>
+        </View>
+        {details ? (
+          <Text style={[styles.recentDetailsLine, { color: subtleText, fontFamily: Font.regular }]} numberOfLines={1}>
+            {details}
+          </Text>
+        ) : null}
+        <View style={[styles.recentFooter, { borderTopColor: borderColor }]}>
+          <Feather name="clock" size={14} color={subtleText} />
+          <Text style={[styles.recentFooterTime, { color: subtleText, fontFamily: Font.medium }]}>
+            {formatDistanceToNow(new Date(ticket.updatedAt), { addSuffix: true })}
+          </Text>
+        </View>
+      </View>
+      <View style={[styles.recentChevronWrap, { backgroundColor: mutedSurface }]}>
+        <Feather name="chevron-right" size={20} color={Palette.primary} />
+      </View>
+    </TouchableOpacity>
   );
 }
 
@@ -384,13 +614,22 @@ const styles = StyleSheet.create({
   },
   headerBar: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    paddingBottom: Spacing.md,
+    paddingBottom: Spacing.lg,
+    overflow: 'hidden',
+  },
+  headerAccent: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    height: 3,
   },
   headerInner: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     minHeight: 44,
+    paddingTop: Spacing.xs,
   },
   scrollFlex: {
     flex: 1,
@@ -405,101 +644,165 @@ const styles = StyleSheet.create({
     paddingRight: Spacing.md,
     justifyContent: 'center',
   },
+  greetingLine: {
+    fontSize: 13,
+    letterSpacing: 0.2,
+    marginBottom: 2,
+  },
   screenTitle: {
-    fontSize: 22,
-    letterSpacing: -0.3,
+    fontSize: 28,
+    letterSpacing: -0.6,
+    lineHeight: 34,
   },
   screenSubtitle: {
-    fontSize: 13,
-    lineHeight: 18,
-    marginTop: 2,
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: Spacing.xs,
+    maxWidth: 260,
   },
   topBarActions: {
     flexDirection: 'row',
     alignItems: 'center',
     flexShrink: 0,
-    gap: Spacing.xs,
+    gap: Spacing.sm,
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+  },
+  avatarText: {
+    fontSize: 14,
+  },
+  iconBtn: {
+    padding: Spacing.sm,
+    borderRadius: Radius.md,
+  },
+  heroCard: {
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    padding: Spacing.lg,
+    marginBottom: Spacing.md,
+    overflow: 'hidden',
+  },
+  heroGlow: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.9,
+  },
+  heroRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.md,
+  },
+  heroCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  heroEyebrow: {
+    fontSize: 12,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    marginBottom: Spacing.xs,
+  },
+  heroValue: {
+    fontSize: 40,
+    letterSpacing: -1,
+    lineHeight: 44,
+  },
+  heroCaption: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: Spacing.xs,
+  },
+  heroBadge: {
+    width: 52,
+    height: 52,
+    borderRadius: Radius.md,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
   },
-  avatarText: {
-    fontSize: 13,
-  },
-  iconBtn: {
-    padding: Spacing.sm,
-  },
-  sectionLabel: {
-    fontSize: 11,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginTop: Spacing.lg,
     marginBottom: Spacing.md,
   },
+  sectionTitleRowInline: {
+    marginTop: 0,
+    marginBottom: 0,
+    flexShrink: 1,
+    minWidth: 0,
+  },
+  sectionAccent: {
+    width: 4,
+    height: 16,
+    borderRadius: 2,
+  },
+  sectionLabel: {
+    fontSize: 12,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
   grid: {
-    gap: Spacing.sm,
+    gap: Spacing.md,
   },
   gridRow: {
     flexDirection: 'row',
-    gap: Spacing.sm,
+    gap: Spacing.md,
   },
   statCardOuter: {
     flex: 1,
-    borderRadius: Radius.md,
-    padding: Spacing.md,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
     borderWidth: 1,
-    minHeight: 118,
+    minHeight: 124,
+    overflow: 'hidden',
   },
   statCardTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.md,
   },
   statIconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: Radius.sm,
+    width: 40,
+    height: 40,
+    borderRadius: Radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
   },
   activeTag: {
     paddingHorizontal: Spacing.sm,
-    paddingVertical: 3,
-    borderRadius: Radius.sm,
+    paddingVertical: 4,
+    borderRadius: Radius.pill,
     borderWidth: 1,
-    backgroundColor: 'transparent',
   },
   activeTagText: {
     fontSize: 10,
-    letterSpacing: 0.4,
+    letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
   statCount: {
-    fontSize: 26,
-    letterSpacing: -0.4,
+    fontSize: 30,
+    letterSpacing: -0.8,
   },
   statLabel: {
     fontSize: 13,
-    marginTop: 2,
-  },
-  sectionHeading: {
-    fontSize: 15,
-    marginTop: Spacing.xxl,
-    marginBottom: Spacing.md,
+    marginTop: 4,
     letterSpacing: -0.1,
   },
   actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.md,
-    borderRadius: Radius.md,
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: Radius.lg,
     borderWidth: 1,
     gap: Spacing.md,
   },
@@ -508,75 +811,204 @@ const styles = StyleSheet.create({
     borderLeftColor: Palette.danger,
   },
   actionIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: Radius.sm,
+    width: 44,
+    height: 44,
+    borderRadius: Radius.md,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    backgroundColor: 'transparent',
   },
   actionTextWrap: {
     flex: 1,
+    minWidth: 0,
   },
   actionTitle: {
-    fontSize: 15,
-    lineHeight: 20,
+    fontSize: 16,
+    lineHeight: 22,
+    letterSpacing: -0.2,
   },
   actionSubtitle: {
     fontSize: 13,
     lineHeight: 18,
-    marginTop: 2,
+    marginTop: 4,
   },
-  recentHeader: {
-    flexDirection: 'row',
+  chevronCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: Spacing.xxl,
-    marginBottom: Spacing.md,
+    justifyContent: 'center',
   },
-  viewAll: {
-    fontSize: 14,
-    color: Palette.primary,
-  },
-  queryCard: {
-    borderRadius: Radius.md,
+  recentPanel: {
+    marginTop: Spacing.xxxl,
+    borderRadius: Radius.lg,
     borderWidth: 1,
     padding: Spacing.md,
-    marginBottom: Spacing.sm,
+    paddingBottom: Spacing.lg,
   },
-  queryCardTop: {
+  recentPanelHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.md,
+    gap: Spacing.md,
+  },
+  viewAllPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexShrink: 0,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+  },
+  viewAllPillText: {
+    fontSize: 13,
+    color: Palette.primary,
+    letterSpacing: -0.1,
+  },
+  recentList: {
+    gap: Spacing.md,
+  },
+  recentCard: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  recentStripe: {
+    width: 3,
+  },
+  recentLeadIcon: {
+    alignSelf: 'center',
+    width: 44,
+    height: 44,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: Spacing.md,
+    marginVertical: Spacing.md,
+  },
+  recentCardMain: {
+    flex: 1,
+    paddingVertical: Spacing.md,
+    paddingLeft: Spacing.md,
+    paddingRight: Spacing.sm,
+    minWidth: 0,
+  },
+  recentTopRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: Spacing.sm,
     marginBottom: Spacing.sm,
   },
-  queryId: {
-    fontSize: 14,
-    letterSpacing: 0.3,
+  recentIdCol: {
+    flex: 1,
+    minWidth: 0,
   },
-  querySnippet: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  queryMeta: {
-    fontSize: 12,
-    lineHeight: 16,
-    marginTop: Spacing.xs,
-  },
-  pill: {
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 4,
-    borderRadius: Radius.sm,
-  },
-  pillText: {
+  recentKicker: {
     fontSize: 10,
+    letterSpacing: 0.9,
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
+  recentIdMono: {
+    fontSize: 15,
     letterSpacing: 0.5,
   },
-  emptyHint: {
+  recentSubject: {
+    fontSize: 16,
+    lineHeight: 23,
+    letterSpacing: -0.25,
+    marginBottom: Spacing.sm,
+  },
+  recentChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+    marginBottom: Spacing.xs,
+  },
+  recentChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+    maxWidth: '100%',
+  },
+  recentChipLabel: {
+    fontSize: 11,
+    letterSpacing: 0.1,
+    flexShrink: 1,
+  },
+  recentDetailsLine: {
+    fontSize: 12,
+    lineHeight: 16,
+    marginBottom: Spacing.sm,
+    opacity: 0.92,
+  },
+  recentFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingTop: Spacing.sm,
+    marginTop: Spacing.xs,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  recentFooterTime: {
+    fontSize: 12,
+    flex: 1,
+  },
+  recentChevronWrap: {
+    alignSelf: 'center',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Spacing.md,
+  },
+  recentEmptyInner: {
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    paddingVertical: Spacing.xxl,
+    paddingHorizontal: Spacing.lg,
+    alignItems: 'center',
+  },
+  recentEmptyIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.md,
+  },
+  recentEmptyTitle: {
+    fontSize: 16,
+    letterSpacing: -0.2,
+    marginBottom: Spacing.xs,
     textAlign: 'center',
-    marginTop: Spacing.lg,
-    fontSize: 14,
-    lineHeight: 20,
+  },
+  recentEmptySub: {
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: 'center',
+    maxWidth: 260,
+  },
+  pill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+  },
+  pillText: {
+    fontSize: 9,
+    letterSpacing: 0.6,
   },
 });

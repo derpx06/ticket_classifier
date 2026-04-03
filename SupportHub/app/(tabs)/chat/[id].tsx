@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -9,10 +9,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  ListRenderItem,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { format } from 'date-fns';
+import { format, isToday, isYesterday } from 'date-fns';
 import { getTicketMessages, sendMessage, Message, normalizeMessage } from '@/services/ticket-service';
 import { getSocket, joinTicket, leaveTicket } from '@/services/socket-service';
 import { Colors, Spacing, Radius, Palette } from '@/constants/theme';
@@ -30,15 +32,60 @@ function dedupeMessagesById(list: Message[]): Message[] {
   });
 }
 
+function ticketHeaderCode(id: string): string {
+  const tail = id.replace(/\s/g, '').slice(-6);
+  return tail ? tail.toUpperCase() : '—';
+}
+
+function dateSeparatorLabel(d: Date): string {
+  if (isToday(d)) return 'Today';
+  if (isYesterday(d)) return 'Yesterday';
+  return format(d, 'EEEE, MMM d');
+}
+
+type ChatRow =
+  | { kind: 'date'; key: string; date: Date }
+  | { kind: 'msg'; key: string; message: Message };
+
+function senderLabel(sender: Message['sender']): string {
+  if (sender === 'agent') return 'You';
+  if (sender === 'bot') return 'Assistant';
+  return 'Customer';
+}
+
 export default function ChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [inputText, setInputText] = useState('');
-  const flatListRef = useRef<FlatList>(null);
+  const flatListRef = useRef<FlatList<ChatRow>>(null);
 
   const colorScheme = useColorScheme();
   const c = Colors[colorScheme ?? 'light'];
+
+  useEffect(() => {
+    if (id) {
+      navigation.setOptions({ title: `Ticket #${ticketHeaderCode(id)}` });
+    }
+  }, [id, navigation]);
+
+  const rows = useMemo((): ChatRow[] => {
+    const out: ChatRow[] = [];
+    let prevDayKey: string | null = null;
+    for (const m of messages) {
+      const d = new Date(m.createdAt);
+      const dayKey = format(d, 'yyyy-MM-dd');
+      if (dayKey !== prevDayKey) {
+        prevDayKey = dayKey;
+        out.push({ kind: 'date', key: `sep-${dayKey}`, date: d });
+      }
+      const mid = m.id ? String(m.id) : `t-${m.createdAt}`;
+      out.push({ kind: 'msg', key: `m-${mid}`, message: m });
+    }
+    return out;
+  }, [messages]);
 
   useEffect(() => {
     if (!id) return;
@@ -102,7 +149,6 @@ export default function ChatScreen() {
       const realMsg = await sendMessage(id, textToSend);
       setMessages((prev) => {
         const withoutOptimistic = prev.filter((m) => m.id !== optimisticMsg.id);
-        // Socket may have appended the same persisted message before HTTP returned.
         const withoutDup = withoutOptimistic.filter((m) => m.id !== realMsg.id);
         return dedupeMessagesById([...withoutDup, realMsg]);
       });
@@ -112,112 +158,176 @@ export default function ChatScreen() {
     }
   };
 
-  const renderItem = ({ item }: { item: Message }) => {
-    const isAgent = item.sender === 'agent';
+  const renderItem: ListRenderItem<ChatRow> = ({ item }) => {
+    if (item.kind === 'date') {
+      return (
+        <View style={styles.dateWrap}>
+          <View style={[styles.datePill, { backgroundColor: c.surfaceMuted, borderColor: c.border }]}>
+            <Text style={[styles.datePillText, { color: c.textSecondary, fontFamily: Font.semibold }]}>
+              {dateSeparatorLabel(item.date)}
+            </Text>
+          </View>
+        </View>
+      );
+    }
+
+    const msg = item.message;
+    const isAgent = msg.sender === 'agent';
+    const isBot = msg.sender === 'bot';
+
+    let bubbleBg: string;
+    let bubbleBorder: string;
+    let textColor: string;
+    let timeColor: string;
+    let align: 'flex-end' | 'flex-start';
+
+    if (isAgent) {
+      bubbleBg = Palette.primary;
+      bubbleBorder = 'transparent';
+      textColor = '#ffffff';
+      timeColor = 'rgba(255,255,255,0.75)';
+      align = 'flex-end';
+    } else if (isBot) {
+      bubbleBg = `${Palette.info}14`;
+      bubbleBorder = `${Palette.info}35`;
+      textColor = c.text;
+      timeColor = c.textSecondary;
+      align = 'flex-start';
+    } else {
+      bubbleBg = c.surface;
+      bubbleBorder = c.border;
+      textColor = c.text;
+      timeColor = c.textSecondary;
+      align = 'flex-start';
+    }
 
     return (
-      <View
-        style={[
-          styles.messageBubble,
-          isAgent ? styles.messageAgent : styles.messageUser,
-          {
-            backgroundColor: isAgent ? Palette.primary : c.surfaceMuted,
-            alignSelf: isAgent ? 'flex-end' : 'flex-start',
-            borderColor: isAgent ? 'transparent' : c.border,
-          },
-        ]}
-      >
-        {!isAgent && (
-          <Text
-            style={[
-              styles.senderName,
-              { color: c.textSecondary, fontFamily: Font.medium },
-            ]}
-          >
-            {item.sender}
-          </Text>
-        )}
-        <Text style={[styles.messageText, { color: isAgent ? '#fff' : c.text, fontFamily: Font.regular }]}>
-          {item.text}
-        </Text>
-        <Text
+      <View style={[styles.bubbleRow, { alignSelf: align }]}>
+        <View
           style={[
-            styles.messageTime,
+            styles.messageBubble,
+            isAgent ? styles.bubbleTailAgent : isBot ? styles.bubbleTailBot : styles.bubbleTailUser,
             {
-              color: isAgent ? 'rgba(255,255,255,0.72)' : c.icon,
-              fontFamily: Font.regular,
+              backgroundColor: bubbleBg,
+              borderColor: bubbleBorder,
             },
           ]}
         >
-          {format(new Date(item.createdAt), 'HH:mm')}
-        </Text>
+          {!isAgent && (
+            <View style={styles.senderRow}>
+              {isBot ? (
+                <Feather name="cpu" size={12} color={Palette.info} style={styles.senderIcon} />
+              ) : (
+                <Feather name="user" size={12} color={c.textSecondary} style={styles.senderIcon} />
+              )}
+              <Text style={[styles.senderName, { color: isBot ? Palette.info : c.textSecondary, fontFamily: Font.semibold }]}>
+                {senderLabel(msg.sender)}
+              </Text>
+            </View>
+          )}
+          <Text style={[styles.messageText, { color: textColor, fontFamily: Font.regular }]}>{msg.text}</Text>
+          <View style={styles.timeRowInner}>
+            <Text style={[styles.messageTime, { color: timeColor, fontFamily: Font.regular }]}>
+              {format(new Date(msg.createdAt), 'HH:mm')}
+            </Text>
+          </View>
+        </View>
       </View>
     );
   };
 
   if (loading) {
     return (
-      <View style={[styles.container, styles.center, { backgroundColor: c.background }]}>
-        <ActivityIndicator size="large" color={Palette.primary} />
-        <Text style={[styles.loadingText, { color: c.textSecondary, fontFamily: Font.regular }]}>
-          Loading messages…
-        </Text>
+      <View style={[styles.container, styles.center, { backgroundColor: c.chatCanvas }]}>
+        <View style={[styles.loadingCard, { backgroundColor: c.surface, borderColor: c.border }]}>
+          <ActivityIndicator size="large" color={Palette.primary} />
+          <Text style={[styles.loadingText, { color: c.textSecondary, fontFamily: Font.medium }]}>
+            Loading conversation…
+          </Text>
+        </View>
       </View>
     );
   }
 
+  const canSend = !!inputText.trim();
+  const kbOffset = Platform.OS === 'ios' ? 90 : 0;
+
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: c.background }]}
+      style={[styles.container, { backgroundColor: c.chatCanvas }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      keyboardVerticalOffset={kbOffset}
     >
-      <FlatList
+      <FlatList<ChatRow>
         ref={flatListRef}
-        data={messages}
-        keyExtractor={(item, index) =>
-          item.id
-            ? `${item.ticketId}-${item.id}`
-            : `local-${item.createdAt}-${index}`
-        }
+        data={rows}
+        keyExtractor={(item) => item.key}
         renderItem={renderItem}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[
+          styles.listContent,
+          { paddingBottom: Spacing.lg + insets.bottom },
+        ]}
         onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
         onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
+        ListEmptyComponent={
+          <View style={styles.emptyThread}>
+            <View style={[styles.emptyThreadIcon, { backgroundColor: `${Palette.primary}12`, borderColor: `${Palette.primary}22` }]}>
+              <Feather name="message-circle" size={28} color={Palette.primary} />
+            </View>
+            <Text style={[styles.emptyThreadTitle, { color: c.text, fontFamily: Font.semibold }]}>Start the thread</Text>
+            <Text style={[styles.emptyThreadSub, { color: c.textSecondary, fontFamily: Font.regular }]}>
+              No messages yet. Say hello below — your reply goes to the customer in real time.
+            </Text>
+          </View>
+        }
       />
 
       <View
         style={[
-          styles.inputContainer,
+          styles.inputShell,
           {
             backgroundColor: c.surface,
             borderTopColor: c.border,
+            paddingBottom: Math.max(insets.bottom, Spacing.md),
           },
+          Platform.select({
+            ios: {
+              shadowColor: '#0f172a',
+              shadowOffset: { width: 0, height: -4 },
+              shadowOpacity: 0.06,
+              shadowRadius: 12,
+            },
+            android: { elevation: 6 },
+            default: {},
+          }),
         ]}
       >
-        <TextInput
-          style={[
-            styles.input,
-            {
-              color: c.text,
-              backgroundColor: c.surfaceMuted,
-              fontFamily: Font.regular,
-            },
-          ]}
-          placeholder="Type a message…"
-          placeholderTextColor={c.icon}
-          value={inputText}
-          onChangeText={setInputText}
-          multiline
-        />
-        <TouchableOpacity
-          style={[styles.sendButton, { backgroundColor: Palette.primary, opacity: inputText.trim() ? 1 : 0.45 }]}
-          onPress={handleSend}
-          disabled={!inputText.trim()}
-          activeOpacity={0.88}
-        >
-          <Feather name="send" size={20} color="#fff" />
-        </TouchableOpacity>
+        <View style={[styles.inputInner, { backgroundColor: c.surfaceMuted, borderColor: c.border }]}>
+          <TextInput
+            style={[styles.input, { color: c.text, fontFamily: Font.regular }]}
+            placeholder="Write a reply…"
+            placeholderTextColor={c.icon}
+            value={inputText}
+            onChangeText={setInputText}
+            multiline
+            maxLength={4000}
+          />
+          <TouchableOpacity
+            style={[
+              styles.sendButton,
+              {
+                backgroundColor: Palette.primary,
+                opacity: canSend ? 1 : 0.38,
+              },
+            ]}
+            onPress={handleSend}
+            disabled={!canSend}
+            activeOpacity={0.88}
+            accessibilityLabel="Send message"
+          >
+            <Feather name="send" size={19} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -230,61 +340,136 @@ const styles = StyleSheet.create({
   center: {
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: Spacing.xl,
+  },
+  loadingCard: {
+    paddingVertical: Spacing.xxl,
+    paddingHorizontal: Spacing.xxxl,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    alignItems: 'center',
     gap: Spacing.md,
   },
   loadingText: {
-    fontSize: 14,
-    marginTop: Spacing.sm,
+    fontSize: 15,
+    textAlign: 'center',
   },
   listContent: {
-    padding: Spacing.lg,
-    paddingBottom: Spacing.xxl,
-    gap: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md,
+    flexGrow: 1,
+    gap: Spacing.sm,
+  },
+  dateWrap: {
+    alignItems: 'center',
+    marginVertical: Spacing.md,
+  },
+  datePill: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 6,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+  },
+  datePillText: {
+    fontSize: 11,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  bubbleRow: {
+    maxWidth: '88%',
+    marginBottom: Spacing.xs,
   },
   messageBubble: {
-    maxWidth: '82%',
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     borderRadius: Radius.lg,
     borderWidth: 1,
   },
-  messageAgent: {
-    borderBottomRightRadius: Spacing.xs,
+  bubbleTailAgent: {
+    borderBottomRightRadius: 5,
   },
-  messageUser: {
-    borderBottomLeftRadius: Spacing.xs,
+  bubbleTailUser: {
+    borderBottomLeftRadius: 5,
+  },
+  bubbleTailBot: {
+    borderBottomLeftRadius: 5,
+  },
+  senderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  senderIcon: {
+    marginRight: 5,
   },
   senderName: {
-    fontSize: 12,
-    marginBottom: Spacing.xs,
-    textTransform: 'capitalize',
+    fontSize: 11,
+    letterSpacing: 0.35,
+    textTransform: 'uppercase',
   },
   messageText: {
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 16,
+    lineHeight: 24,
+    letterSpacing: -0.1,
+  },
+  timeRowInner: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: Spacing.sm,
   },
   messageTime: {
     fontSize: 11,
-    alignSelf: 'flex-end',
-    marginTop: Spacing.sm,
+    letterSpacing: 0.2,
   },
-  inputContainer: {
-    flexDirection: 'row',
+  emptyThread: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.xxxl,
+    minHeight: 280,
+  },
+  emptyThreadIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.lg,
+  },
+  emptyThreadTitle: {
+    fontSize: 18,
+    letterSpacing: -0.2,
+    marginBottom: Spacing.sm,
+  },
+  emptyThreadSub: {
+    fontSize: 14,
+    lineHeight: 22,
+    textAlign: 'center',
+    maxWidth: 300,
+  },
+  inputShell: {
+    borderTopWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
-    paddingBottom: Platform.OS === 'ios' ? 28 : Spacing.lg,
-    borderTopWidth: 1,
+  },
+  inputInner: {
+    flexDirection: 'row',
     alignItems: 'flex-end',
-    gap: Spacing.md,
+    borderRadius: Radius.xl,
+    borderWidth: 1,
+    paddingLeft: Spacing.lg,
+    paddingRight: Spacing.xs,
+    paddingVertical: Spacing.xs,
+    gap: Spacing.sm,
   },
   input: {
     flex: 1,
     minHeight: 44,
     maxHeight: 120,
-    borderRadius: Radius.xl,
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.md,
+    paddingTop: Platform.OS === 'ios' ? 11 : 10,
+    paddingBottom: Platform.OS === 'ios' ? 11 : 10,
     fontSize: 16,
     lineHeight: 22,
   },

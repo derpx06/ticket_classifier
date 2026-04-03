@@ -206,75 +206,66 @@ export function TicketDetailsModal({
               </View>
             </View>
 
-            <Text style={[styles.sectionKicker, { color: c.textSecondary, fontFamily: Font.medium }]}>ACTIONS</Text>
-            <View style={styles.actionRow}>
-              {isPending && (
-                <>
-                  <ModalActionButton
-                    label="Accept Ticket"
-                    icon="check-circle"
-                    variant="primary"
-                    disabled={actionsBlocked}
-                    loading={busy === 'accept'}
-                    onPress={() => run('accept', () => onAccept(ticket.id))}
-                    isDark={isDark}
-                  />
-                  <ModalActionButton
-                    label="Reject Ticket"
-                    icon="alert-triangle"
-                    variant="danger"
-                    disabled={actionsBlocked}
-                    loading={busy === 'reject'}
-                    onPress={() => run('reject', () => onReject(ticket.id))}
-                    isDark={isDark}
-                  />
-                </>
-              )}
-              {isAssigned && (
-                <>
-                  <ModalActionButton
-                    label="Resolve"
-                    icon="check-circle"
-                    variant="primary"
-                    disabled={actionsBlocked}
-                    loading={busy === 'resolve'}
-                    onPress={() => run('resolve', () => onResolve(ticket.id))}
-                    isDark={isDark}
-                  />
-                  <ModalActionButton
-                    label="Escalate"
-                    icon="alert-triangle"
-                    variant="danger"
-                    disabled={actionsBlocked}
-                    loading={busy === 'escalate'}
-                    onPress={() => run('escalate', () => onEscalate(ticket.id))}
-                    isDark={isDark}
-                  />
-                </>
-              )}
-              {actionsBlocked && (
-                <>
-                  <ModalActionButton
-                    label="Accept Ticket"
-                    icon="check-circle"
-                    variant="primary"
-                    disabled
-                    loading={false}
-                    onPress={() => {}}
-                    isDark={isDark}
-                  />
-                  <ModalActionButton
-                    label="Reject Ticket"
-                    icon="alert-triangle"
-                    variant="danger"
-                    disabled
-                    loading={false}
-                    onPress={() => {}}
-                    isDark={isDark}
-                  />
-                </>
-              )}
-            </View>
+            {!actionsBlocked ? (
+              <>
+                <Text style={[styles.sectionKicker, { color: c.textSecondary, fontFamily: Font.medium }]}>
+                  ACTIONS
+                </Text>
+                <View style={styles.actionRow}>
+                  {isPending && (
+                    <>
+                      <ModalActionButton
+                        label="Accept Ticket"
+                        icon="check-circle"
+                        variant="primary"
+                        disabled={false}
+                        loading={busy === 'accept'}
+                        onPress={() => run('accept', () => onAccept(ticket.id))}
+                        isDark={isDark}
+                      />
+                      <ModalActionButton
+                        label="Reject Ticket"
+                        icon="alert-triangle"
+                        variant="danger"
+                        disabled={false}
+                        loading={busy === 'reject'}
+                        onPress={() => run('reject', () => onReject(ticket.id))}
+                        isDark={isDark}
+                      />
+                    </>
+                  )}
+                  {isAssigned && (
+                    <>
+                      <ModalActionButton
+                        label="Resolve"
+                        icon="check-circle"
+                        variant="primary"
+                        disabled={false}
+                        loading={busy === 'resolve'}
+                        onPress={() => run('resolve', () => onResolve(ticket.id))}
+                        isDark={isDark}
+                      />
+                      <ModalActionButton
+                        label="Escalate"
+                        icon="alert-triangle"
+                        variant="danger"
+                        disabled={false}
+                        loading={busy === 'escalate'}
+                        onPress={() => run('escalate', () => onEscalate(ticket.id))}
+                        isDark={isDark}
+                      />
+                    </>
+                  )}
+                </View>
+              </>
+            ) : (
+              <View style={[styles.terminalNote, { borderColor: c.border, backgroundColor: c.surfaceMuted }]}>
+                <Feather name="info" size={18} color={c.textSecondary} style={styles.terminalNoteIcon} />
+                <Text style={[styles.terminalNoteText, { color: c.textSecondary, fontFamily: Font.regular }]}>
+                  This ticket is {statusLabel(ticket.status).toLowerCase()}. No further actions are available.
+                </Text>
+              </View>
+            )}
           </ScrollView>
         </View>
       </View>
@@ -462,6 +453,23 @@ const styles = StyleSheet.create({
   actionRow: {
     flexDirection: 'row',
     gap: Spacing.sm,
+  },
+  terminalNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.sm,
+    borderWidth: 1,
+    borderRadius: Radius.md,
+    padding: Spacing.md,
+    marginTop: Spacing.xs,
+  },
+  terminalNoteIcon: {
+    marginTop: 1,
+  },
+  terminalNoteText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 19,
   },
   modalBtn: {
     flex: 1,

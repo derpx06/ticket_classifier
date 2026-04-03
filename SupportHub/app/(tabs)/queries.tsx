@@ -109,16 +109,6 @@ export default function QueriesScreen() {
     return ['all', ...Array.from(map.values()).sort((a, b) => a.localeCompare(b))];
   }, [tickets]);
 
-  const handleAccept = async (id: string) => {
-    try {
-      await acceptTicket(id);
-      Alert.alert('Success', 'Ticket accepted');
-      fetchData();
-    } catch {
-      Alert.alert('Error', 'Could not accept ticket');
-    }
-  };
-
   const handleStatusChange = async (id: string, newStatus: Ticket['status']) => {
     try {
       await updateTicketConfig(id, { status: newStatus });
@@ -328,30 +318,35 @@ export default function QueriesScreen() {
 
     const metaPills = (
       <View style={styles.metaPillRow}>
-        <View style={[styles.metaPill, { backgroundColor: '#f1f5f9' }]}>
-          <Text style={[styles.metaPillText, { color: '#475569', fontFamily: Font.semibold }]} numberOfLines={1}>
+        <View style={[styles.metaPill, styles.metaPillCustomer]}>
+          <Feather name="user" size={12} color="#64748b" style={styles.metaPillIcon} />
+          <Text style={[styles.metaPillText, { color: '#334155', fontFamily: Font.semibold }]} numberOfLines={1}>
             {customerLabel}
           </Text>
         </View>
-        <View style={[styles.metaPill, { backgroundColor: '#ede9fe' }]}>
+        <View style={[styles.metaPill, styles.metaPillCategory]}>
+          <Feather name="folder" size={12} color="#5b21b6" style={styles.metaPillIcon} />
           <Text style={[styles.metaPillText, { color: '#5b21b6', fontFamily: Font.semibold }]}>
             {titleCaseWord(item.category)}
           </Text>
         </View>
-        <View style={[styles.metaPill, { backgroundColor: '#ffedd5' }]}>
+        <View style={[styles.metaPill, styles.metaPillPriority]}>
+          <Feather name="flag" size={12} color="#c2410c" style={styles.metaPillIcon} />
           <Text style={[styles.metaPillText, { color: '#c2410c', fontFamily: Font.semibold }]}>
             {titleCaseWord(item.priority)}
           </Text>
         </View>
         {item.urgency ? (
-          <View style={[styles.metaPill, { backgroundColor: '#fee2e2' }]}>
+          <View style={[styles.metaPill, styles.metaPillUrgency]}>
+            <Feather name="zap" size={12} color="#b91c1c" style={styles.metaPillIcon} />
             <Text style={[styles.metaPillText, { color: '#b91c1c', fontFamily: Font.semibold }]}>
-              Urgency {titleCaseWord(item.urgency)}
+              {titleCaseWord(item.urgency)}
             </Text>
           </View>
         ) : null}
         {item.assignedRoleName?.trim() ? (
-          <View style={[styles.metaPill, { backgroundColor: '#e0f2fe' }]}>
+          <View style={[styles.metaPill, styles.metaPillRole]}>
+            <Feather name="briefcase" size={12} color="#0369a1" style={styles.metaPillIcon} />
             <Text
               style={[styles.metaPillText, { color: '#0369a1', fontFamily: Font.semibold }]}
               numberOfLines={1}
@@ -377,7 +372,9 @@ export default function QueriesScreen() {
 
         <View style={styles.ticketCardBody}>
           <View style={styles.ticketTopRow}>
-            <Text style={[styles.ticketId, { fontFamily: Font.semibold }]}>{ticketCode(item.id)}</Text>
+            <View style={styles.ticketIdRow}>
+              <Text style={[styles.ticketId, { fontFamily: Font.semibold }]}>{ticketCode(item.id)}</Text>
+            </View>
             <View style={[styles.statusBadge, { backgroundColor: vis.badgeBg }]}>
               <Text style={[styles.statusBadgeText, { color: vis.badgeFg, fontFamily: Font.bold }]}>{vis.label}</Text>
             </View>
@@ -390,6 +387,7 @@ export default function QueriesScreen() {
           {metaPills}
 
           <View style={styles.ticketFooter}>
+            <Feather name="clock" size={14} color={metaMuted} style={styles.footerClock} />
             <Text style={[styles.updatedLabel, { color: metaMuted, fontFamily: Font.medium }]}>
               Updated {ago} ago
             </Text>
@@ -397,24 +395,26 @@ export default function QueriesScreen() {
 
           <View style={styles.actions}>
             {item.status === 'pending' && (
-              <>
-                <TouchableOpacity
-                  style={[styles.btn, { backgroundColor: BRAND_BLUE }]}
-                  onPress={() => handleAccept(item.id)}
-                  activeOpacity={0.9}
-                >
-                  <Text style={[styles.btnText, { fontFamily: Font.semibold }]}>Accept</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.btn, styles.btnSecondary, { backgroundColor: '#f8fafc', borderColor: '#e2e8f0' }]}
-                  onPress={() => openTicketDetails(item)}
-                  activeOpacity={0.9}
-                >
-                  <Text style={[styles.btnTextSecondary, { color: '#0f172a', fontFamily: Font.semibold }]}>
-                    View Details
-                  </Text>
-                </TouchableOpacity>
-              </>
+              <TouchableOpacity
+                style={styles.btnDetailsPrimary}
+                onPress={() => openTicketDetails(item)}
+                activeOpacity={0.88}
+              >
+                <View style={styles.btnDetailsPrimaryRow}>
+                  <View style={styles.btnDetailsPrimaryMain}>
+                    <View style={[styles.btnDetailsIconCircle, { backgroundColor: `${BRAND_BLUE}14` }]}>
+                      <Feather name="eye" size={18} color={BRAND_BLUE} />
+                    </View>
+                    <View style={styles.btnDetailsTextCol}>
+                      <Text style={[styles.btnDetailsPrimaryText, { fontFamily: Font.semibold }]}>View details</Text>
+                      <Text style={[styles.btnDetailsHint, { fontFamily: Font.regular }]}>
+                        Accept or reject from here
+                      </Text>
+                    </View>
+                  </View>
+                  <Feather name="chevron-right" size={20} color={BRAND_BLUE} />
+                </View>
+              </TouchableOpacity>
             )}
 
             {item.status === 'assigned' && (
@@ -436,39 +436,35 @@ export default function QueriesScreen() {
                   </TouchableOpacity>
                 </View>
                 <TouchableOpacity
-                  style={[
-                    styles.btn,
-                    styles.btnSecondary,
-                    styles.btnFullWidth,
-                    { backgroundColor: '#f8fafc', borderColor: '#e2e8f0', marginTop: Spacing.sm },
-                  ]}
+                  style={styles.btnDetailsSecondary}
                   onPress={() => openTicketDetails(item)}
-                  activeOpacity={0.9}
+                  activeOpacity={0.88}
                 >
-                  <Text style={[styles.btnTextSecondary, { color: '#0f172a', fontFamily: Font.semibold }]}>
-                    View Details
-                  </Text>
+                  <Feather name="list" size={17} color="#334155" />
+                  <Text style={[styles.btnDetailsSecondaryText, { fontFamily: Font.semibold }]}>View details</Text>
+                  <Feather name="chevron-right" size={18} color="#94a3b8" />
                 </TouchableOpacity>
               </View>
             )}
 
             {isTerminalStatus(item.status) && (
-              <View style={styles.actionsCol}>
-                <TouchableOpacity
-                  style={[
-                    styles.btn,
-                    styles.btnSecondary,
-                    styles.btnFullWidth,
-                    { backgroundColor: '#f8fafc', borderColor: '#e2e8f0' },
-                  ]}
-                  onPress={() => openTicketDetails(item)}
-                  activeOpacity={0.9}
-                >
-                  <Text style={[styles.btnTextSecondary, { color: '#0f172a', fontFamily: Font.semibold }]}>
-                    View Details
-                  </Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                style={styles.btnDetailsPrimary}
+                onPress={() => openTicketDetails(item)}
+                activeOpacity={0.88}
+              >
+                <View style={styles.btnDetailsPrimaryRow}>
+                  <View style={styles.btnDetailsPrimaryMain}>
+                    <View style={[styles.btnDetailsIconCircle, { backgroundColor: `${BRAND_BLUE}14` }]}>
+                      <Feather name="eye" size={18} color={BRAND_BLUE} />
+                    </View>
+                    <View style={styles.btnDetailsTextCol}>
+                      <Text style={[styles.btnDetailsPrimaryText, { fontFamily: Font.semibold }]}>View details</Text>
+                    </View>
+                  </View>
+                  <Feather name="chevron-right" size={20} color={BRAND_BLUE} />
+                </View>
+              </TouchableOpacity>
             )}
           </View>
         </View>
@@ -652,23 +648,23 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   ticketCard: {
-    borderRadius: 0,
+    borderRadius: Radius.lg,
     borderWidth: 1,
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.md,
     flexDirection: 'row',
     overflow: 'hidden',
     ...Platform.select({
       ios: {
         shadowColor: '#0f172a',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.08,
+        shadowRadius: 16,
       },
-      android: { elevation: 2 },
+      android: { elevation: 3 },
     }),
   },
   accentBar: {
-    width: 5,
+    width: 4,
     alignSelf: 'stretch',
   },
   ticketCardBody: {
@@ -678,55 +674,94 @@ const styles = StyleSheet.create({
   },
   ticketTopRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: Spacing.sm,
-    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+    gap: Spacing.md,
+  },
+  ticketIdRow: {
+    flex: 1,
+    minWidth: 0,
   },
   ticketId: {
     fontSize: 11,
     color: '#94a3b8',
-    letterSpacing: 0.8,
+    letterSpacing: 0.85,
     textTransform: 'uppercase',
-    flex: 1,
   },
   statusBadge: {
     borderRadius: Radius.pill,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    flexShrink: 0,
   },
   statusBadgeText: {
     fontSize: 9,
-    letterSpacing: 0.6,
+    letterSpacing: 0.65,
   },
   ticketSubjectTitle: {
-    fontSize: 16,
-    lineHeight: 22,
-    letterSpacing: -0.2,
+    fontSize: 17,
+    lineHeight: 24,
+    letterSpacing: -0.35,
     marginBottom: Spacing.md,
   },
   metaPillRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.sm,
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.md,
   },
   metaPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderRadius: Radius.pill,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     maxWidth: '100%',
+    borderWidth: 1,
+  },
+  metaPillIcon: {
+    marginRight: 6,
+  },
+  metaPillCustomer: {
+    backgroundColor: '#f8fafc',
+    borderColor: '#e2e8f0',
+  },
+  metaPillCategory: {
+    backgroundColor: '#f5f3ff',
+    borderColor: '#ddd6fe',
+  },
+  metaPillPriority: {
+    backgroundColor: '#fff7ed',
+    borderColor: '#fed7aa',
+  },
+  metaPillUrgency: {
+    backgroundColor: '#fef2f2',
+    borderColor: '#fecaca',
+  },
+  metaPillRole: {
+    backgroundColor: '#f0f9ff',
+    borderColor: '#bae6fd',
   },
   metaPillText: {
-    fontSize: 10,
-    letterSpacing: 0.2,
+    fontSize: 11,
+    letterSpacing: 0.15,
+    flexShrink: 1,
   },
   ticketFooter: {
-    alignItems: 'flex-end',
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: Spacing.lg,
+    paddingTop: Spacing.xs,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#e2e8f0',
+  },
+  footerClock: {
+    marginRight: 6,
   },
   updatedLabel: {
     fontSize: 12,
+    flex: 1,
   },
   actions: {
     flexDirection: 'row',
@@ -735,29 +770,82 @@ const styles = StyleSheet.create({
   },
   actionsCol: {
     width: '100%',
+    gap: Spacing.sm,
   },
-  btnFullWidth: {
-    alignSelf: 'stretch',
-    minWidth: undefined,
+  btnDetailsPrimary: {
     width: '100%',
+    borderRadius: Radius.md,
+    borderWidth: 1.5,
+    borderColor: `${BRAND_BLUE}55`,
+    backgroundColor: '#f8fafc',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
   },
-  btn: {
-    borderRadius: Radius.sm,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm + 1,
+  btnDetailsPrimaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.md,
+  },
+  btnDetailsPrimaryMain: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    minWidth: 0,
+    gap: Spacing.md,
+  },
+  btnDetailsIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 108,
   },
-  btnSecondary: {
+  btnDetailsTextCol: {
+    flex: 1,
+    minWidth: 0,
+  },
+  btnDetailsPrimaryText: {
+    fontSize: 16,
+    color: '#0f172a',
+    letterSpacing: -0.2,
+  },
+  btnDetailsHint: {
+    fontSize: 12,
+    color: '#64748b',
+    marginTop: 3,
+    lineHeight: 16,
+  },
+  btnDetailsSecondary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    width: '100%',
+    borderRadius: Radius.md,
     borderWidth: 1,
+    borderColor: '#e2e8f0',
+    backgroundColor: '#ffffff',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
+  },
+  btnDetailsSecondaryText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#334155',
+    letterSpacing: -0.1,
+  },
+  btn: {
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm + 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 112,
+    flex: 1,
   },
   btnText: {
     color: '#fff',
-    fontSize: 13,
-  },
-  btnTextSecondary: {
-    fontSize: 13,
+    fontSize: 14,
   },
   empty: {
     alignItems: 'center',

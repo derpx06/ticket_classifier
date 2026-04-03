@@ -13,6 +13,8 @@ export const Colors = {
     text: '#0f172a',
     textSecondary: '#64748b',
     background: '#fafafa',
+    /** Slightly cooler canvas behind chat bubbles */
+    chatCanvas: '#f1f5f9',
     surface: '#ffffff',
     surfaceMuted: '#f4f4f5',
     tint: tintColorLight,
@@ -25,6 +27,7 @@ export const Colors = {
     text: '#f1f5f9',
     textSecondary: '#94a3b8',
     background: '#0f172a',
+    chatCanvas: '#0c1222',
     surface: '#1e293b',
     surfaceMuted: '#334155',
     tint: tintColorDark,
