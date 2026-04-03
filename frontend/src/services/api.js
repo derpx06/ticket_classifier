@@ -12,6 +12,8 @@ const unwrapData = (response) => {
 };
 
 export const getTickets = async () => unwrapData(await apiClient.get('/tickets'));
+export const searchTickets = async (query, limit = 25) =>
+  unwrapData(await apiClient.get('/tickets/search', { params: { q: query, limit } }));
 export const createTicket = async (body) => unwrapData(await apiClient.post('/tickets', body));
 export const getMyTickets = async () => unwrapData(await apiClient.get('/tickets/my'));
 export const updateTicket = async (id, updates) =>

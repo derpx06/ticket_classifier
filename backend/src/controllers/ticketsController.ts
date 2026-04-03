@@ -4,6 +4,7 @@ import { getCollections } from "../config/db";
 import { createTicketSchema } from "../schemas/ticketSchemas";
 import { emitRealtimeMessageFromHttp, emitRealtimeTicketStatusFromHttp } from "../services/chatSocketServer";
 import { resolveAssignedRole } from "../utils/roleAssignment";
+import { ticketVectorService } from "../services/TicketVectorService";
 
 type TicketStatus = "pending" | "assigned" | "resolved" | "escalated";
 type TicketPriority = "low" | "medium" | "high" | "critical";
@@ -111,6 +112,23 @@ async function insertTicketFromInput(
         ];
 
   await db.collection("messages").insertMany(seedMessages);
+
+  try {
+    await ticketVectorService.upsertTicket({
+      ticketId: ticketId.toString(),
+      companyId: targetCompanyId,
+      message: input.message,
+      category: ticketDoc.category as string,
+      priority: ticketDoc.priority as string,
+      customerName: ticketDoc.customerName as string,
+    });
+    await db.collection("tickets").updateOne(
+      { _id: ticketId },
+      { $set: { vectorizedAt: new Date() } },
+    );
+  } catch (error) {
+    console.error("[TicketVector] Failed to index ticket:", error);
+  }
 
   return { ticketId, ticketDoc };
 }
@@ -297,6 +315,93 @@ export async function getMyTickets(req: Request, res: Response): Promise<void> {
   } catch (error) {
     console.error("getMyTickets error", error);
     res.status(500).json({ message: "Failed to fetch assigned tickets." });
+  }
+}
+
+export async function searchTickets(req: Request, res: Response): Promise<void> {
+  try {
+    if (!req.auth) {
+      res.status(401).json({ message: "Authentication required." });
+      return;
+    }
+
+    const query = String(req.query?.q ?? req.query?.query ?? "").trim();
+    if (!query) {
+      res.json({ data: [] });
+      return;
+    }
+
+    const limit = Math.min(Number(req.query?.limit ?? 25) || 25, 50);
+    let results = await ticketVectorService.searchTickets(req.auth.companyId, query, limit);
+    const ids = results
+      .map((result) => parseObjectId(result.ticketId))
+      .filter((id): id is ObjectId => Boolean(id));
+
+    if (ids.length === 0) {
+      const { users } = await getCollections();
+      const db = users.db;
+      const missing = await db
+        .collection("tickets")
+        .find({ companyId: req.auth.companyId, vectorizedAt: { $exists: false } })
+        .limit(200)
+        .toArray();
+
+      if (missing.length > 0) {
+        try {
+          await ticketVectorService.upsertTickets(
+            missing.map((ticket) => ({
+              ticketId: String(ticket._id),
+              companyId: Number(ticket.companyId),
+              message: String(ticket.message || ""),
+              category: ticket.category,
+              priority: ticket.priority,
+              customerName: ticket.customerName,
+            })),
+          );
+          await db.collection("tickets").updateMany(
+            { _id: { $in: missing.map((t) => t._id) } },
+            { $set: { vectorizedAt: new Date() } },
+          );
+        } catch (error) {
+          console.error("[TicketVector] On-demand backfill failed:", error);
+        }
+      }
+
+      results = await ticketVectorService.searchTickets(req.auth.companyId, query, limit);
+    }
+
+    const resolvedIds = results
+      .map((result) => parseObjectId(result.ticketId))
+      .filter((id): id is ObjectId => Boolean(id));
+
+    if (resolvedIds.length === 0) {
+      res.json({ data: [] });
+      return;
+    }
+
+    const { users } = await getCollections();
+    const db = users.db;
+    const tickets = await db
+      .collection("tickets")
+      .find({ companyId: req.auth.companyId, _id: { $in: resolvedIds } })
+      .toArray();
+
+    const ticketById = new Map(tickets.map((ticket) => [String(ticket._id), ticket]));
+    const ordered = results
+      .map((result) => {
+        const ticket = ticketById.get(String(result.ticketId));
+        if (!ticket) return null;
+        return {
+          ...ticket,
+          similarity: Number(result.score.toFixed(4)),
+        };
+      })
+      .filter(Boolean);
+
+    res.json({ data: ordered });
+  } catch (error) {
+    console.error("searchTickets error", error);
+    res.status(500).json({ message: "Failed to run smart search." });
   }
 }
 

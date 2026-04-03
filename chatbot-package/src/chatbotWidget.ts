@@ -862,6 +862,45 @@ const unwrapResponseData = <T>(payload: unknown): T => {
 
 type ResolvedOptions = typeof DEFAULT_OPTIONS & ChatbotWidgetOptions
 
+type StoredMessage = { role: 'user' | 'bot'; text: string }
+
+const resolveHistoryKey = (config: ResolvedOptions): string => {
+  return 'chatbot_ai_history'
+}
+
+const loadHistory = (storageKey: string): StoredMessage[] => {
+  if (typeof localStorage === 'undefined') return []
+  try {
+    const raw = localStorage.getItem(storageKey)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    return parsed
+      .filter((entry) => entry && (entry.role === 'user' || entry.role === 'bot'))
+      .map((entry) => ({ role: entry.role, text: String(entry.text || '') }))
+  } catch {
+    return []
+  }
+}
+
+const saveHistory = (storageKey: string, history: StoredMessage[]): void => {
+  if (typeof localStorage === 'undefined') return
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(history))
+  } catch {
+    // ignore storage errors
+  }
+}
+
+const pushHistory = (
+  storageKey: string,
+  history: StoredMessage[],
+  entry: StoredMessage,
+) => {
+  history.push(entry)
+  saveHistory(storageKey, history)
+}
+
 const buildHeader = (config: ResolvedOptions, onClose: () => void) => {
   const header = document.createElement('header')
   header.className = 'chatbot-header'
@@ -1129,6 +1168,16 @@ export const createChatbotWidget = (
 
   const { humanContainer, humanForm, cancelBtn, successBackBtn } = buildHumanContainer()
 
+  const historyStorageKey = resolveHistoryKey(config)
+  const messageHistory = loadHistory(historyStorageKey)
+  if (messageHistory.length > 0) {
+    body.classList.add('has-messages')
+    messages.innerHTML = ''
+    messageHistory.forEach((entry) => {
+      messages.appendChild(createBubble(entry.text, entry.role, entry.role === 'bot'))
+    })
+  }
+
   panel.append(header, body, footer, humanContainer)
   root.append(panel, launcherButton)
   document.body.appendChild(root)
@@ -1146,11 +1195,17 @@ export const createChatbotWidget = (
   let widgetTicketId: string | null = null
   const seenMessageIds = new Set<string>()
 
-  const appendBotBubble = (text: string, options?: { markdown?: boolean }): void => {
+  const appendBotBubble = (
+    text: string,
+    options?: { markdown?: boolean; store?: boolean },
+  ): void => {
     if (!text.trim()) return
     body.classList.add('has-messages')
     messages.appendChild(createBubble(text.trim(), 'bot', options?.markdown ?? false))
     body.scrollTop = body.scrollHeight
+    if (options?.store && !isHumanChatActive) {
+      pushHistory(historyStorageKey, messageHistory, { role: 'bot', text: text.trim() })
+    }
   }
 
   const setHumanMode = (enabled: boolean): void => {
@@ -1192,7 +1247,7 @@ export const createChatbotWidget = (
     if (options.onUserMessage) {
       const result = await options.onUserMessage(message)
       if (typeof result === 'string' && result.trim()) {
-        appendBotBubble(result)
+        appendBotBubble(result, { store: true })
       }
       return
     }
@@ -1222,7 +1277,7 @@ export const createChatbotWidget = (
           (typeof data?.response === 'string' && data.response) ||
           (typeof data?.message === 'string' && data.message) ||
           'I processed your question, but no answer text was returned.'
-        appendBotBubble(answer, { markdown: true })
+        appendBotBubble(answer, { markdown: true, store: true })
         if (data?.raise_ticket && data?.ticket_payload) {
           const payload = data.ticket_payload as {
             summary?: string
@@ -1241,7 +1296,7 @@ export const createChatbotWidget = (
             ticketId ? `- Ticket ID: ${ticketId}` : null,
             '- Status: Pending',
           ].filter(Boolean) as string[]
-          appendBotBubble(details.join('\n'), { markdown: true })
+          appendBotBubble(details.join('\n'), { markdown: true, store: true })
         }
       } catch (error) {
         const msg = error instanceof Error
@@ -1256,7 +1311,7 @@ export const createChatbotWidget = (
       return
     }
 
-    appendBotBubble(`Thanks! ${config.botName} received: "${message}"`)
+    appendBotBubble(`Thanks! ${config.botName} received: "${message}"`, { store: true })
   }
 
   const connectHumanSupport = async (payload: {
@@ -1398,6 +1453,9 @@ export const createChatbotWidget = (
       body.classList.add('has-messages')
       setHumanMode(true)
       messages.appendChild(createBubble(cleaned, 'user'))
+      if (!isHumanChatActive) {
+        pushHistory(historyStorageKey, messageHistory, { role: 'user', text: cleaned })
+      }
       input.value = ''
       body.scrollTop = body.scrollHeight
       awaitingHumanIssue = false
@@ -1422,6 +1480,9 @@ export const createChatbotWidget = (
     body.classList.add('has-messages')
     setHumanMode(isHumanChatActive)
     messages.appendChild(createBubble(cleaned, 'user'))
+    if (!isHumanChatActive) {
+      pushHistory(historyStorageKey, messageHistory, { role: 'user', text: cleaned })
+    }
     input.value = ''
     body.scrollTop = body.scrollHeight
     await appendBotReply(cleaned)

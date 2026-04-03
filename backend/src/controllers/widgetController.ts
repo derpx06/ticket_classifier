@@ -5,6 +5,7 @@ import { getCollections, nextSequence, type ApiKeyDoc } from "../config/db";
 import { signWidgetToken } from "../utils/chatTokens";
 import { ragEngine } from "../services/RAGEngine";
 import { resolveAssignedRole } from "../utils/roleAssignment";
+import { ticketVectorService } from "../services/TicketVectorService";
 
 type ChatSessionDoc = {
   _id?: ObjectId;
@@ -153,6 +154,23 @@ export async function createWidgetSession(req: Request, res: Response): Promise<
         createdAt: now,
         updatedAt: now,
       });
+    }
+
+    try {
+      await ticketVectorService.upsertTicket({
+        ticketId: ticketObjectId.toString(),
+        companyId: keyDoc.companyId,
+        message: ticketDoc.message,
+        category: ticketDoc.category,
+        priority: ticketDoc.priority,
+        customerName: ticketDoc.customerName,
+      });
+      await db.collection("tickets").updateOne(
+        { _id: ticketObjectId },
+        { $set: { vectorizedAt: new Date() } },
+      );
+    } catch (error) {
+      console.error("[TicketVector] Failed to index widget ticket:", error);
     }
 
     const chatToken = signWidgetToken({

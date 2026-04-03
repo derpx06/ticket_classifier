@@ -82,6 +82,14 @@ const ragService = {
     },
 
     /**
+     * Fetch knowledge base stats
+     */
+    async getKnowledgeBase() {
+        const response = await apiClient.get('/rag/knowledge-base');
+        return response.data;
+    },
+
+    /**
      * --- API Keys ---
      */
     async getApiKeys() {

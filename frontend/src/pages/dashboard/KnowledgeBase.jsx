@@ -71,6 +71,9 @@ const KnowledgeBase = () => {
     const [newKeyLabel, setNewKeyLabel] = useState('');
     const [isCreatingKey, setIsCreatingKey] = useState(false);
     const [activeTab, setActiveTab] = useState('crawl');
+    const [knowledgeData, setKnowledgeData] = useState(null);
+    const [knowledgeLoading, setKnowledgeLoading] = useState(false);
+    const [knowledgeError, setKnowledgeError] = useState('');
     const [chatInput, setChatInput] = useState('');
     const [chatLoading, setChatLoading] = useState(false);
     const [chatError, setChatError] = useState('');
@@ -88,6 +91,7 @@ const KnowledgeBase = () => {
     React.useEffect(() => {
         fetchApiKeys();
         fetchWidgetConfig();
+        fetchKnowledgeBase();
     }, []);
 
     const fetchApiKeys = async () => {
@@ -102,6 +106,19 @@ const KnowledgeBase = () => {
             const data = await ragService.getWidgetConfig();
             setWidgetConfig(data);
         } catch (err) { console.error('Failed to fetch widget config', err); }
+    };
+
+    const fetchKnowledgeBase = async () => {
+        try {
+            setKnowledgeLoading(true);
+            setKnowledgeError('');
+            const data = await ragService.getKnowledgeBase();
+            setKnowledgeData(data);
+        } catch (err) {
+            setKnowledgeError(err?.response?.data?.error || err?.message || 'Failed to fetch knowledge base.');
+        } finally {
+            setKnowledgeLoading(false);
+        }
     };
 
     /* ── helpers ── */
@@ -153,6 +170,7 @@ const KnowledgeBase = () => {
                 privacyPatterns: body.privacyPatterns
             });
             setCrawlResult(result); setCrawlStatus('success');
+            fetchKnowledgeBase();
         } catch (err) {
             const isTimeout = err?.code === 'ECONNABORTED' || String(err?.message || '').toLowerCase().includes('timeout');
             if (isTimeout) {
@@ -174,6 +192,7 @@ const KnowledgeBase = () => {
                 const base64 = ev.target.result.split(',')[1];
                 const res = await ragService.uploadDocument(uploadFile, base64);
                 setUploadResult(res); setUploadStatus('success');
+                fetchKnowledgeBase();
             } catch (err) {
                 setUploadError(err?.response?.data?.details || err?.message || 'Unknown error');
                 setUploadStatus('error');
@@ -216,6 +235,7 @@ const KnowledgeBase = () => {
             await ragService.deleteKnowledgeBase();
             setDeleteStatus('success');
             setConfirmDelete(false);
+            fetchKnowledgeBase();
         } catch (err) {
             setDeleteError(err?.response?.data?.details || err?.message || 'Failed to clear knowledge base');
             setDeleteStatus('error');
@@ -452,6 +472,67 @@ createChatbotWidget({
                                     {uploadResult && <p className="mt-2 text-sm text-slate-600">Successfully indexed <b>{uploadResult.filename}</b>.</p>}
                                     {uploadError && <p className="mt-2 text-sm text-red-600">{uploadError}</p>}
                                 </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Knowledge Base (Dynamic) */}
+                    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                        <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/60 px-6 py-4">
+                            <div className="flex items-center gap-3">
+                                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white"><BrainCircuit size={18} /></span>
+                                <div>
+                                    <p className="font-semibold text-slate-900">Knowledge Base</p>
+                                    <p className="text-xs text-slate-500">Live indexed pages from your crawls/uploads</p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={fetchKnowledgeBase}
+                                className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                            >
+                                Refresh
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            {knowledgeLoading ? (
+                                <p className="text-sm text-slate-500">Loading knowledge base…</p>
+                            ) : knowledgeError ? (
+                                <p className="text-sm text-red-600">{knowledgeError}</p>
+                            ) : (
+                                <>
+                                    <div className="grid grid-cols-2 gap-3 text-xs">
+                                        <div className="rounded-lg border border-slate-200 p-3">
+                                            <p className="text-slate-400">Indexed Pages</p>
+                                            <p className="mt-1 text-lg font-semibold text-slate-900">
+                                                {knowledgeData?.totalPages ?? 0}
+                                            </p>
+                                        </div>
+                                        <div className="rounded-lg border border-slate-200 p-3">
+                                            <p className="text-slate-400">Vector Chunks</p>
+                                            <p className="mt-1 text-lg font-semibold text-slate-900">
+                                                {knowledgeData?.vectorCount ?? 0}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="max-h-[260px] space-y-2 overflow-y-auto rounded-xl border border-slate-100 bg-slate-50 p-3">
+                                        {(knowledgeData?.pages || []).length === 0 ? (
+                                            <p className="text-sm text-slate-500">No indexed pages yet.</p>
+                                        ) : (
+                                            knowledgeData.pages.map((page, idx) => (
+                                                <div key={`${page.url}-${idx}`} className="rounded-lg bg-white p-3 shadow-sm">
+                                                    <p className="text-xs font-semibold text-slate-800">
+                                                        {page.title || page.url}
+                                                    </p>
+                                                    <p className="mt-1 text-[11px] text-slate-500 break-all">
+                                                        {page.url}
+                                                    </p>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </>
                             )}
                         </div>
                     </div>

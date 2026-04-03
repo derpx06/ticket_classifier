@@ -6,6 +6,7 @@ import {
   getMessagesByTicket,
   getMyTickets,
   getTickets,
+  searchTickets,
   updateTicket,
 } from "../controllers/ticketsController";
 import { requireAuth } from "../middleware/authMiddleware";
@@ -14,6 +15,7 @@ const router = Router();
 
 router.use(requireAuth);
 router.get("/", getTickets);
+router.get("/search", searchTickets);
 router.post("/", createTicket);
 router.get("/my", getMyTickets);
 router.get("/:id/messages", getMessagesByTicket);

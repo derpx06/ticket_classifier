@@ -3,6 +3,7 @@ import { crawlerService } from '../services/Crawler';
 import { advancedCrawler } from '../services/AdvancedCrawler';
 import { indexerService } from '../services/Indexer';
 import { getCollections, nextSequence, ApiKeyDoc } from '../config/db';
+import { qdrant, COLLECTION_NAME } from '../config/qdrant';
 import { ragEngine } from '../services/RAGEngine';
 import { emitTicketUpdateFromHttp } from '../services/chatSocketServer';
 import { createRouteMap, routeMapToSitemapPages, summarizeRouteMap } from '../utils/mapNextRoutes';
@@ -10,6 +11,7 @@ import { requireAdmin, requireAuth } from '../middleware/authMiddleware';
 import { env } from '../config/env';
 import { resolveAssignedRole } from '../utils/roleAssignment';
 import { inferSentiment } from '../utils/sentiment';
+import { ticketVectorService } from '../services/TicketVectorService';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 
@@ -119,6 +121,22 @@ router.post('/chat', resolveChatCompany, async (req: Request, res: Response) => 
                     _id: ticketId,
                     ...ticketDoc,
                 };
+                try {
+                    await ticketVectorService.upsertTicket({
+                        ticketId: ticketId.toString(),
+                        companyId,
+                        message: ticketDoc.message,
+                        category: ticketDoc.category,
+                        priority: ticketDoc.priority,
+                        customerName: ticketDoc.customerName,
+                    });
+                    await db.collection('tickets').updateOne(
+                        { _id: ticketId },
+                        { $set: { vectorizedAt: new Date() } },
+                    );
+                } catch (error) {
+                    console.error("[TicketVector] Failed to index AI ticket:", error);
+                }
             } catch (err) {
                 console.error('[RAG] Auto ticket creation failed:', err);
             }
@@ -127,6 +145,40 @@ router.post('/chat', resolveChatCompany, async (req: Request, res: Response) => 
     } catch (error) {
         console.error('Chat error:', error);
         return res.status(500).json({ error: 'Failed to process chat' });
+    }
+});
+
+/**
+ * Fetch knowledge base stats (sitemap pages + vector count)
+ * GET /api/rag/knowledge-base
+ */
+router.get('/knowledge-base', requireAuth, async (req: Request, res: Response) => {
+    try {
+        const companyId = req.auth?.companyId;
+        if (!companyId) {
+            return res.status(401).json({ error: 'Authentication required.' });
+        }
+
+        const { sitemaps } = await getCollections();
+        const sitemapDoc = await sitemaps.findOne({ companyId });
+        const pages = Array.isArray(sitemapDoc?.pages) ? sitemapDoc.pages : [];
+
+        let vectorCount = 0;
+        try {
+            const info = await qdrant.getCollection(COLLECTION_NAME);
+            vectorCount = Number((info as any)?.points_count ?? 0);
+        } catch (err) {
+            console.error('[KnowledgeBase] Qdrant info fetch failed:', err);
+        }
+
+        return res.status(200).json({
+            pages,
+            totalPages: pages.length,
+            vectorCount,
+        });
+    } catch (error) {
+        console.error('Knowledge base fetch error:', error);
+        return res.status(500).json({ error: 'Failed to fetch knowledge base.' });
     }
 });
 

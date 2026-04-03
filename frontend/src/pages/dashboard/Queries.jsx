@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { acceptTicket, getTickets, updateTicket } from '../../services/api';
+import { acceptTicket, getTickets, searchTickets, updateTicket } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
 
 const priorityWeight = {
@@ -46,6 +46,9 @@ const Queries = () => {
   const [sortBy, setSortBy] = useState('Newest');
   const [selectedId, setSelectedId] = useState('');
   const [teamView, setTeamView] = useState('my-team');
+  const [smartSearch, setSmartSearch] = useState(false);
+  const [smartResults, setSmartResults] = useState(null);
+  const [isSmartSearching, setIsSmartSearching] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [pendingAcceptId, setPendingAcceptId] = useState('');
   const navigate = useNavigate();
@@ -70,8 +73,40 @@ const Queries = () => {
     loadTickets();
   }, []);
 
+  useEffect(() => {
+    if (!smartSearch || !searchText.trim()) {
+      setSmartResults(null);
+      return;
+    }
+
+    let cancelled = false;
+    setIsSmartSearching(true);
+    searchTickets(searchText.trim(), 35)
+      .then((results) => {
+        if (!cancelled) {
+          setSmartResults(Array.isArray(results) ? results : []);
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          toast.error(error?.response?.data?.message || 'Smart search failed.');
+          setSmartResults([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsSmartSearching(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [smartSearch, searchText]);
+
   const filteredTickets = useMemo(() => {
-    const filtered = tickets.filter((ticket) => {
+    const baseTickets = smartSearch && smartResults ? smartResults : tickets;
+    const filtered = baseTickets.filter((ticket) => {
       if (user?.role !== 'admin' && teamView === 'my-team') {
         if (!userRoleId) return false;
         return Number(ticket.assignedRoleId) === Number(userRoleId);
@@ -91,6 +126,9 @@ const Queries = () => {
     });
 
     return [...filtered].sort((a, b) => {
+      if (sortBy === 'Similarity') {
+        return Number(b.similarity ?? 0) - Number(a.similarity ?? 0);
+      }
       if (sortBy === 'Priority') {
         return priorityWeight[b.priority] - priorityWeight[a.priority];
       }
@@ -106,6 +144,8 @@ const Queries = () => {
     teamView,
     userRoleId,
     user?.role,
+    smartSearch,
+    smartResults,
   ]);
 
   const selectedTicket =
@@ -232,15 +272,43 @@ const Queries = () => {
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
               <label className="xl:col-span-2">
-                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Search
-                </span>
+                <div className="mb-1 flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Search
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSmartSearch((prev) => {
+                        const next = !prev;
+                        if (next) {
+                          setSortBy('Similarity');
+                        } else if (sortBy === 'Similarity') {
+                          setSortBy('Newest');
+                        }
+                        return next;
+                      });
+                    }}
+                    className={`rounded-full px-2.5 py-1 text-[10px] font-semibold transition ${
+                      smartSearch
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    Smart search
+                  </button>
+                </div>
                 <input
                   value={searchText}
                   onChange={(event) => setSearchText(event.target.value)}
                   placeholder="Ticket ID, customer, message..."
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
+                {smartSearch && searchText.trim() && (
+                  <p className="mt-1 text-[11px] text-slate-400">
+                    {isSmartSearching ? 'Searching by similarity…' : 'Smart similarity search enabled'}
+                  </p>
+                )}
               </label>
 
               <label>
@@ -308,6 +376,7 @@ const Queries = () => {
                 >
                   <option>Newest</option>
                   <option>Priority</option>
+                  {smartSearch && <option>Similarity</option>}
                 </select>
               </label>
             </div>
@@ -324,6 +393,11 @@ const Queries = () => {
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                       Sentiment
                     </th>
+                    {smartSearch && (
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Similarity
+                      </th>
+                    )}
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                       Category
                     </th>
@@ -368,6 +442,13 @@ const Queries = () => {
                           <span className="text-xs text-slate-400">—</span>
                         )}
                       </td>
+                      {smartSearch && (
+                        <td className="px-4 py-3 text-xs text-slate-600">
+                          {typeof ticket.similarity === 'number'
+                            ? ticket.similarity.toFixed(3)
+                            : '—'}
+                        </td>
+                      )}
                       <td className="px-4 py-3">
                         <span
                           className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${

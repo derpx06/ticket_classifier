@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit",
     "db:test": "ts-node src/utils/testDbConnection.ts",
     "db:setup": "ts-node src/utils/setupMongo.ts",
-    "routes:map": "ts-node src/utils/mapNextRoutes.ts"
+    "routes:map": "ts-node src/utils/mapNextRoutes.ts",
+    "tickets:vectorize": "ts-node src/scripts/backfillTicketVectors.ts"
   },
   "keywords": [],
   "author": "",
