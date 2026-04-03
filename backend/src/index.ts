@@ -23,8 +23,11 @@ const startServer = async (): Promise<void> => {
     console.warn(error);
   }
 
-  httpServer.listen(env.port, () => {
-    console.log(`API listening at http://127.0.0.1:${env.port}/api (PORT from .env; Vite dev proxy must match)`);
+  // httpServer.listen(env.port, () => {
+  //   console.log(`API listening at http://127.0.0.1:${env.port}/api (PORT from .env; Vite dev proxy must match)`);
+  // });
+  httpServer.listen(env.port, '0.0.0.0', () => {
+    console.log('Server running');
   });
 };
 
