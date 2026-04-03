@@ -48,6 +48,7 @@ const RoleBasedDashboard = () => {
     high: 'bg-red-100 text-red-700',
     medium: 'bg-orange-100 text-orange-700',
     low: 'bg-green-100 text-green-700',
+    critical: 'bg-red-200 text-red-800',
   };
 
   const statusStyles = {
@@ -213,12 +214,11 @@ const RoleBasedDashboard = () => {
     const maxCategoryCount = Math.max(...Object.values(adminAnalytics.categoryCount), 1);
     const categoryRows = Object.entries(adminAnalytics.categoryCount).sort((a, b) => b[1] - a[1]);
     const categoryPalette = ['bg-blue-500', 'bg-cyan-500', 'bg-violet-500', 'bg-indigo-500', 'bg-emerald-500'];
-    const urgentTickets = tickets.filter(
-      (ticket) =>
-        typeof ticket.priority === 'string' &&
-        ticket.priority.toLowerCase() === 'high' &&
-        ticket.status?.toLowerCase() !== 'resolved'
-    );
+    const urgentTickets = tickets.filter((ticket) => {
+      const priority = typeof ticket.priority === 'string' ? ticket.priority.toLowerCase() : '';
+      const isUrgent = priority === 'high' || priority === 'critical';
+      return isUrgent && ticket.status?.toLowerCase() !== 'resolved';
+    });
 
     const latencyChartWidth = 720;
     const latencyChartHeight = 300;

@@ -18,9 +18,9 @@ export const createTicketSchema = z.object({
   // optional → AI will fill
   category: optionalEnum(["billing", "technical", "login", "other"]),
 
-  priority: optionalEnum(["low", "medium", "high"]),
+  priority: optionalEnum(["low", "medium", "high", "critical"]),
 
-  urgency: optionalEnum(["low", "medium", "high"]),
+  urgency: optionalEnum(["low", "medium", "high", "critical"]),
 
   chatHistory: z
     .array(

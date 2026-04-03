@@ -4,9 +4,12 @@ import { advancedCrawler } from '../services/AdvancedCrawler';
 import { indexerService } from '../services/Indexer';
 import { getCollections, nextSequence, ApiKeyDoc } from '../config/db';
 import { ragEngine } from '../services/RAGEngine';
+import { emitTicketUpdateFromHttp } from '../services/chatSocketServer';
 import { createRouteMap, routeMapToSitemapPages, summarizeRouteMap } from '../utils/mapNextRoutes';
 import { requireAdmin, requireAuth } from '../middleware/authMiddleware';
 import { env } from '../config/env';
+import { resolveAssignedRole } from '../utils/roleAssignment';
+import { inferSentiment } from '../utils/sentiment';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 
@@ -62,6 +65,64 @@ router.post('/chat', resolveChatCompany, async (req: Request, res: Response) => 
 
     try {
         const result = await ragEngine.answerTicket(query, sessionId, companyId);
+        if (result?.raise_ticket && result?.ticket_payload) {
+            try {
+                const { users } = await getCollections();
+                const db = users.db;
+                const now = new Date();
+                const assignedRole = await resolveAssignedRole(
+                    companyId,
+                    result.ticket_payload.category || 'other',
+                    result.ticket_payload.customer_message || query,
+                );
+                const sentiment = inferSentiment(result.ticket_payload.customer_message || query);
+
+                const ticketDoc = {
+                    companyId,
+                    message: result.ticket_payload.summary || query,
+                    category: result.ticket_payload.category || 'other',
+                    priority: result.ticket_payload.priority || 'medium',
+                    urgency: result.ticket_payload.urgency || result.ticket_payload.priority || 'medium',
+                    status: 'pending',
+                    assignedTo: null as number | null,
+                    assignedRoleId: assignedRole?.id ?? null,
+                    assignedRoleName: assignedRole?.name ?? null,
+                    sentiment: sentiment.label,
+                    sentimentEmoji: sentiment.emoji,
+                    customerName: String(req.body?.customerName || 'AI Chat User').trim() || 'AI Chat User',
+                    source: 'ai',
+                    createdAt: now,
+                    updatedAt: now,
+                };
+
+                const inserted = await db.collection('tickets').insertOne(ticketDoc);
+                const ticketId = inserted.insertedId;
+
+                await db.collection('messages').insertOne({
+                    ticketId,
+                    companyId,
+                    sender: 'user',
+                    text: result.ticket_payload.customer_message || query,
+                    createdAt: now,
+                    updatedAt: now,
+                });
+
+                emitTicketUpdateFromHttp({
+                    companyId,
+                    ticketId: ticketId.toString(),
+                    status: 'pending',
+                    assignedTo: null,
+                    updatedAt: now,
+                });
+
+                (result as any).ticket = {
+                    _id: ticketId,
+                    ...ticketDoc,
+                };
+            } catch (err) {
+                console.error('[RAG] Auto ticket creation failed:', err);
+            }
+        }
         return res.status(200).json(result);
     } catch (error) {
         console.error('Chat error:', error);

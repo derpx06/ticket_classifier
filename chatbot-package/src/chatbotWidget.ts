@@ -23,7 +23,6 @@ export interface ChatbotWidgetOptions {
     apiBaseUrl: string
     apiKey: string
     chatPath?: string
-    sessionId?: string
   }
   humanSupport?: {
     apiBaseUrl: string
@@ -295,6 +294,61 @@ const WIDGET_CSS = `
 .chatbot-body.has-messages .chatbot-messages {
   display: flex;
 }
+.chatbot-body.human-mode .chatbot-intro {
+  display: none;
+}
+.chatbot-human-hero {
+  display: none;
+  text-align: center;
+  color: #0f172a;
+  border: 1px solid #dbe4f5;
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: 14px;
+  padding: 18px 14px;
+}
+.chatbot-body.human-mode .chatbot-human-hero {
+  display: block;
+}
+.chatbot-human-hero h3 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+.chatbot-human-hero p {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #475569;
+}
+.chatbot-history-label {
+  margin-top: 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  text-align: center;
+}
+.chatbot-divider {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0 10px;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.chatbot-divider::before,
+.chatbot-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #e2e8f0;
+}
+.chatbot-body.human-mode .chatbot-divider {
+  display: flex;
+}
 
 .chatbot-bubble {
   max-width: 86%;
@@ -315,6 +369,63 @@ const WIDGET_CSS = `
   align-self: flex-start;
   background: #e2e8f0;
   color: #1e293b;
+}
+.chatbot-bubble.bot a {
+  color: #1d4ed8;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.chatbot-bubble.bot code {
+  background: #e2e8f0;
+  border-radius: 6px;
+  padding: 1px 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  font-size: 12px;
+}
+.chatbot-bubble.bot pre {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #e2e8f0;
+  overflow-x: auto;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.chatbot-bubble.bot pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+.chatbot-md-h1,
+.chatbot-md-h2,
+.chatbot-md-h3 {
+  font-weight: 700;
+  color: #0f172a;
+  margin: 6px 0 4px;
+}
+.chatbot-md-h1 {
+  font-size: 15px;
+}
+.chatbot-md-h2 {
+  font-size: 14px;
+}
+.chatbot-md-h3 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.chatbot-bubble.system {
+  align-self: center;
+  background: transparent;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 4px 6px;
+  box-shadow: none;
 }
 
 .chatbot-footer {
@@ -341,8 +452,25 @@ const WIDGET_CSS = `
   background: #ffffff;
   color: #1e293b;
 }
+.chatbot-input-row textarea {
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  min-height: 46px;
+  padding: 10px 12px;
+  outline: none;
+  font-size: 13px;
+  background: #ffffff;
+  color: #1e293b;
+  resize: none;
+  line-height: 1.4;
+  font-family: inherit;
+}
 
 .chatbot-input-row input:focus {
+  border-color: var(--chatbot-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+.chatbot-input-row textarea:focus {
   border-color: var(--chatbot-primary);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
 }
@@ -631,10 +759,55 @@ const ensureStyles = (): void => {
   document.head.appendChild(style)
 }
 
-const createBubble = (text: string, role: 'user' | 'bot'): HTMLDivElement => {
+const escapeHtml = (value: string): string =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+
+const renderMarkdownInline = (value: string): string => {
+  const withHeadings = value
+    .replace(/^###\s+(.+)$/gm, '<div class="chatbot-md-h3">$1</div>')
+    .replace(/^##\s+(.+)$/gm, '<div class="chatbot-md-h2">$1</div>')
+    .replace(/^#\s+(.+)$/gm, '<div class="chatbot-md-h1">$1</div>')
+  const withLinks = withHeadings.replace(
+    /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
+    (_, text, url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${text}</a>`,
+  )
+  const withBold = withLinks.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+  const withItalic = withBold.replace(/\*([^*]+)\*/g, '<em>$1</em>')
+  const withCode = withItalic.replace(/`([^`]+)`/g, '<code>$1</code>')
+  const withBullets = withCode.replace(/^\s*-\s+/gm, '• ')
+  return withBullets.replace(/\n/g, '<br>')
+}
+
+const renderMarkdown = (value: string): string => {
+  const segments = String(value || '').split(/```/)
+  return segments
+    .map((segment, idx) => {
+      if (idx % 2 === 1) {
+        return `<pre><code>${escapeHtml(segment.trim())}</code></pre>`
+      }
+      const escaped = escapeHtml(segment)
+      return renderMarkdownInline(escaped)
+    })
+    .join('')
+}
+
+const createBubble = (
+  text: string,
+  role: 'user' | 'bot' | 'system',
+  renderAsMarkdown = false,
+): HTMLDivElement => {
   const bubble = document.createElement('div')
   bubble.className = `chatbot-bubble ${role}`
-  bubble.textContent = text
+  if (renderAsMarkdown) {
+    bubble.innerHTML = renderMarkdown(text)
+  } else {
+    bubble.textContent = text
+  }
   return bubble
 }
 
@@ -667,7 +840,15 @@ const hydrateIcons = (): void => {
   })
 }
 
-const resolveApiBase = (input: string): string => input.replace(/\/+$/, '')
+const resolveApiBase = (input: string): string => {
+  const trimmed = String(input || '').trim().replace(/\/+$/, '')
+  if (!trimmed) return trimmed
+  if (/^https?:\/\//i.test(trimmed)) return trimmed
+  if (trimmed.startsWith('/')) {
+    return `${window.location.origin}${trimmed}`
+  }
+  return trimmed
+}
 const resolveApiPath = (input: string): string => (input.startsWith('/') ? input : `/${input}`)
 
 const resolveSocketBase = (apiBase: string): string => apiBase.replace(/\/api\/?$/i, '')
@@ -679,35 +860,9 @@ const unwrapResponseData = <T>(payload: unknown): T => {
   return payload as T
 }
 
-export const createChatbotWidget = (
-  options: ChatbotWidgetOptions = {},
-): ChatbotWidgetInstance => {
-  if (typeof window === 'undefined' || typeof document === 'undefined') {
-    throw new Error('chatbot-package can only run in a browser environment.')
-  }
+type ResolvedOptions = typeof DEFAULT_OPTIONS & ChatbotWidgetOptions
 
-  ensureStyles()
-
-  const config = { ...DEFAULT_OPTIONS, ...options }
-  const root = document.createElement('div')
-  root.className = `chatbot-widget-root ${
-    config.position === 'bottom-left' ? 'left' : 'right'
-  }`
-  root.style.setProperty('--chatbot-primary', config.primaryColor)
-  root.style.zIndex = String(config.zIndex)
-
-  const launcherButton = document.createElement('button')
-  launcherButton.type = 'button'
-  launcherButton.className = 'chatbot-launcher'
-  launcherButton.setAttribute('aria-label', 'Open chatbot')
-  launcherButton.setAttribute('aria-expanded', 'false')
-  launcherButton.innerHTML = '<i data-lucide="message-circle" aria-hidden="true"></i>'
-
-  const panel = document.createElement('section')
-  panel.className = 'chatbot-panel'
-  panel.setAttribute('role', 'dialog')
-  panel.setAttribute('aria-label', config.title)
-
+const buildHeader = (config: ResolvedOptions, onClose: () => void) => {
   const header = document.createElement('header')
   header.className = 'chatbot-header'
 
@@ -740,16 +895,18 @@ export const createChatbotWidget = (
   const controls = document.createElement('div')
   controls.className = 'chatbot-controls'
 
-  const closePanel = (): void => {
-    root.classList.remove('open')
-    launcherButton.setAttribute('aria-expanded', 'false')
-  }
-
-  const closeControl = createControlButton('x', 'Close chat', closePanel)
-
+  const closeControl = createControlButton('x', 'Close chat', onClose)
   controls.append(closeControl)
+
   header.append(headerLeft, controls)
 
+  return {
+    header,
+    statusText,
+  }
+}
+
+const buildBody = (config: ResolvedOptions) => {
   const body = document.createElement('div')
   body.className = 'chatbot-body'
 
@@ -773,21 +930,44 @@ export const createChatbotWidget = (
 
   intro.append(introIcon, introTitle, introDescription, introHumanNote)
 
+  const humanHero = document.createElement('section')
+  humanHero.className = 'chatbot-human-hero'
+  const humanHeroTitle = document.createElement('h3')
+  humanHeroTitle.textContent = 'Talk to Support'
+  const humanHeroCopy = document.createElement('p')
+  humanHeroCopy.textContent = 'Our team typically replies in a few minutes.'
+  const historyLabel = document.createElement('div')
+  historyLabel.className = 'chatbot-history-label'
+  historyLabel.textContent = 'Previous Messages'
+  humanHero.append(humanHeroTitle, humanHeroCopy, historyLabel)
+
+  const humanDivider = document.createElement('div')
+  humanDivider.className = 'chatbot-divider'
+  humanDivider.textContent = 'Previous AI Interaction'
+
   const messages = document.createElement('div')
   messages.className = 'chatbot-messages'
   messages.setAttribute('aria-live', 'polite')
-  messages.appendChild(createBubble(config.welcomeMessage, 'bot'))
+  messages.appendChild(createBubble(config.welcomeMessage, 'bot', true))
 
-  body.append(intro, messages)
+  body.append(intro, humanHero, messages)
 
+  return {
+    body,
+    humanDivider,
+    messages,
+  }
+}
+
+const buildFooter = (config: ResolvedOptions) => {
   const footer = document.createElement('div')
   footer.className = 'chatbot-footer'
 
   const inputRow = document.createElement('form')
   inputRow.className = 'chatbot-input-row'
 
-  const input = document.createElement('input')
-  input.type = 'text'
+  const input = document.createElement('textarea')
+  input.rows = 1
   input.placeholder = config.placeholder
 
   const sendButton = document.createElement('button')
@@ -800,9 +980,6 @@ export const createChatbotWidget = (
   const humanButton = document.createElement('button')
   humanButton.type = 'button'
   humanButton.className = 'chatbot-human-button'
-  const humanButtonMarkup =
-    '<i data-lucide="user-round" aria-hidden="true"></i><span>Talk to a real human</span>'
-  humanButton.innerHTML = humanButtonMarkup
 
   const poweredText = document.createElement('p')
   poweredText.className = 'chatbot-powered'
@@ -810,6 +987,15 @@ export const createChatbotWidget = (
 
   footer.append(inputRow, humanButton, poweredText)
 
+  return {
+    footer,
+    inputRow,
+    input,
+    humanButton,
+  }
+}
+
+const buildHumanContainer = () => {
   const humanContainer = document.createElement('div')
   humanContainer.className = 'chatbot-human-container'
 
@@ -853,7 +1039,8 @@ export const createChatbotWidget = (
   const cancelBtn = document.createElement('button')
   cancelBtn.type = 'button'
   cancelBtn.className = 'chatbot-btn-secondary'
-  cancelBtn.innerHTML = '<i data-lucide="arrow-left" aria-hidden="true" style="width: 16px; height: 16px;"></i> Back'
+  cancelBtn.innerHTML =
+    '<i data-lucide=\"arrow-left\" aria-hidden=\"true\" style=\"width: 16px; height: 16px;\"></i> Back'
 
   const submitBtn = document.createElement('button')
   submitBtn.type = 'submit'
@@ -865,30 +1052,82 @@ export const createChatbotWidget = (
     createFormGroup('Name', nameInput),
     createFormGroup('Email', emailInput),
     createFormGroup('Description', issueTextarea),
-    formActions
+    formActions,
   )
 
   const humanSuccess = document.createElement('div')
   humanSuccess.className = 'chatbot-human-success'
-  
+
   const successIcon = document.createElement('div')
   successIcon.className = 'chatbot-success-icon'
-  successIcon.innerHTML = '<i data-lucide="check-circle" aria-hidden="true"></i>'
-  
+  successIcon.innerHTML = '<i data-lucide=\"check-circle\" aria-hidden=\"true\"></i>'
+
   const successTitle = document.createElement('h3')
   successTitle.textContent = 'Message Sent!'
-  
+
   const successMsg = document.createElement('p')
   successMsg.textContent = 'Our support team will reach out to you via email shortly.'
-  
+
   const successBackBtn = document.createElement('button')
   successBackBtn.type = 'button'
   successBackBtn.className = 'chatbot-btn-primary'
   successBackBtn.textContent = 'Back to Chat'
-  
-  humanSuccess.append(successIcon, successTitle, successMsg, successBackBtn)
 
+  humanSuccess.append(successIcon, successTitle, successMsg, successBackBtn)
   humanContainer.append(humanHeader, humanForm, humanSuccess)
+
+  return {
+    humanContainer,
+    humanForm,
+    cancelBtn,
+    successBackBtn,
+  }
+}
+
+export const createChatbotWidget = (
+  options: ChatbotWidgetOptions = {},
+): ChatbotWidgetInstance => {
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    throw new Error('chatbot-package can only run in a browser environment.')
+  }
+
+  ensureStyles()
+
+  const config: ResolvedOptions = { ...DEFAULT_OPTIONS, ...options }
+  const root = document.createElement('div')
+  root.className = `chatbot-widget-root ${
+    config.position === 'bottom-left' ? 'left' : 'right'
+  }`
+  root.style.setProperty('--chatbot-primary', config.primaryColor)
+  root.style.zIndex = String(config.zIndex)
+
+  const launcherButton = document.createElement('button')
+  launcherButton.type = 'button'
+  launcherButton.className = 'chatbot-launcher'
+  launcherButton.setAttribute('aria-label', 'Open chatbot')
+  launcherButton.setAttribute('aria-expanded', 'false')
+  launcherButton.innerHTML = '<i data-lucide="message-circle" aria-hidden="true"></i>'
+
+  const panel = document.createElement('section')
+  panel.className = 'chatbot-panel'
+  panel.setAttribute('role', 'dialog')
+  panel.setAttribute('aria-label', config.title)
+
+  const closePanel = (): void => {
+    root.classList.remove('open')
+    launcherButton.setAttribute('aria-expanded', 'false')
+  }
+
+  const { header, statusText } = buildHeader(config, closePanel)
+  const { body, humanDivider, messages } = buildBody(config)
+  const { footer, inputRow, input, humanButton } = buildFooter(config)
+  const humanButtonMarkup =
+    '<i data-lucide="user-round" aria-hidden="true"></i><span>Talk to a real human</span>'
+  const aiButtonMarkup =
+    '<i data-lucide="bot" aria-hidden="true"></i><span>Talk to AI</span>'
+  humanButton.innerHTML = humanButtonMarkup
+
+  const { humanContainer, humanForm, cancelBtn, successBackBtn } = buildHumanContainer()
 
   panel.append(header, body, footer, humanContainer)
   root.append(panel, launcherButton)
@@ -899,21 +1138,35 @@ export const createChatbotWidget = (
   let isDestroyed = false
   let isHumanChatActive = false
   let isHumanAgentConnected = false
+  let isHumanConnecting = false
+  let agentJoinedNoticeSent = false
+  let awaitingHumanIssue = false
   let widgetSocket: Socket | null = null
   let widgetSessionId: string | null = null
   let widgetTicketId: string | null = null
   const seenMessageIds = new Set<string>()
-  const aiSessionId =
-    options.aiSupport?.sessionId ||
-    (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-      ? crypto.randomUUID()
-      : `widget-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`)
 
-  const appendBotBubble = (text: string): void => {
+  const appendBotBubble = (text: string, options?: { markdown?: boolean }): void => {
     if (!text.trim()) return
     body.classList.add('has-messages')
-    messages.appendChild(createBubble(text.trim(), 'bot'))
+    messages.appendChild(createBubble(text.trim(), 'bot', options?.markdown ?? false))
     body.scrollTop = body.scrollHeight
+  }
+
+  const setHumanMode = (enabled: boolean): void => {
+    body.classList.toggle('human-mode', enabled)
+    if (enabled) {
+      if (!messages.contains(humanDivider)) {
+        messages.insertBefore(humanDivider, messages.firstChild)
+      }
+      humanButton.innerHTML = aiButtonMarkup
+    } else {
+      if (messages.contains(humanDivider)) {
+        humanDivider.remove()
+      }
+      humanButton.innerHTML = humanButtonMarkup
+    }
+    hydrateIcons()
   }
 
   const setOpen = (nextOpen: boolean): void => {
@@ -956,7 +1209,6 @@ export const createChatbotWidget = (
           },
           body: JSON.stringify({
             query: message,
-            sessionId: aiSessionId,
           }),
         })
 
@@ -970,12 +1222,35 @@ export const createChatbotWidget = (
           (typeof data?.response === 'string' && data.response) ||
           (typeof data?.message === 'string' && data.message) ||
           'I processed your question, but no answer text was returned.'
-        appendBotBubble(answer)
+        appendBotBubble(answer, { markdown: true })
+        if (data?.raise_ticket && data?.ticket_payload) {
+          const payload = data.ticket_payload as {
+            summary?: string
+            priority?: string
+            urgency?: string
+          }
+          const ticketId =
+            (data as any)?.ticket?._id ||
+            (data as any)?.ticketId ||
+            (data as any)?.ticket_id
+          const details = [
+            '### Ticket Details',
+            payload?.summary ? `- Summary: ${payload.summary}` : null,
+            payload?.priority ? `- Priority: ${String(payload.priority).toUpperCase()}` : null,
+            payload?.urgency ? `- Urgency: ${String(payload.urgency).toUpperCase()}` : null,
+            ticketId ? `- Ticket ID: ${ticketId}` : null,
+            '- Status: Pending',
+          ].filter(Boolean) as string[]
+          appendBotBubble(details.join('\n'), { markdown: true })
+        }
       } catch (error) {
+        const msg = error instanceof Error
+          ? error.message
+          : 'Sorry, I am having trouble connecting right now.'
         appendBotBubble(
-          error instanceof Error
-            ? error.message
-            : 'Sorry, I am having trouble connecting right now.',
+          msg.includes('Failed to fetch')
+            ? 'Unable to reach the AI server. Please try again.'
+            : msg,
         )
       }
       return
@@ -1014,7 +1289,12 @@ export const createChatbotWidget = (
     })
 
     if (!response.ok) {
-      throw new Error('Unable to connect to human support right now.')
+      const errorPayload = await response.json().catch(() => null)
+      const msg =
+        errorPayload?.message ||
+        errorPayload?.error ||
+        'Unable to connect to human support right now.'
+      throw new Error(msg)
     }
 
     const sessionData = unwrapResponseData<{
@@ -1026,6 +1306,7 @@ export const createChatbotWidget = (
     widgetSessionId = sessionData.sessionId
     widgetTicketId = sessionData.ticketId
     isHumanChatActive = true
+    setHumanMode(true)
 
     const socket = io(resolveSocketBase(apiBaseUrl), {
       path: '/socket.io',
@@ -1053,7 +1334,13 @@ export const createChatbotWidget = (
         if (event._id && seenMessageIds.has(event._id)) return
         if (event._id) seenMessageIds.add(event._id)
         if (event.sender === 'agent' && typeof event.text === 'string') {
+          if (!isHumanAgentConnected) {
+            appendBotBubble('You are now connected to a human agent.')
+            messages.appendChild(createBubble('AGENT JOINED THE SESSION', 'system'))
+            agentJoinedNoticeSent = true
+          }
           appendBotBubble(event.text)
+          isHumanAgentConnected = true
         }
       },
     )
@@ -1075,6 +1362,10 @@ export const createChatbotWidget = (
             appendBotBubble('A human agent has accepted your chat. You are now connected.')
           }
           isHumanAgentConnected = true
+          if (!agentJoinedNoticeSent) {
+            messages.appendChild(createBubble('AGENT JOINED THE SESSION', 'system'))
+            agentJoinedNoticeSent = true
+          }
           statusText.textContent = 'Connected with human support'
           return
         }
@@ -1103,7 +1394,33 @@ export const createChatbotWidget = (
       return
     }
 
+    if (awaitingHumanIssue) {
+      body.classList.add('has-messages')
+      setHumanMode(true)
+      messages.appendChild(createBubble(cleaned, 'user'))
+      input.value = ''
+      body.scrollTop = body.scrollHeight
+      awaitingHumanIssue = false
+      try {
+        await connectHumanSupport({
+          name: 'Website Visitor',
+          email: '',
+          issue: cleaned,
+        })
+        appendBotBubble("You're now connected to a support agent. Please wait...")
+        humanButton.innerHTML = aiButtonMarkup
+        hydrateIcons()
+      } catch (error) {
+        const msg =
+          error instanceof Error ? error.message : 'Unable to connect to support right now.'
+        appendBotBubble(msg)
+        awaitingHumanIssue = true
+      }
+      return
+    }
+
     body.classList.add('has-messages')
+    setHumanMode(isHumanChatActive)
     messages.appendChild(createBubble(cleaned, 'user'))
     input.value = ''
     body.scrollTop = body.scrollHeight
@@ -1119,79 +1436,55 @@ export const createChatbotWidget = (
     await sendMessage(input.value)
   })
 
+  input.addEventListener('keydown', async (event) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault()
+      await sendMessage(input.value)
+    }
+  })
+
   humanButton.addEventListener('click', async () => {
     if (isHumanChatActive) {
-      appendBotBubble(
-        isHumanAgentConnected
-          ? 'You are already connected with a human agent in this chat.'
-          : 'Your request is already in queue. An agent will join shortly.',
-      )
+      // Switch back to AI mode.
+      isHumanChatActive = false
+      isHumanAgentConnected = false
+      awaitingHumanIssue = false
+      setHumanMode(false)
+      appendBotBubble('You are now chatting with AI again.')
       return
     }
 
-    if (options.onTalkToHumanClick) {
-      humanButton.disabled = true
-      humanButton.textContent = 'Creating ticket...'
-      try {
-        const result = await options.onTalkToHumanClick()
-        if (typeof result === 'string' && result.trim()) {
-          appendBotBubble(result)
-        }
-      } catch (error) {
-        appendBotBubble(
-          error instanceof Error ? error.message : 'Unable to create support ticket right now.',
-        )
-      } finally {
-        humanButton.disabled = false
-        humanButton.innerHTML = humanButtonMarkup
-        hydrateIcons()
-      }
+    if (isHumanConnecting) {
       return
     }
-
-    root.classList.add('show-human-form')
-    root.classList.remove('show-human-success')
+    isHumanConnecting = true
+    setHumanMode(true)
+    appendBotBubble('Please describe the issue you are facing.')
+    awaitingHumanIssue = true
+    try {
+      humanButton.innerHTML = aiButtonMarkup
+      hydrateIcons()
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Unable to connect to support right now.'
+      appendBotBubble(msg.includes('Failed to fetch') ? 'Unable to reach support server. Please try again.' : msg)
+      isHumanChatActive = false
+      isHumanAgentConnected = false
+      awaitingHumanIssue = false
+      setHumanMode(false)
+      humanButton.innerHTML = humanButtonMarkup
+      hydrateIcons()
+    } finally {
+      isHumanConnecting = false
+    }
   })
 
   cancelBtn.addEventListener('click', () => {
-    root.classList.remove('show-human-form')
+    // no-op (legacy)
   })
 
   humanForm.addEventListener('submit', async (event) => {
     event.preventDefault()
-    submitBtn.disabled = true
-    submitBtn.textContent = 'Connecting...'
-    try {
-      await connectHumanSupport({
-        name: nameInput.value.trim(),
-        email: emailInput.value.trim(),
-        issue: issueTextarea.value.trim(),
-      })
-      root.classList.remove('show-human-form')
-      root.classList.remove('show-human-success')
-      humanForm.reset()
-      body.classList.add('has-messages')
-      messages.appendChild(
-        createBubble(
-          widgetTicketId
-            ? `Ticket ${widgetTicketId.slice(-6)} created. Connecting you to a human agent now...`
-            : 'Your request is submitted. Connecting you to a human agent now...',
-          'bot',
-        ),
-      )
-      body.scrollTop = body.scrollHeight
-      humanButton.disabled = true
-      humanButton.innerHTML = '<i data-lucide="check-circle" aria-hidden="true"></i><span>Human Support Requested</span>'
-      hydrateIcons()
-      submitBtn.textContent = 'Send Message'
-    } catch (error) {
-      appendBotBubble(
-        error instanceof Error ? error.message : 'Unable to connect to support right now.',
-      )
-      submitBtn.textContent = 'Send Message'
-    } finally {
-      submitBtn.disabled = false
-    }
+    // no-op (legacy)
   })
 
   successBackBtn.addEventListener('click', () => {

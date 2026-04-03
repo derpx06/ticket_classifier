@@ -13,7 +13,8 @@ dotenv.config();
 export class RAGEngine {
     private groq: Groq;
     private modelName: string;
-    private history: Map<string, any[]> = new Map();
+    private historyByCompany: Map<number, Array<{ role: "user" | "assistant"; content: string }>> = new Map();
+    private readonly MAX_CONTEXT_MESSAGES = 30;
 
     constructor() {
         if (!process.env.GROQ_API_KEY) {
@@ -26,7 +27,8 @@ export class RAGEngine {
 
 
 
-    async answerTicket(query: string, sessionId: string = "default", companyId?: number) {
+    async answerTicket(query: string, _sessionId: string = "default", companyId?: number) {
+        const historyKey = Number(companyId ?? 1);
         // 1. Q&A Mapping (Fast track)
         if (companyId) {
             const { questions } = await getCollections() as any;
@@ -38,9 +40,11 @@ export class RAGEngine {
                 });
 
                 if (qaResult) {
+                    const qaSources = [{ url: "Internal", title: "Pre-defined Q&A" }];
+                    const qaAnswer = this.appendSources(String(qaResult.answer || ""), qaSources);
                     return {
-                        answer: qaResult.answer,
-                        sources: [{ url: "Internal", title: "Pre-defined Q&A" }],
+                        answer: qaAnswer,
+                        sources: qaSources,
                         type: "qa-match"
                     };
                 }
@@ -55,6 +59,7 @@ export class RAGEngine {
         // simple relevance grading (threshold check)
         const filteredDocs = rankedDocs.filter(doc => (doc.metadata.score ?? 1) > 0.55).slice(0, 5);
         const sourceDocs = (filteredDocs.length > 0 ? filteredDocs : rankedDocs.slice(0, 3));
+        const sources = this.buildSources(sourceDocs);
         const contextText = filteredDocs.map((doc: LangChainDocument) => doc.pageContent).join('\n\n');
 
         // 3. Retrieve Sitemap for navigation guidance
@@ -74,8 +79,11 @@ export class RAGEngine {
         }
 
         // 4. Conversation History
-        const chatHistory = this.history.get(sessionId) || [];
-        const historyText = chatHistory.slice(-4).map(m => `${m.role}: ${m.content}`).join('\n');
+        const chatHistory = this.historyByCompany.get(historyKey) || [];
+        const historyText = chatHistory
+            .slice(-this.MAX_CONTEXT_MESSAGES)
+            .map(m => `${m.role}: ${m.content}`)
+            .join('\n');
 
         // 5. Define prompt
         const prompt = `
@@ -88,6 +96,10 @@ PERSONA:
 - If the answer is not in the context, look at the Sitemap and suggest pages that might be relevant.
 - If you are still unsure, suggest they contact a human support agent.
 - NEVER make up facts or URLs.
+FORMAT:
+- Respond in clean Markdown (MDX-friendly).
+- Use short headings and bullet lists when helpful.
+- Do NOT add a references section or invent sources. References will be attached automatically.
 
 SITEMAP (Use this to guide the user to specific pages):
 ${sitemapText}
@@ -145,18 +157,36 @@ Helpful Support Response:`;
             }
         }
 
+        const ticketPayload = this.buildAutoTicketPayload(query);
+        const raiseTicket = needsHandoff && ticketPayload.shouldRaise;
+        if (raiseTicket) {
+            result = `${result}\n\nI have created a support ticket for this issue. Our team will follow up shortly.`;
+        }
+        const resultWithSources = this.appendSources(result, sources);
+
         // 7. Update History
         chatHistory.push({ role: "user", content: query });
-        chatHistory.push({ role: "assistant", content: result });
-        this.history.set(sessionId, chatHistory);
+        chatHistory.push({ role: "assistant", content: resultWithSources });
+        if (chatHistory.length > this.MAX_CONTEXT_MESSAGES) {
+            chatHistory.splice(0, chatHistory.length - this.MAX_CONTEXT_MESSAGES);
+        }
+        this.historyByCompany.set(historyKey, chatHistory);
 
         return {
-            answer: result,
-            sources: this.buildSources(sourceDocs),
+            answer: resultWithSources,
+            sources,
             type: "rag-generation",
             needs_handoff: needsHandoff,
             confidence,
-            support_contact: supportContact
+            support_contact: supportContact,
+            raise_ticket: raiseTicket,
+            ticket_payload: raiseTicket ? {
+                summary: ticketPayload.summary,
+                category: ticketPayload.category,
+                priority: ticketPayload.priority,
+                urgency: ticketPayload.urgency,
+                customer_message: ticketPayload.message,
+            } : null,
         };
     }
 
@@ -180,6 +210,22 @@ Helpful Support Response:`;
         }
 
         return uniqueSources;
+    }
+
+    private appendSources(
+        answer: string,
+        sources: Array<{ url: string; title: string }>,
+    ): string {
+        if (!sources || sources.length === 0) return answer;
+        if (/\b(references|sources)\b\s*[:#]/i.test(answer)) return answer;
+        const lines = sources.slice(0, 5).map((source) => {
+            const title = source.title || source.url;
+            const url = source.url || '';
+            return /^https?:\/\//i.test(url)
+                ? `- [${title}](${url})`
+                : `- ${title}`;
+        });
+        return `${answer}\n\n### References\n${lines.join('\n')}`;
     }
 
     private rankDocsForQuery(query: string, docs: LangChainDocument[]): LangChainDocument[] {
@@ -215,6 +261,51 @@ Helpful Support Response:`;
             return keywords.some((k) => text.includes(k));
         });
         return hit ? { url: hit.url, title: hit.title || "Contact Support" } : null;
+    }
+
+    private buildAutoTicketPayload(query: string) {
+        const message = String(query || "").trim();
+        const lower = message.toLowerCase();
+        const looksLikeIssue = /error|issue|problem|bug|failed|failure|unable|can't|cannot|doesn'?t work|not working|broken|refund|charge|billing|login|password|reset|access|down|outage/.test(lower);
+        const hasDetail =
+            message.split(/\s+/).length >= 6 &&
+            (/(when|after|while|during|on|if)\b/.test(lower) ||
+                /#[0-9]+|[A-Z]{2,}-[0-9]+/.test(message) ||
+                /(error|failed|unable|can't|cannot|not working)\b/.test(lower));
+
+        const category =
+            /billing|payment|charge|refund|invoice/.test(lower)
+                ? "billing"
+                : /login|password|signin|sign in|auth/.test(lower)
+                    ? "login"
+                    : /error|bug|crash|broken|issue|problem|not working|failed|unable/.test(lower)
+                        ? "technical"
+                        : "other";
+
+        const priority =
+            /data loss|security|breach|fraud|chargeback|critical|outage|down|cannot access|can't access|production/.test(lower)
+                ? "critical"
+                : /urgent|asap|immediately|blocked|cannot|can't|failed|error/.test(lower)
+                    ? "high"
+                    : /slow|delay|sometimes|intermittent|minor/.test(lower)
+                        ? "low"
+                        : "medium";
+
+        const urgency = priority;
+        const summary = message.length > 140 ? `${message.slice(0, 137).trim()}...` : message || "Customer issue";
+
+        return {
+            shouldRaise: looksLikeIssue && hasDetail,
+            summary,
+            category,
+            priority,
+            urgency,
+            message: message || "Customer reported an issue.",
+        };
+    }
+
+    public triageIssue(query: string) {
+        return this.buildAutoTicketPayload(query);
     }
 
 }

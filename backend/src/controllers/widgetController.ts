@@ -3,6 +3,8 @@ import { randomUUID } from "crypto";
 import { ObjectId } from "mongodb";
 import { getCollections, nextSequence, type ApiKeyDoc } from "../config/db";
 import { signWidgetToken } from "../utils/chatTokens";
+import { ragEngine } from "../services/RAGEngine";
+import { resolveAssignedRole } from "../utils/roleAssignment";
 
 type ChatSessionDoc = {
   _id?: ObjectId;
@@ -80,6 +82,10 @@ export async function createWidgetSession(req: Request, res: Response): Promise<
     const visitorEmailRaw = normalizeString(req.body?.visitorEmail);
     const visitorEmail = visitorEmailRaw || null;
     const initialIssue = normalizeString(req.body?.issue || req.body?.initialMessage);
+    if (!initialIssue) {
+      res.status(400).json({ message: "Please describe the issue so we can connect you to a human." });
+      return;
+    }
 
     const { apiKeys, users } = await getCollections();
     const db = users.db;
@@ -93,14 +99,28 @@ export async function createWidgetSession(req: Request, res: Response): Promise<
       return;
     }
 
+    const triage = ragEngine.triageIssue(initialIssue);
+    if (!triage.shouldRaise) {
+      res.status(400).json({ message: "Please provide a bit more detail about the issue." });
+      return;
+    }
+
     const now = new Date();
+    const assignedRole = await resolveAssignedRole(
+      keyDoc.companyId,
+      "website-chat",
+      initialIssue,
+    );
     const ticketDoc = {
       companyId: keyDoc.companyId,
-      message: initialIssue || "Website visitor started a support chat.",
-      category: "website-chat",
-      priority: "medium",
+      message: triage.summary || initialIssue,
+      category: triage.category || "other",
+      priority: triage.priority || "medium",
+      urgency: triage.urgency || triage.priority || "medium",
       status: "pending",
       assignedTo: null as number | null,
+      assignedRoleId: assignedRole?.id ?? null,
+      assignedRoleName: assignedRole?.name ?? null,
       customerName: visitorName,
       source: "widget",
       createdAt: now,

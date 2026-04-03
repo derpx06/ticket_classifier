@@ -11,7 +11,6 @@ export interface ChatbotWidgetOptions {
         apiBaseUrl: string;
         apiKey: string;
         chatPath?: string;
-        sessionId?: string;
     };
     humanSupport?: {
         apiBaseUrl: string;
