@@ -216,7 +216,8 @@ const RoleBasedDashboard = () => {
     const categoryPalette = ['bg-blue-500', 'bg-cyan-500', 'bg-violet-500', 'bg-indigo-500', 'bg-emerald-500'];
     const urgentTickets = tickets.filter((ticket) => {
       const priority = typeof ticket.priority === 'string' ? ticket.priority.toLowerCase() : '';
-      return (priority === 'high' || priority === 'critical') && ticket.status?.toLowerCase() !== 'resolved';
+      const isUrgent = priority === 'high' || priority === 'critical';
+      return isUrgent && ticket.status?.toLowerCase() !== 'resolved';
     });
 
     const latencyChartWidth = 720;

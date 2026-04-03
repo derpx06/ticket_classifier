@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 import { acceptTicket, getTickets, updateTicket } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -36,7 +37,7 @@ const formatLabel = (value = '') => {
 
 const Queries = () => {
   const { user } = useAuth();
-  const companyUuid = user?.company?.uuid || user?.companyUuid || '';
+  const userRoleId = user?.companyRole?.id ?? null;
   const [tickets, setTickets] = useState([]);
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -44,8 +45,10 @@ const Queries = () => {
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [sortBy, setSortBy] = useState('Newest');
   const [selectedId, setSelectedId] = useState('');
+  const [teamView, setTeamView] = useState('my-team');
   const [isLoading, setIsLoading] = useState(true);
   const [pendingAcceptId, setPendingAcceptId] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const loadTickets = async () => {
@@ -69,6 +72,10 @@ const Queries = () => {
 
   const filteredTickets = useMemo(() => {
     const filtered = tickets.filter((ticket) => {
+      if (user?.role !== 'admin' && teamView === 'my-team') {
+        if (!userRoleId) return false;
+        return Number(ticket.assignedRoleId) === Number(userRoleId);
+      }
       const matchesSearch =
         (ticket.ticketCode || ticket._id || ticket.id || '').toLowerCase().includes(searchText.toLowerCase()) ||
         (ticket.message || '').toLowerCase().includes(searchText.toLowerCase());
@@ -89,7 +96,17 @@ const Queries = () => {
       }
       return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
     });
-  }, [tickets, searchText, statusFilter, priorityFilter, categoryFilter, sortBy]);
+  }, [
+    tickets,
+    searchText,
+    statusFilter,
+    priorityFilter,
+    categoryFilter,
+    sortBy,
+    teamView,
+    userRoleId,
+    user?.role,
+  ]);
 
   const selectedTicket =
     filteredTickets.find((ticket) => (ticket._id || ticket.id) === selectedId) || filteredTickets[0] || null;
@@ -103,11 +120,26 @@ const Queries = () => {
   };
 
   const handleAccept = async (ticketId) => {
+    if (user?.role !== 'admin') {
+      const ticket = tickets.find((item) => (item._id || item.id) === ticketId);
+      const status = String(ticket?.status || '').toLowerCase();
+      if (status === 'assigned' || status === 'resolved') {
+        toast.error('This ticket cannot be accepted.');
+        return;
+      }
+      const assignedRoleId = ticket?.assignedRoleId;
+      if (!userRoleId || !assignedRoleId || Number(assignedRoleId) !== Number(userRoleId)) {
+        toast.error('You can only accept tickets assigned to your team.');
+        return;
+      }
+    }
     try {
       setPendingAcceptId(ticketId);
       const accepted = await acceptTicket(ticketId);
       updateTicketState(ticketId, accepted || { status: 'assigned' });
       toast.success('Ticket accepted and moved to My Chats.');
+      const nextId = accepted?._id || accepted?.id || ticketId;
+      navigate(`/chat?ticketId=${nextId}`);
     } catch (error) {
       toast.error(error?.response?.data?.message || 'Unable to accept ticket.');
     } finally {
@@ -116,6 +148,19 @@ const Queries = () => {
   };
 
   const handleReject = async (ticketId) => {
+    if (user?.role !== 'admin') {
+      const ticket = tickets.find((item) => (item._id || item.id) === ticketId);
+      const status = String(ticket?.status || '').toLowerCase();
+      if (status === 'assigned' || status === 'resolved') {
+        toast.error('This ticket cannot be rejected.');
+        return;
+      }
+      const assignedRoleId = ticket?.assignedRoleId;
+      if (!userRoleId || !assignedRoleId || Number(assignedRoleId) !== Number(userRoleId)) {
+        toast.error('You can only reject tickets assigned to your team.');
+        return;
+      }
+    }
     try {
       const updated = await updateTicket(ticketId, { status: 'escalated' });
       updateTicketState(ticketId, updated || { status: 'escalated' });
@@ -158,6 +203,32 @@ const Queries = () => {
 
       <section className="grid grid-cols-1 gap-5 xl:grid-cols-12">
         <div className="space-y-4 xl:col-span-8">
+          {user?.role !== 'admin' && (
+            <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setTeamView('my-team')}
+                className={`flex-1 rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                  teamView === 'my-team'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                My Team
+              </button>
+              <button
+                type="button"
+                onClick={() => setTeamView('all')}
+                className={`flex-1 rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                  teamView === 'all'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                All Queries
+              </button>
+            </div>
+          )}
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
               <label className="xl:col-span-2">
@@ -432,7 +503,16 @@ const Queries = () => {
                   <div className="grid grid-cols-1 gap-2">
                     <button
                       type="button"
-                      disabled={pendingAcceptId === (selectedTicket._id || selectedTicket.id)}
+                      disabled={
+                        pendingAcceptId === (selectedTicket._id || selectedTicket.id) ||
+                        ['assigned', 'resolved'].includes(
+                          String(selectedTicket.status || '').toLowerCase(),
+                        ) ||
+                        (user?.role !== 'admin' &&
+                          (!userRoleId ||
+                            !selectedTicket.assignedRoleId ||
+                            Number(selectedTicket.assignedRoleId) !== Number(userRoleId)))
+                      }
                       onClick={() => handleAccept(selectedTicket._id || selectedTicket.id)}
                       className="rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-left text-xs font-semibold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-70"
                     >
@@ -442,6 +522,15 @@ const Queries = () => {
                     </button>
                     <button
                       type="button"
+                      disabled={
+                        ['assigned', 'resolved'].includes(
+                          String(selectedTicket.status || '').toLowerCase(),
+                        ) ||
+                        user?.role !== 'admin' &&
+                        (!userRoleId ||
+                          !selectedTicket.assignedRoleId ||
+                          Number(selectedTicket.assignedRoleId) !== Number(userRoleId))
+                      }
                       onClick={() => handleReject(selectedTicket._id || selectedTicket.id)}
                       className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-left text-xs font-semibold text-rose-700 transition hover:bg-rose-100"
                     >

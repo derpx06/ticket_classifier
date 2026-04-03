@@ -256,8 +256,9 @@ const Chat = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 gap-5 lg:grid-cols-10">
-      <aside className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-3">
+    <div className="h-full w-full px-3 pb-4 pt-2">
+      <div className="grid h-full grid-cols-1 gap-5 lg:grid-cols-12">
+      <aside className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-4">
         <div className="border-b border-slate-200 bg-gradient-to-r from-slate-900 to-slate-700 p-4 text-white">
           <div className="flex items-center justify-between gap-2">
             <h1 className="text-lg font-semibold">Support Chat</h1>
@@ -274,7 +275,7 @@ const Chat = () => {
           </p>
         </div>
 
-        <div className="max-h-[640px] space-y-2 overflow-y-auto p-3">
+        <div className="flex-1 space-y-2 overflow-y-auto p-3">
           {conversations.map((conversation) => {
             const conversationId = conversation._id || conversation.id;
             const lastMessage = (messagesByTicket[conversationId] || []).at(-1);
@@ -319,7 +320,7 @@ const Chat = () => {
         </div>
       </aside>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-7">
+      <section className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-8">
         {activeConversation ? (
           <>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
@@ -336,7 +337,7 @@ const Chat = () => {
               </span>
             </div>
 
-            <div className="mb-4 h-[440px] space-y-3 overflow-y-auto rounded-xl border border-slate-200 bg-gradient-to-b from-slate-50 to-white p-4">
+            <div className="mb-4 flex-1 space-y-3 overflow-y-auto rounded-xl border border-slate-200 bg-gradient-to-b from-slate-50 to-white p-4">
               {activeMessages.map((entry, index) => (
                 <div
                   key={`${activeId}-${entry._id || index}`}
@@ -406,11 +407,12 @@ const Chat = () => {
             </div>
           </>
         ) : (
-          <div className="grid h-[240px] place-items-center rounded-xl border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">
+          <div className="grid flex-1 place-items-center rounded-xl border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">
             Select a conversation to start chatting.
           </div>
         )}
       </section>
+      </div>
     </div>
   );
 };
