@@ -1,7 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { ArrowUpDown, Search, SlidersHorizontal, Sparkles } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowUpDown,
+  CheckCircle2,
+  Clock3,
+  FilterX,
+  Search,
+  SlidersHorizontal,
+  Sparkles,
+  Ticket,
+} from 'lucide-react';
 import { acceptTicket, getTickets, searchTickets, updateTicket } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -35,6 +45,18 @@ const categoryStyles = {
 const formatLabel = (value = '') => {
   if (!value) return 'Unknown';
   return value.charAt(0).toUpperCase() + value.slice(1);
+};
+
+const formatDateTime = (value) => {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '-';
+  return date.toLocaleString([], {
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 };
 
 const filterControlClass =
@@ -154,6 +176,41 @@ const Queries = () => {
   const selectedTicket =
     tickets.find((ticket) => (ticket._id || ticket.id) === selectedId) || null;
 
+  const dashboardStats = useMemo(() => {
+    const counts = filteredTickets.reduce(
+      (acc, ticket) => {
+        const status = String(ticket.status || '').toLowerCase();
+        if (status) {
+          acc[status] = (acc[status] || 0) + 1;
+        }
+        return acc;
+      },
+      { pending: 0, assigned: 0, resolved: 0, escalated: 0 }
+    );
+
+    const open = counts.pending + counts.assigned + counts.escalated;
+
+    return {
+      total: filteredTickets.length,
+      open,
+      pending: counts.pending,
+      resolved: counts.resolved,
+      escalated: counts.escalated,
+    };
+  }, [filteredTickets]);
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (searchText.trim()) count += 1;
+    if (statusFilter !== 'All') count += 1;
+    if (priorityFilter !== 'All') count += 1;
+    if (categoryFilter !== 'All') count += 1;
+    if (sortBy !== 'Newest') count += 1;
+    if (smartSearch) count += 1;
+    if (user?.role !== 'admin' && teamView !== 'my-team') count += 1;
+    return count;
+  }, [searchText, statusFilter, priorityFilter, categoryFilter, sortBy, smartSearch, user?.role, teamView]);
+
   useEffect(() => {
     if (selectedId && !selectedTicket) {
       setIsDetailsOpen(false);
@@ -183,6 +240,28 @@ const Queries = () => {
   const openTicketDetails = (ticketId) => {
     setSelectedId(ticketId);
     setIsDetailsOpen(true);
+  };
+
+  const clearFilters = () => {
+    setSearchText('');
+    setStatusFilter('All');
+    setPriorityFilter('All');
+    setCategoryFilter('All');
+    setSortBy('Newest');
+    setSmartSearch(false);
+    setSmartResults(null);
+    if (user?.role !== 'admin') {
+      setTeamView('my-team');
+    }
+  };
+
+  const isActionBlocked = (ticket) => {
+    const status = String(ticket?.status || '').toLowerCase();
+    const isLockedStatus = ['assigned', 'resolved'].includes(status);
+    if (isLockedStatus) return true;
+    if (user?.role === 'admin') return false;
+    if (!userRoleId || !ticket?.assignedRoleId) return true;
+    return Number(ticket.assignedRoleId) !== Number(userRoleId);
   };
 
   const handleAccept = async (ticketId) => {
@@ -239,15 +318,20 @@ const Queries = () => {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {user?.role !== 'admin' && (
-        <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-[linear-gradient(135deg,_#ffffff_0%,_#f8fafc_100%)] p-2 shadow-sm">
+          <div className="mb-2 flex items-center gap-2 px-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+            <Ticket size={13} />
+            View Mode
+          </div>
+          <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setTeamView('my-team')}
             className={`flex-1 rounded-xl px-3 py-2 text-sm font-semibold transition ${
               teamView === 'my-team'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-blue-600 text-white shadow-sm'
                 : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
@@ -258,135 +342,179 @@ const Queries = () => {
             onClick={() => setTeamView('all')}
             className={`flex-1 rounded-xl px-3 py-2 text-sm font-semibold transition ${
               teamView === 'all'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-blue-600 text-white shadow-sm'
                 : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
             All Queries
           </button>
+          </div>
         </div>
       )}
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 bg-[linear-gradient(120deg,_rgba(239,246,255,1),_rgba(255,255,255,1),_rgba(241,245,249,1))] px-4 py-4 sm:px-5">
-          <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="relative overflow-hidden border-b border-slate-200 bg-[linear-gradient(120deg,_rgba(15,23,42,1)_0%,_rgba(30,64,175,1)_62%,_rgba(37,99,235,1)_100%)] px-4 py-5 text-white sm:px-5">
+          <span className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+          <span className="pointer-events-none absolute -bottom-14 left-20 h-36 w-36 rounded-full bg-blue-300/25 blur-2xl" />
+          <div className="relative flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h1 className="text-xl font-semibold tracking-tight text-slate-900">Queries Workspace</h1>
-              <p className="mt-1 text-sm text-slate-600">Click any ticket card to open full details in a popup.</p>
+              <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+                <Ticket size={22} />
+                Queries Workspace
+              </h1>
+              <p className="mt-1 text-sm text-blue-100">
+                Review incoming support tickets, prioritize issues, and move faster with smart search.
+              </p>
             </div>
-            <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-              {filteredTickets.length} Ticket{filteredTickets.length === 1 ? '' : 's'}
+            <span className="inline-flex rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-semibold text-blue-50">
+              {dashboardStats.total} Visible Ticket{dashboardStats.total === 1 ? '' : 's'}
             </span>
+          </div>
+
+          <div className="relative mt-4 grid grid-cols-2 gap-2 text-xs font-semibold sm:grid-cols-4">
+            <div className="rounded-xl border border-white/20 bg-white/10 px-3 py-2.5">
+              <p className="text-blue-100">Open</p>
+              <p className="mt-0.5 text-lg text-white">{dashboardStats.open}</p>
+            </div>
+            <div className="rounded-xl border border-white/20 bg-white/10 px-3 py-2.5">
+              <p className="text-blue-100">Pending</p>
+              <p className="mt-0.5 text-lg text-white">{dashboardStats.pending}</p>
+            </div>
+            <div className="rounded-xl border border-white/20 bg-white/10 px-3 py-2.5">
+              <p className="text-blue-100">Resolved</p>
+              <p className="mt-0.5 text-lg text-white">{dashboardStats.resolved}</p>
+            </div>
+            <div className="rounded-xl border border-white/20 bg-white/10 px-3 py-2.5">
+              <p className="text-blue-100">Escalated</p>
+              <p className="mt-0.5 text-lg text-white">{dashboardStats.escalated}</p>
+            </div>
           </div>
         </div>
 
         <div className="border-b border-slate-200 bg-slate-50 p-4">
           <div className="rounded-2xl border border-slate-200 bg-[linear-gradient(180deg,_#ffffff_0%,_#f8fafc_100%)] p-3 shadow-sm sm:p-4">
-            <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
-                <SlidersHorizontal size={14} />
-              </span>
-              Refine Tickets
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
-            <label className="xl:col-span-2">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  <Search size={13} />
-                  Search
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
+                  <SlidersHorizontal size={14} />
+                </span>
+                Refine Tickets
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                  <Clock3 size={12} />
+                  {activeFilterCount} active filter{activeFilterCount === 1 ? '' : 's'}
                 </span>
                 <button
                   type="button"
-                  onClick={() => {
-                    setSmartSearch((prev) => {
-                      const next = !prev;
-                      if (next) {
-                        setSortBy('Similarity');
-                      } else if (sortBy === 'Similarity') {
-                        setSortBy('Newest');
-                      }
-                      return next;
-                    });
-                  }}
-                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-semibold transition ${
-                    smartSearch
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
+                  onClick={clearFilters}
+                  disabled={activeFilterCount === 0}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  <Sparkles size={12} />
-                  Smart search
+                  <FilterX size={12} />
+                  Clear all
                 </button>
               </div>
-              <div className="group relative">
-                <Search
-                  size={16}
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 transition group-focus-within:text-blue-500"
-                />
-                <input
-                  value={searchText}
-                  onChange={(event) => setSearchText(event.target.value)}
-                  placeholder="Ticket ID, customer, message..."
-                  className={`${filterControlClass} pl-10`}
-                />
-              </div>
-              {smartSearch && searchText.trim() && (
-                <p className="mt-1 text-[11px] text-slate-400">
-                  {isSmartSearching ? 'Searching by similarity...' : 'Smart similarity search enabled'}
-                </p>
-              )}
-            </label>
+            </div>
 
-            <label>
-              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Status
-              </span>
-              <select
-                value={statusFilter}
-                onChange={(event) => setStatusFilter(event.target.value)}
-                className={filterControlClass}
-              >
-                <option>All</option>
-                <option>Pending</option>
-                <option>Assigned</option>
-                <option>Escalated</option>
-                <option>Resolved</option>
-              </select>
-            </label>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+              <label className="xl:col-span-2">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <Search size={13} />
+                    Search
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSmartSearch((prev) => {
+                        const next = !prev;
+                        if (next) {
+                          setSortBy('Similarity');
+                        } else if (sortBy === 'Similarity') {
+                          setSortBy('Newest');
+                        }
+                        return next;
+                      });
+                    }}
+                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-semibold transition ${
+                      smartSearch
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    <Sparkles size={12} />
+                    Smart search
+                  </button>
+                </div>
+                <div className="group relative">
+                  <Search
+                    size={16}
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 transition group-focus-within:text-blue-500"
+                  />
+                  <input
+                    value={searchText}
+                    onChange={(event) => setSearchText(event.target.value)}
+                    placeholder="Ticket ID, customer, message..."
+                    className={`${filterControlClass} pl-10`}
+                  />
+                </div>
+                {smartSearch && searchText.trim() && (
+                  <p className="mt-1 text-[11px] text-slate-400">
+                    {isSmartSearching ? 'Searching by similarity...' : 'Smart similarity search enabled'}
+                  </p>
+                )}
+              </label>
 
-            <label>
-              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Priority
-              </span>
-              <select
-                value={priorityFilter}
-                onChange={(event) => setPriorityFilter(event.target.value)}
-                className={filterControlClass}
-              >
-                <option>All</option>
-                <option>Critical</option>
-                <option>High</option>
-                <option>Medium</option>
-                <option>Low</option>
-              </select>
-            </label>
+              <label>
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Status
+                </span>
+                <select
+                  value={statusFilter}
+                  onChange={(event) => setStatusFilter(event.target.value)}
+                  className={filterControlClass}
+                >
+                  <option>All</option>
+                  <option>Pending</option>
+                  <option>Assigned</option>
+                  <option>Escalated</option>
+                  <option>Resolved</option>
+                </select>
+              </label>
 
-            <label>
-              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Category
-              </span>
-              <select
-                value={categoryFilter}
-                onChange={(event) => setCategoryFilter(event.target.value)}
-                className={filterControlClass}
-              >
-                <option>All</option>
-                <option>Billing</option>
-                <option>Technical</option>
-                <option>Login</option>
-              </select>
-            </label>
+              <label>
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Priority
+                </span>
+                <select
+                  value={priorityFilter}
+                  onChange={(event) => setPriorityFilter(event.target.value)}
+                  className={filterControlClass}
+                >
+                  <option>All</option>
+                  <option>Critical</option>
+                  <option>High</option>
+                  <option>Medium</option>
+                  <option>Low</option>
+                </select>
+              </label>
+
+              <label>
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Category
+                </span>
+                <select
+                  value={categoryFilter}
+                  onChange={(event) => setCategoryFilter(event.target.value)}
+                  className={filterControlClass}
+                >
+                  <option>All</option>
+                  <option>Billing</option>
+                  <option>Technical</option>
+                  <option>Login</option>
+                </select>
+              </label>
             </div>
 
             <div className="mt-3 flex items-center justify-between border-t border-slate-200 pt-3">
@@ -421,9 +549,9 @@ const Queries = () => {
                     key={ticketId}
                     type="button"
                     onClick={() => openTicketDetails(ticketId)}
-                    className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-[linear-gradient(160deg,_#ffffff_0%,_#f8fafc_100%)] p-4 text-left transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_20px_32px_-24px_rgba(37,99,235,0.8)]"
+                    className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-[linear-gradient(160deg,_#ffffff_0%,_#f8fafc_100%)] p-4 text-left transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_24px_36px_-24px_rgba(37,99,235,0.75)]"
                   >
-                    <span className="pointer-events-none absolute right-0 top-0 h-20 w-20 rounded-bl-full bg-blue-50/80 transition group-hover:bg-blue-100/90" />
+                    <span className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-bl-full bg-blue-50/80 transition group-hover:bg-blue-100/90" />
 
                     <div className="relative flex items-start justify-between gap-2">
                       <div className="min-w-0">
@@ -446,6 +574,13 @@ const Queries = () => {
                     <p className="relative mt-3 max-h-[4.5rem] overflow-hidden text-sm leading-6 text-slate-700">
                       {ticket.message || 'No description provided.'}
                     </p>
+
+                    <div className="relative mt-3 rounded-xl border border-slate-200 bg-white/80 px-3 py-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Assigned Role</p>
+                      <p className="mt-1 text-xs font-semibold text-slate-700">
+                        {ticket.assignedRoleId ? `Team #${ticket.assignedRoleId}` : 'Unassigned'}
+                      </p>
+                    </div>
 
                     <div className="relative mt-3 flex flex-wrap gap-1.5">
                       <span
@@ -471,13 +606,13 @@ const Queries = () => {
                     </div>
 
                     <div className="relative mt-3 flex items-center justify-between text-[11px] text-slate-500">
-                      <span>{ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString() : '-'}</span>
+                      <span>{formatDateTime(ticket.createdAt)}</span>
                       {smartSearch && typeof ticket.similarity === 'number' ? (
                         <span className="rounded-full bg-blue-50 px-2 py-0.5 font-semibold text-blue-700">
                           Similarity {ticket.similarity.toFixed(3)}
                         </span>
                       ) : (
-                        <span className="font-semibold text-blue-600">Open details</span>
+                        <span className="font-semibold text-blue-600">View details</span>
                       )}
                     </div>
                   </button>
@@ -485,8 +620,25 @@ const Queries = () => {
               })}
             </div>
           ) : (
-            <div className="grid h-40 place-items-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">
-              {isLoading ? 'Loading tickets...' : 'No tickets match your filters.'}
+            <div className="grid min-h-44 place-items-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+              <div>
+                <span className="mx-auto inline-flex h-11 w-11 items-center justify-center rounded-full bg-slate-200 text-slate-600">
+                  {isLoading ? <Clock3 size={18} /> : <AlertTriangle size={18} />}
+                </span>
+                <p className="mt-3 text-sm font-semibold text-slate-700">
+                  {isLoading ? 'Loading tickets...' : 'No tickets match your filters.'}
+                </p>
+                {!isLoading && activeFilterCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="mt-3 inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100"
+                  >
+                    <FilterX size={12} />
+                    Reset filters
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -494,7 +646,7 @@ const Queries = () => {
 
       {isDetailsOpen && selectedTicket && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 px-4 py-6 backdrop-blur-[2px]"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 px-4 py-6 backdrop-blur-sm"
           onClick={() => setIsDetailsOpen(false)}
         >
           <div
@@ -567,9 +719,7 @@ const Queries = () => {
                 <div className="rounded-xl border border-slate-200 bg-white p-3">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Created</p>
                   <p className="mt-1 text-sm font-semibold text-slate-800">
-                    {selectedTicket.createdAt
-                      ? new Date(selectedTicket.createdAt).toLocaleString()
-                      : '-'}
+                    {formatDateTime(selectedTicket.createdAt)}
                   </p>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-white p-3">
@@ -587,35 +737,23 @@ const Queries = () => {
                     type="button"
                     disabled={
                       pendingAcceptId === (selectedTicket._id || selectedTicket.id) ||
-                      ['assigned', 'resolved'].includes(
-                        String(selectedTicket.status || '').toLowerCase(),
-                      ) ||
-                      (user?.role !== 'admin' &&
-                        (!userRoleId ||
-                          !selectedTicket.assignedRoleId ||
-                          Number(selectedTicket.assignedRoleId) !== Number(userRoleId)))
+                      isActionBlocked(selectedTicket)
                     }
                     onClick={() => handleAccept(selectedTicket._id || selectedTicket.id)}
-                    className="rounded-xl border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-70"
+                    className="inline-flex items-center justify-center gap-1 rounded-xl border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-70"
                   >
+                    <CheckCircle2 size={15} />
                     {pendingAcceptId === (selectedTicket._id || selectedTicket.id)
                       ? 'Accepting...'
                       : 'Accept Ticket'}
                   </button>
                   <button
                     type="button"
-                    disabled={
-                      ['assigned', 'resolved'].includes(
-                        String(selectedTicket.status || '').toLowerCase(),
-                      ) ||
-                      (user?.role !== 'admin' &&
-                        (!userRoleId ||
-                          !selectedTicket.assignedRoleId ||
-                          Number(selectedTicket.assignedRoleId) !== Number(userRoleId)))
-                    }
+                    disabled={isActionBlocked(selectedTicket)}
                     onClick={() => handleReject(selectedTicket._id || selectedTicket.id)}
-                    className="rounded-xl border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-70"
+                    className="inline-flex items-center justify-center gap-1 rounded-xl border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-70"
                   >
+                    <AlertTriangle size={15} />
                     Reject Ticket
                   </button>
                 </div>
