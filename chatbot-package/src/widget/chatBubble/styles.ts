@@ -68,9 +68,11 @@ export const CHAT_BUBBLE_CSS = `
 }
 
 .chatbot-bubble.typing {
-  min-width: 44px;
-  padding: 6px 8px;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  min-width: 56px;
+  padding: 8px 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #f1f5ff 100%);
+  border: 1px solid #dbeafe;
+  box-shadow: 0 10px 22px rgba(30, 64, 175, 0.12);
 }
 
 .chatbot-bubble.typing .chatbot-typing {
@@ -143,11 +145,11 @@ export const CHAT_BUBBLE_CSS = `
 }
 
 .chatbot-typing span {
-  width: 5px;
-  height: 5px;
+  width: 7px;
+  height: 7px;
   border-radius: 999px;
-  background: #94a3b8;
-  animation: typing-bounce 1.2s infinite ease-in-out;
+  background: linear-gradient(135deg, #1d4ed8, #60a5fa);
+  animation: typing-bounce 1.05s infinite ease-in-out;
 }
 
 .chatbot-typing span:nth-child(2) {
@@ -161,10 +163,12 @@ export const CHAT_BUBBLE_CSS = `
 @keyframes typing-bounce {
   0%,
   100% {
-    transform: translateY(0);
+    transform: translateY(0) scale(0.9);
+    opacity: 0.7;
   }
   50% {
-    transform: translateY(-3px);
+    transform: translateY(-5px) scale(1);
+    opacity: 1;
   }
 }
 

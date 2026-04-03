@@ -35,4 +35,7 @@ export const getWidgetConfig = async () => unwrapData(await apiClient.get('/widg
 export const createWidgetSession = async (body) =>
   unwrapData(await apiClient.post('/widget/session', body));
 
+export const uploadChatImage = async (body) =>
+  unwrapData(await apiClient.post('/uploads/chat-image', body));
+
 export default apiClient;

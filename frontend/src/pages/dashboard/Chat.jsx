@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import {
   AlertCircle,
   ArrowUpRight,
+  ImagePlus,
   ShieldAlert,
   UserRound,
   UsersRound,
@@ -15,6 +16,7 @@ import {
   getMessagesByTicket,
   getMyTickets,
   sendMessage,
+  uploadChatImage,
   updateTicket,
 } from '../../services/api';
 import teamService from '../../services/teamService';
@@ -60,6 +62,13 @@ const mdComponents = {
       {children}
     </a>
   ),
+  img: ({ src, alt }) => (
+    <img
+      src={src}
+      alt={alt}
+      className="mt-2 max-w-full rounded-xl border border-slate-200 shadow-sm"
+    />
+  ),
   code: ({ children }) => (
     <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{children}</code>
   ),
@@ -93,6 +102,7 @@ const Chat = () => {
   const [conversationSearch, setConversationSearch] = useState('');
   const [draft, setDraft] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [isSocketConnected, setIsSocketConnected] = useState(false);
   const [isLoadingConversations, setIsLoadingConversations] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
@@ -101,6 +111,7 @@ const Chat = () => {
   const [isLoadingTeamMembers, setIsLoadingTeamMembers] = useState(false);
   const [assigningMemberId, setAssigningMemberId] = useState(null);
   const bottomRef = useRef(null);
+  const uploadInputRef = useRef(null);
   const socketRef = useRef(null);
   const activeIdRef = useRef(activeId);
 
@@ -256,6 +267,58 @@ const Chat = () => {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [activeMessages.length, isLockedConversation]);
+
+  const readFileAsDataUrl = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(new Error('Unable to read file.'));
+      reader.readAsDataURL(file);
+    });
+
+  const handleImageUpload = async (file) => {
+    if (!file || !activeId || !activeConversation) return;
+    try {
+      setIsUploading(true);
+      const dataUrl = await readFileAsDataUrl(file);
+      const result = await uploadChatImage({
+        fileName: file.name,
+        dataUrl,
+      });
+      if (!result?.url) {
+        throw new Error('Upload succeeded but no URL was returned.');
+      }
+      const markdown = `![Uploaded image](${result.url})`;
+      const socket = socketRef.current;
+      if (socket && isSocketConnected) {
+        socket.emit('agent:send_message', {
+          ticketId: activeId,
+          text: markdown,
+        });
+      } else {
+        const created = await sendMessage({
+          ticketId: activeId,
+          text: markdown,
+          sender: 'agent',
+        });
+        const fallback = {
+          _id: created?._id || `${Date.now()}`,
+          ticketId: activeId,
+          text: markdown,
+          sender: 'agent',
+          createdAt: new Date().toISOString(),
+        };
+        setMessagesByTicket((previous) => ({
+          ...previous,
+          [activeId]: [...(previous[activeId] || []), fallback],
+        }));
+      }
+    } catch (error) {
+      toast.error(error?.response?.data?.message || error?.message || 'Failed to upload image.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   useEffect(() => {
     const loadMessages = async () => {
@@ -559,13 +622,9 @@ const Chat = () => {
                           : 'mr-auto border border-slate-200 bg-white text-slate-700'
                     }`}
                   >
-                    {entry.sender !== 'user' ? (
-                      <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
-                        {entry.text || ''}
-                      </ReactMarkdown>
-                    ) : (
-                      entry.text
-                    )}
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
+                      {entry.text || ''}
+                    </ReactMarkdown>
                   </div>
                 ))}
                 {isLoadingMessages && (
@@ -597,6 +656,27 @@ const Chat = () => {
                   disabled={isLockedConversation}
                   className={inputClass}
                 />
+                <input
+                  ref={uploadInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    event.target.value = '';
+                    if (file) {
+                      handleImageUpload(file);
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => uploadInputRef.current?.click()}
+                  disabled={!activeConversation || isUploading || isLockedConversation}
+                  className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <ImagePlus size={18} />
+                </button>
                 <button
                   type="submit"
                   disabled={!draft.trim() || isSending || isLockedConversation}

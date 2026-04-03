@@ -21,4 +21,8 @@ export const env = {
   jwtSecret: process.env.JWT_SECRET || "change-me",
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "7d",
   widgetJwtExpiresIn: process.env.WIDGET_JWT_EXPIRES_IN || "40h",
+  cloudinaryUrl: process.env.CLOUDINARY_URL || "",
+  cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME || "",
+  cloudinaryApiKey: process.env.CLOUDINARY_API_KEY || "",
+  cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET || "",
 };

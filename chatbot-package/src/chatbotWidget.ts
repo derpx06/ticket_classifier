@@ -55,7 +55,8 @@ export const createChatbotWidget = (
 
   const { header, statusText } = buildHeader(config, closePanel)
   const { body, humanDivider, messages } = buildBody(config)
-  const { footer, inputRow, input, humanButton } = buildFooter(config)
+  const { footer, inputRow, input, humanButton, loadingRow, attachInput, attachButton } =
+    buildFooter(config)
   const humanButtonMarkup =
     '<i data-lucide="user-round" aria-hidden="true"></i><span>Talk to a real human</span>'
   const aiButtonMarkup = '<i data-lucide="bot" aria-hidden="true"></i><span>Talk to AI</span>'
@@ -191,7 +192,7 @@ export const createChatbotWidget = (
   ): void => {
     if (!text.trim()) return
     body.classList.add('has-messages')
-    messages.appendChild(createBubble(text.trim(), 'bot', options?.markdown ?? false))
+    messages.appendChild(createBubble(text.trim(), 'bot', options?.markdown ?? true))
     body.scrollTop = body.scrollHeight
     if (options?.store && !isHumanChatActive && !awaitingHumanIssue) {
       pushHistory(historyStorageKey, messageHistory, { role: 'bot', text: text.trim() })
@@ -209,6 +210,60 @@ export const createChatbotWidget = (
     messages.appendChild(createBubble(text.trim(), role, options?.markdown ?? false))
     body.scrollTop = body.scrollHeight
   }
+
+  const setHumanLoading = (active: boolean, label?: string): void => {
+    if (!loadingRow) return
+    if (label) {
+      const labelEl = loadingRow.querySelector('.chatbot-loading-label')
+      if (labelEl) labelEl.textContent = label
+    }
+    loadingRow.style.display = active ? 'flex' : 'none'
+  }
+
+  const readFileAsDataUrl = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(String(reader.result || ''))
+      reader.onerror = () => reject(new Error('Unable to read file.'))
+      reader.readAsDataURL(file)
+    })
+
+  const uploadImage = async (file: File): Promise<string> => {
+    const widgetKey = config.humanSupport?.widgetKey || options.aiSupport?.apiKey
+    if (!widgetKey) {
+      throw new Error('Widget key is required for uploads.')
+    }
+    const apiBaseUrl = resolveApiBase(
+      config.humanSupport?.apiBaseUrl || options.aiSupport?.apiBaseUrl || '',
+    )
+    const dataUrl = await readFileAsDataUrl(file)
+    const response = await fetch(`${apiBaseUrl}/api/uploads/chat-image`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        widgetKey,
+        fileName: file.name,
+        dataUrl,
+      }),
+    })
+    if (!response.ok) {
+      const errorPayload = await response.json().catch(() => null)
+      const msg =
+        errorPayload?.message ||
+        errorPayload?.error ||
+        'Unable to upload image right now.'
+      throw new Error(msg)
+    }
+    const payload = unwrapResponseData<{ url: string }>(await response.json())
+    if (!payload?.url) {
+      throw new Error('Upload succeeded but no URL was returned.')
+    }
+    return payload.url
+  }
+
+  let pendingImageUrl: string | null = null
 
   let setHumanMode = (enabled: boolean): void => {
     body.classList.toggle('human-mode', enabled)
@@ -470,7 +525,8 @@ export const createChatbotWidget = (
             appendHumanBubble('AGENT JOINED THE SESSION', 'system')
             agentJoinedNoticeSent = true
           }
-          appendHumanBubble(event.text, 'bot')
+          setHumanLoading(false)
+          appendHumanBubble(event.text, 'bot', { markdown: true })
           isHumanAgentConnected = true
         }
       },
@@ -489,6 +545,7 @@ export const createChatbotWidget = (
             appendHumanBubble('A human agent has accepted your chat. You are now connected.', 'bot')
           }
           isHumanAgentConnected = true
+          setHumanLoading(false)
           if (!agentJoinedNoticeSent) {
             appendHumanBubble('AGENT JOINED THE SESSION', 'system')
             agentJoinedNoticeSent = true
@@ -513,20 +570,33 @@ export const createChatbotWidget = (
       issue: payload.issue,
     })
     statusText.textContent = 'Connecting to a human agent...'
+    setHumanLoading(true, 'Connecting to support')
   }
 
   const sendMessage = async (message: string): Promise<void> => {
     const cleaned = message.trim()
-    if (!cleaned || isDestroyed) {
+    const attachmentUrl = pendingImageUrl
+    if ((!cleaned && !attachmentUrl) || isDestroyed) {
+      if (attachmentUrl) {
+        pendingImageUrl = attachmentUrl
+      }
       return
     }
+
+    if (attachmentUrl) {
+      pendingImageUrl = null
+    }
+
+    const finalMessage = attachmentUrl
+      ? `${cleaned || 'Attached image:'}\n\n![Uploaded image](${attachmentUrl})`
+      : cleaned
 
     if (awaitingHumanIssue) {
       body.classList.add('has-messages')
       setHumanMode(true)
-      appendHumanBubble(cleaned, 'user')
+      appendHumanBubble(finalMessage, 'user', { markdown: true })
       if (!isHumanChatActive && !awaitingHumanIssue) {
-        pushHistory(historyStorageKey, messageHistory, { role: 'user', text: cleaned })
+        pushHistory(historyStorageKey, messageHistory, { role: 'user', text: finalMessage })
       }
       input.value = ''
       body.scrollTop = body.scrollHeight
@@ -535,15 +605,17 @@ export const createChatbotWidget = (
         await connectHumanSupport({
           name: 'Website Visitor',
           email: '',
-          issue: cleaned,
+          issue: finalMessage,
         })
         appendHumanBubble("You're now connected to a support agent. Please wait...", 'bot')
+        setHumanLoading(true, 'Waiting for support')
         humanButton.innerHTML = aiButtonMarkup
         hydrateIcons()
       } catch (error) {
         const msg =
           error instanceof Error ? error.message : 'Unable to connect to support right now.'
         appendHumanBubble(msg, 'bot')
+        setHumanLoading(false)
         awaitingHumanIssue = true
       }
       return
@@ -552,12 +624,13 @@ export const createChatbotWidget = (
     body.classList.add('has-messages')
     setHumanMode(isHumanChatActive)
     if (isHumanChatActive) {
-      appendHumanBubble(cleaned, 'user')
+      appendHumanBubble(finalMessage, 'user', { markdown: !!attachmentUrl })
+      setHumanLoading(true, 'Waiting for support')
     } else {
-      messages.appendChild(createBubble(cleaned, 'user'))
+      messages.appendChild(createBubble(finalMessage, 'user', !!attachmentUrl))
     }
     if (!isHumanChatActive && !awaitingHumanIssue) {
-      pushHistory(historyStorageKey, messageHistory, { role: 'user', text: cleaned })
+      pushHistory(historyStorageKey, messageHistory, { role: 'user', text: finalMessage })
     }
     input.value = ''
     body.scrollTop = body.scrollHeight
@@ -569,7 +642,7 @@ export const createChatbotWidget = (
     }
 
     try {
-      await appendBotReply(cleaned)
+      await appendBotReply(finalMessage)
     } finally {
       if (typingBubble?.isConnected) {
         typingBubble.remove()
@@ -586,6 +659,29 @@ export const createChatbotWidget = (
     await sendMessage(input.value)
   })
 
+  attachButton.addEventListener('click', () => {
+    attachInput.click()
+  })
+
+  attachInput.addEventListener('change', async () => {
+    const file = attachInput.files?.[0]
+    attachInput.value = ''
+    if (!file) return
+    if (!isHumanChatActive && !awaitingHumanIssue) {
+      appendBotBubble('Image uploads are available in human support chat.')
+      return
+    }
+    try {
+      const url = await uploadImage(file)
+      pendingImageUrl = url
+      appendHumanBubble('Image attached. Please include it with your message.', 'system')
+    } catch (error) {
+      const msg =
+        error instanceof Error ? error.message : 'Unable to upload image right now.'
+      appendHumanBubble(msg, 'bot')
+    }
+  })
+
   input.addEventListener('keydown', async (event) => {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault()
@@ -597,6 +693,7 @@ export const createChatbotWidget = (
     if (!isHumanChatActive && awaitingHumanIssue) {
       awaitingHumanIssue = false
       setHumanMode(false)
+      setHumanLoading(false)
       humanButton.innerHTML = humanButtonMarkup
       hydrateIcons()
       return
@@ -609,6 +706,7 @@ export const createChatbotWidget = (
       }
       isHumanChatActive = false
       isHumanAgentConnected = false
+      setHumanLoading(false)
       awaitingHumanIssue = false
       setHumanMode(false)
       appendBotBubble('You are now chatting with AI again.')
@@ -636,6 +734,7 @@ export const createChatbotWidget = (
       )
       isHumanChatActive = false
       isHumanAgentConnected = false
+      setHumanLoading(false)
       awaitingHumanIssue = false
       setHumanMode(false)
       humanButton.innerHTML = humanButtonMarkup

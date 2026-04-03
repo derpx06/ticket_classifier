@@ -125,13 +125,24 @@ export const buildFooter = (config: ResolvedOptions) => {
   input.rows = 1
   input.placeholder = config.placeholder
 
+  const attachInput = document.createElement('input')
+  attachInput.type = 'file'
+  attachInput.accept = 'image/*'
+  attachInput.className = 'chatbot-attach-input'
+
+  const attachButton = document.createElement('button')
+  attachButton.type = 'button'
+  attachButton.className = 'chatbot-attach'
+  attachButton.setAttribute('aria-label', 'Upload image')
+  attachButton.innerHTML = '<i data-lucide="image" aria-hidden="true"></i>'
+
   const sendButton = document.createElement('button')
   sendButton.type = 'submit'
   sendButton.className = 'chatbot-send'
   sendButton.setAttribute('aria-label', 'Send message')
   sendButton.innerHTML = '<i data-lucide="send-horizontal" aria-hidden="true"></i>'
 
-  inputRow.append(input, sendButton)
+  inputRow.append(input, attachButton, sendButton, attachInput)
 
   const humanButton = document.createElement('button')
   humanButton.type = 'button'
@@ -141,13 +152,25 @@ export const buildFooter = (config: ResolvedOptions) => {
   poweredText.className = 'chatbot-powered'
   poweredText.innerHTML = 'Powered by <strong>AI assistant</strong>'
 
-  footer.append(inputRow, humanButton, poweredText)
+  const loadingRow = document.createElement('div')
+  loadingRow.className = 'chatbot-loading-row'
+  loadingRow.innerHTML = `
+    <span class="chatbot-loading-label">Waiting for support</span>
+    <span class="chatbot-loading-dots" aria-hidden="true">
+      <span></span><span></span><span></span>
+    </span>
+  `
+
+  footer.append(inputRow, loadingRow, humanButton, poweredText)
 
   return {
     footer,
     inputRow,
     input,
     humanButton,
+    loadingRow,
+    attachInput,
+    attachButton,
   }
 }
 
