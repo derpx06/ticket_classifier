@@ -7,7 +7,7 @@ const optionalEnum = <T extends [string, ...string[]]>(values: T) =>
     .transform((v) => (v === undefined ? undefined : v));
 
 export const createTicketSchema = z.object({
-  apiKey: z.string().trim().min(1, "API key is required"),
+  apiKey: z.string().trim().uuid("Valid company API key (UUID) is required"),
 
   message: z
     .string()
