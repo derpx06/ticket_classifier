@@ -7,10 +7,12 @@ import Signup from '../pages/auth/Signup';
 import Chat from '../pages/dashboard/Chat';
 import Queries from '../pages/dashboard/Queries';
 import RoleBasedDashboard from '../pages/dashboard/RoleBasedDashboard';
+import KnowledgeBase from '../pages/dashboard/KnowledgeBase';
 import Landing from '../pages/public/Landing';
 import Unauthorized from '../pages/system/Unauthorized';
 import Teams from '../pages/teams/Teams';
 import ProtectedRoute from './ProtectedRoute';
+
 
 const AppRoutes = () => {
   return (
@@ -34,12 +36,15 @@ const AppRoutes = () => {
             <Route path="dashboard" element={<RoleBasedDashboard />} />
             <Route path="queries" element={<Queries />} />
             <Route path="chat" element={<Chat />} />
+            <Route path="knowledge-base" element={<KnowledgeBase />} />
 
             <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
               <Route path="teams" element={<Teams />} />
+              <Route path="knowledge-base" element={<KnowledgeBase />} />
               <Route path="admin" element={<Navigate to="/teams" replace />} />
             </Route>
           </Route>
+
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

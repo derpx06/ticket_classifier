@@ -18,28 +18,59 @@ const ragService = {
 
     /**
      * Start a website crawl
+     * @param {string} url - URL to crawl
+     * @param {number} maxPages - Max pages to crawl
+     * @param {boolean} useAdvanced - Use Playwright-based advanced crawler
+     * @param {boolean} useAI - Use Gemini to clean crawled content
+     * @param {object} auth - Authentication credentials
      */
-    async startCrawl(url, maxDepth = 2, useAdvanced = false) {
-        const endpoint = useAdvanced ? '/rag/crawl/advanced' : '/rag/crawl';
-        const response = await apiClient.post(endpoint, {
+    async startCrawl(url, maxPages = 20, useAdvanced = false, useAI = false, auth = {}, options = {}) {
+        const response = await apiClient.post('/rag/crawl', {
             url,
-            maxDepth
+            maxPages,
+            useAdvanced,
+            useAI,
+            auth,
+            excludePatterns: options.excludePatterns || [],
+            privacyPatterns: options.privacyPatterns || [],
         });
         return response.data;
     },
 
+
     /**
      * Upload and process a document (PDF, DOCX, etc.)
+     * @param {File} file - The file object
+     * @param {string} base64 - Base64-encoded file content
      */
-    async uploadDocument(file) {
-        const formData = new FormData();
-        formData.append('file', file);
-
-        const response = await apiClient.post('/rag/upload', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
+    async uploadDocument(file, base64) {
+        const response = await apiClient.post('/rag/upload', {
+            filename: file.name,
+            base64,
         });
+        return response.data;
+    },
+    /**
+     * Delete all indexed knowledge from Qdrant
+     */
+    async deleteKnowledgeBase() {
+        const response = await apiClient.delete('/rag/knowledge-base');
+        return response.data;
+    },
+
+    /**
+     * --- API Keys ---
+     */
+    async getApiKeys() {
+        const response = await apiClient.get('/rag/api-keys');
+        return response.data;
+    },
+    async createApiKey(label) {
+        const response = await apiClient.post('/rag/api-keys', { label });
+        return response.data;
+    },
+    async deleteApiKey(id) {
+        const response = await apiClient.delete(`/rag/api-keys/${id}`);
         return response.data;
     }
 };

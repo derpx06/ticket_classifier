@@ -20,7 +20,8 @@ export class RAGEngine {
     constructor() {
         this.model = new ChatGoogleGenerativeAI({
             apiKey: process.env.GEMINI_API_KEY,
-            model: process.env.GEMINI_MODEL || "gemini-1.5-flash",
+            model: process.env.GEMINI_MODEL || "gemini-3-flash-preview",
+
             temperature: 0.2,
         });
 
@@ -56,28 +57,51 @@ export class RAGEngine {
         const filteredDocs = contextDocs.filter(doc => (doc.metadata.score ?? 1) > 0.6);
         const contextText = filteredDocs.map((doc: LangChainDocument) => doc.pageContent).join('\n\n');
 
-        // 3. Conversation History
+        // 3. Retrieve Sitemap for navigation guidance
+        let sitemapText = "No sitemap available.";
+        if (companyId) {
+            try {
+                const { sitemaps } = await getCollections();
+                const sitemapDoc = await sitemaps.findOne({ companyId });
+                if (sitemapDoc) {
+                    sitemapText = sitemapDoc.pages.map(p => `- ${p.title}: ${p.url}`).join('\n');
+                }
+            } catch (err) {
+                console.error("[RAGEngine] Sitemap fetch error:", err);
+            }
+        }
+
+        // 4. Conversation History
         const chatHistory = this.history.get(sessionId) || [];
         const historyText = chatHistory.slice(-4).map(m => `${m.role}: ${m.content}`).join('\n');
 
-        // 4. Define prompt template
+        // 5. Define prompt template
         const template = `
-You are a helpful customer support agent for our company. 
-Use the provided Context and Conversation History to answer the user's Question.
-If the answer is not in the context, say that you don't know and suggest they contact a human agent.
-Do not make up facts.
+You are a friendly and proactive Support Chatbot for our website.
+Your goal is to help the user find answers and navigate the site effectively.
 
-Context:
+PERSONA:
+- Be empathetic, professional, and concise.
+- If you find the answer in the Context, provide it clearly.
+- If the answer is not in the context, look at the Sitemap and suggest pages that might be relevant.
+- If you are still unsure, suggest they contact a human support agent.
+- NEVER make up facts or URLs.
+
+SITEMAP (Use this to guide the user to specific pages):
+{sitemap}
+
+CONTEXT (Use this to answer specific questions):
 {context}
 
-History:
+HISTORY (Previous messages):
 {history}
 
-Question: {question}
+User Question: {question}
 
-Helpful Answer:`;
+Helpful Support Response:`;
 
         const prompt = PromptTemplate.fromTemplate(template);
+
 
         // 5. Create chain
         const chain = RunnableSequence.from([
@@ -86,12 +110,14 @@ Helpful Answer:`;
             new StringOutputParser(),
         ]);
 
-        // 6. Generate answer
+        // 7. Generate answer
         const result = await chain.invoke({
+            sitemap: sitemapText,
             context: contextText || "No specific documentation found.",
             history: historyText || "First message.",
             question: query,
         });
+
 
         // 8. Human handoff check (SiteChat logic)
         const needsHandoff = result.toLowerCase().includes("i don't know") ||

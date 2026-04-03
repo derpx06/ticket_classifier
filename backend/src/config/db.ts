@@ -48,6 +48,22 @@ export type QuestionDoc = {
   createdAt: Date;
 };
 
+export type ApiKeyDoc = {
+  id: number;
+  companyId: number;
+  key: string;
+  label: string;
+  isActive: boolean;
+  createdAt: Date;
+};
+
+export type SitemapDoc = {
+  companyId: number;
+  pages: Array<{ url: string; title: string }>;
+  updatedAt: Date;
+};
+
+
 
 type CounterDoc = {
   _id: string;
@@ -65,6 +81,8 @@ function collections(database: Db): {
   companyRoles: Collection<CompanyRoleDoc>;
   questions: Collection<QuestionDoc>;
   counters: Collection<CounterDoc>;
+  apiKeys: Collection<ApiKeyDoc>;
+  sitemaps: Collection<SitemapDoc>;
 } {
   return {
     companies: database.collection<CompanyDoc>("companies"),
@@ -72,8 +90,11 @@ function collections(database: Db): {
     companyRoles: database.collection<CompanyRoleDoc>("company_roles"),
     questions: database.collection<QuestionDoc>("questions"),
     counters: database.collection<CounterDoc>("counters"),
+    apiKeys: database.collection<ApiKeyDoc>("api_keys"),
+    sitemaps: database.collection<SitemapDoc>("sitemaps"),
   };
 }
+
 
 
 async function ensureIndexes(database: Db): Promise<void> {
@@ -81,7 +102,7 @@ async function ensureIndexes(database: Db): Promise<void> {
     return;
   }
 
-  const { companies, users, companyRoles } = collections(database);
+  const { companies, users, companyRoles, apiKeys, sitemaps } = collections(database);
 
   await Promise.all([
     companies.createIndex({ id: 1 }, { unique: true }),
@@ -92,7 +113,12 @@ async function ensureIndexes(database: Db): Promise<void> {
     companyRoles.createIndex({ id: 1 }, { unique: true }),
     companyRoles.createIndex({ companyId: 1, name: 1 }, { unique: true }),
     companyRoles.createIndex({ companyId: 1 }),
+    apiKeys.createIndex({ id: 1 }, { unique: true }),
+    apiKeys.createIndex({ key: 1 }, { unique: true }),
+    apiKeys.createIndex({ companyId: 1 }),
+    sitemaps.createIndex({ companyId: 1 }, { unique: true }),
   ]);
+
 
   indexesReady = true;
 }
@@ -131,6 +157,8 @@ export async function getCollections(): Promise<{
   companyRoles: Collection<CompanyRoleDoc>;
   questions: Collection<QuestionDoc>;
   counters: Collection<CounterDoc>;
+  apiKeys: Collection<ApiKeyDoc>;
+  sitemaps: Collection<SitemapDoc>;
 }> {
 
   await connectDb();
@@ -139,6 +167,7 @@ export async function getCollections(): Promise<{
   }
   return collections(db);
 }
+
 
 export async function nextSequence(sequenceName: string): Promise<number> {
   const { counters } = await getCollections();
