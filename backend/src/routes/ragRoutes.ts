@@ -51,7 +51,7 @@ router.post('/chat', authenticateApiKey, async (req: Request, res: Response) => 
  * POST /api/rag/crawl
  */
 router.post('/crawl', async (req: Request, res: Response) => {
-    const { url, maxPages, useAdvanced, useAI, auth, excludePatterns, privacyPatterns } = req.body;
+    const { url, maxPages, depthLimit, useAdvanced, useAI, auth, excludePatterns, privacyPatterns } = req.body;
 
     if (!url) {
         return res.status(400).json({ error: 'URL is required' });
@@ -61,27 +61,31 @@ router.post('/crawl', async (req: Request, res: Response) => {
         console.log(`Starting crawl for ${url}...`);
         let pages;
 
+        // Wrapper for parallel indexing
+        const onPageCrawled = async (page: any) => {
+            console.log(`[Route] Stream-indexing page: ${page.url}`);
+            await indexerService.indexPages([page]);
+        };
+
         if (useAdvanced) {
-            pages = await advancedCrawler.crawl(url, maxPages || 10, auth || {}, {
+            pages = await advancedCrawler.crawl(url, maxPages || 10, 2, auth || {}, {
                 excludePatterns: excludePatterns || [],
                 privacyPatterns: privacyPatterns || [],
-                useAI: useAI || false
+                useAI: useAI || false,
+                onPageCrawled
             });
         } else {
-            pages = await crawlerService.crawl(url, maxPages || 20, auth || {}, {
+            pages = await crawlerService.crawl(url, maxPages || 20, 2, auth || {}, {
                 excludePatterns: excludePatterns || [],
                 privacyPatterns: privacyPatterns || [],
-                useAI: useAI || false
+                useAI: useAI || false,
+                onPageCrawled
             });
         }
 
-        console.log(`Indexing ${pages.length} pages...`);
-        const chunksCreated = await indexerService.indexPages(pages);
-
         return res.status(200).json({
             message: 'Crawl and indexing complete',
-            pagesCrawl: pages.length,
-            chunksCreated
+            pagesCrawl: pages.length
         });
     } catch (error) {
         console.error('Crawl/Index error:', error);
