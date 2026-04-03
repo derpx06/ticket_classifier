@@ -6,12 +6,13 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
-  Platform,
+  Pressable,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { formatDistanceToNow } from 'date-fns';
 import { Feather } from '@expo/vector-icons';
-import { getTickets, Ticket } from '@/services/ticket-service';
+import { getTickets, formatTicketCardDetails, Ticket } from '@/services/ticket-service';
 import { useAuth } from '@/context/AuthContext';
 import { Colors, Spacing, Radius, Palette } from '@/constants/theme';
 import { Font } from '@/constants/typography';
@@ -32,8 +33,9 @@ function initials(name?: string | null): string {
 export default function DashboardScreen() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const c = Colors[colorScheme ?? 'light'];
@@ -41,6 +43,10 @@ export default function DashboardScreen() {
   const fetchDashboardData = async () => {
     try {
       const data = await getTickets();
+      if (__DEV__) {
+        console.log('[Dashboard] tickets count', data.length);
+        if (data[0]) console.log('[Dashboard] sample ticket', JSON.stringify(data[0], null, 2));
+      }
       setTickets(data);
     } catch (e) {
       console.error('Error fetching tickets', e);
@@ -72,18 +78,19 @@ export default function DashboardScreen() {
   }, [pending]);
 
   const pendingSubtitle = oldestPending
-    ? `Awaiting response (${formatDistanceToNow(new Date(oldestPending.updatedAt), { addSuffix: false })})`
-    : 'No tickets awaiting response';
+    ? `Oldest waiting ${formatDistanceToNow(new Date(oldestPending.updatedAt), { addSuffix: true })}`
+    : 'Queue is clear';
 
   const criticalHigh = useMemo(
-    () => tickets.filter((t) => t.priority === 'high' && t.status === 'pending').length,
+    () =>
+      tickets.filter((t) => (t.priority === 'high' || t.priority === 'critical') && t.status === 'pending').length,
     [tickets],
   );
 
   const highPrioritySubtitle =
     criticalHigh > 0
-      ? `${criticalHigh} Critical issue${criticalHigh === 1 ? '' : 's'} detected`
-      : 'No critical issues';
+      ? `${criticalHigh} high-priority in queue`
+      : 'No critical items';
 
   const recentQueries = useMemo(
     () =>
@@ -91,27 +98,66 @@ export default function DashboardScreen() {
     [tickets],
   );
 
-  const cardBg = c.surface;
   const subtleText = c.textSecondary;
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: c.background }]}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Palette.primary} />
-      }
-    >
-      <View style={styles.overviewHeader}>
-        <View style={styles.overviewHeaderLeft}>
-          <Text style={[styles.overviewTitle, { color: c.text, fontFamily: Font.bold }]}>Overview</Text>
-          <Text style={[styles.liveUpdates, { fontFamily: Font.extraBold }]}>LIVE UPDATES</Text>
-        </View>
-        <View style={[styles.avatar, { backgroundColor: isDark ? c.surfaceMuted : Palette.primary }]}>
-          <Text style={[styles.avatarText, { fontFamily: Font.semibold }]}>{initials(user?.name)}</Text>
+    <View style={[styles.screenRoot, { backgroundColor: c.background }]}>
+      <View
+        style={[
+          styles.headerBar,
+          {
+            paddingTop: insets.top + Spacing.sm,
+            backgroundColor: c.surface,
+            borderBottomColor: c.border,
+          },
+        ]}
+      >
+        <View style={[styles.headerInner, { paddingHorizontal: Spacing.xl }]}>
+          <View style={styles.topBarText}>
+            <Text
+              style={[styles.screenTitle, { color: c.text, fontFamily: Font.semibold }]}
+              numberOfLines={1}
+            >
+              Dashboard
+            </Text>
+            <Text
+              style={[styles.screenSubtitle, { color: subtleText, fontFamily: Font.regular }]}
+              numberOfLines={1}
+            >
+              Live ticket metrics
+            </Text>
+          </View>
+          <View style={styles.topBarActions}>
+            <View style={[styles.avatar, { borderColor: c.border, backgroundColor: c.surfaceMuted }]}>
+              <Text style={[styles.avatarText, { color: c.text, fontFamily: Font.medium }]}>
+                {initials(user?.name)}
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => void signOut()}
+              style={({ pressed }) => [styles.iconBtn, { opacity: pressed ? 0.5 : 1 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Sign out"
+              hitSlop={8}
+            >
+              <Feather name="log-out" size={20} color={c.icon} />
+            </Pressable>
+          </View>
         </View>
       </View>
+
+      <ScrollView
+        style={styles.scrollFlex}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: insets.bottom + Spacing.xxl },
+        ]}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Palette.primary} />
+        }
+      >
+      <Text style={[styles.sectionLabel, { color: subtleText, fontFamily: Font.medium }]}>Summary</Text>
 
       <View style={styles.grid}>
         <View style={styles.gridRow}>
@@ -121,35 +167,35 @@ export default function DashboardScreen() {
             count={assigned.length}
             label="Assigned"
             activeTag
-            backgroundColor={cardBg}
             borderColor={c.border}
-            isDark={isDark}
             textColor={c.text}
             subtleColor={subtleText}
+            surface={c.surface}
+            accentBorder={false}
           />
           <OverviewStatCard
             icon="message-circle"
             iconColor={Palette.primary}
             count={pending.length}
             label="Pending"
-            backgroundColor={cardBg}
             borderColor={c.border}
-            isDark={isDark}
             textColor={c.text}
             subtleColor={subtleText}
+            surface={c.surface}
+            accentBorder={false}
           />
         </View>
         <View style={styles.gridRow}>
           <OverviewStatCard
             icon="check"
-            iconColor={isDark ? c.icon : '#64748b'}
+            iconColor={subtleText}
             count={resolved.length}
             label="Resolved"
-            backgroundColor={cardBg}
             borderColor={c.border}
-            isDark={isDark}
             textColor={c.text}
             subtleColor={subtleText}
+            surface={c.surface}
+            accentBorder={false}
           />
           <OverviewStatCard
             icon="alert-circle"
@@ -157,110 +203,91 @@ export default function DashboardScreen() {
             count={escalated.length}
             label="Escalated"
             variant="danger"
-            backgroundColor={isDark ? '#3f1d1d' : '#fef2f2'}
-            borderColor={isDark ? '#7f1d1d' : '#fecaca'}
-            isDark={isDark}
-            textColor={isDark ? '#fecaca' : Palette.danger}
-            subtleColor={isDark ? '#fca5a5' : Palette.danger}
+            borderColor={c.border}
+            textColor={c.text}
+            subtleColor={subtleText}
+            surface={c.surface}
+            accentBorder
           />
         </View>
       </View>
 
-      <Text style={[styles.sectionHeading, { color: c.text, fontFamily: Font.bold, marginTop: Spacing.sm }]}>
-        Action Center
-      </Text>
+      <Text style={[styles.sectionHeading, { color: c.text, fontFamily: Font.semibold }]}>Shortcuts</Text>
 
       <TouchableOpacity
-        style={[styles.actionRow, { backgroundColor: isDark ? c.surface : '#f1f5f9' }]}
-        activeOpacity={0.75}
+        style={[styles.actionRow, { backgroundColor: c.surface, borderColor: c.border }]}
+        activeOpacity={0.7}
         onPress={() => router.push('/(tabs)/queries')}
       >
-        <View style={[styles.actionIconWrap, { backgroundColor: isDark ? c.surfaceMuted : '#e2e8f0' }]}>
-          <Feather name="monitor" size={22} color={Palette.primary} />
+        <View style={[styles.actionIconWrap, { borderColor: c.border }]}>
+          <Feather name="inbox" size={20} color={Palette.primary} />
         </View>
         <View style={styles.actionTextWrap}>
-          <Text style={[styles.actionTitle, { color: c.text, fontFamily: Font.semibold }]}>Pending Tickets</Text>
-          <Text style={[styles.actionSubtitle, { color: subtleText, fontFamily: Font.regular }]} numberOfLines={1}>
+          <Text style={[styles.actionTitle, { color: c.text, fontFamily: Font.semibold }]}>Pending tickets</Text>
+          <Text style={[styles.actionSubtitle, { color: subtleText, fontFamily: Font.regular }]} numberOfLines={2}>
             {pendingSubtitle}
           </Text>
         </View>
-        <Feather name="chevron-right" size={22} color={subtleText} />
+        <Feather name="chevron-right" size={18} color={c.icon} />
       </TouchableOpacity>
 
       <TouchableOpacity
         style={[
           styles.actionRow,
-          { backgroundColor: isDark ? '#3f1d1d' : '#fef2f2', marginTop: Spacing.md },
+          styles.actionRowAlert,
+          { backgroundColor: c.surface, borderColor: c.border, marginTop: Spacing.sm },
         ]}
-        activeOpacity={0.75}
+        activeOpacity={0.7}
         onPress={() => router.push('/(tabs)/queries')}
       >
-        <View style={[styles.actionIconWrap, { backgroundColor: isDark ? '#7f1d1d' : '#fee2e2' }]}>
-          <Feather name="alert-triangle" size={22} color={Palette.danger} />
+        <View style={[styles.actionIconWrap, { borderColor: `${Palette.danger}55` }]}>
+          <Feather name="alert-triangle" size={20} color={Palette.danger} />
         </View>
         <View style={styles.actionTextWrap}>
-          <Text style={[styles.actionTitle, { color: isDark ? '#fecaca' : '#991b1b', fontFamily: Font.semibold }]}>
-            High Priority Alerts
-          </Text>
-          <Text
-            style={[styles.actionSubtitle, { color: isDark ? '#fca5a5' : '#b91c1c', fontFamily: Font.regular }]}
-            numberOfLines={1}
-          >
+          <Text style={[styles.actionTitle, { color: c.text, fontFamily: Font.semibold }]}>High priority</Text>
+          <Text style={[styles.actionSubtitle, { color: subtleText, fontFamily: Font.regular }]} numberOfLines={2}>
             {highPrioritySubtitle}
           </Text>
         </View>
-        <Feather name="chevron-right" size={22} color={isDark ? '#fca5a5' : Palette.danger} />
+        <Feather name="chevron-right" size={18} color={c.icon} />
       </TouchableOpacity>
 
       <View style={styles.recentHeader}>
-        <Text style={[styles.sectionHeading, { color: c.text, fontFamily: Font.bold, marginTop: 0 }]}>
-          Recent Queries
+        <Text style={[styles.sectionHeading, { color: c.text, fontFamily: Font.semibold, marginTop: 0 }]}>
+          Recent
         </Text>
         <TouchableOpacity onPress={() => router.push('/(tabs)/queries')} hitSlop={12}>
-          <Text style={[styles.viewAll, { fontFamily: Font.semibold }]}>View All</Text>
+          <Text style={[styles.viewAll, { fontFamily: Font.medium }]}>View all</Text>
         </TouchableOpacity>
       </View>
 
       {recentQueries.map((ticket) => (
         <TouchableOpacity
           key={ticket.id}
-          style={[
-            styles.queryCard,
-            {
-              backgroundColor: cardBg,
-              borderColor: c.border,
-              ...Platform.select({
-                ios: {
-                  shadowColor: '#0f172a',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: isDark ? 0.35 : 0.06,
-                  shadowRadius: 8,
-                },
-                android: { elevation: isDark ? 2 : 1 },
-              }),
-            },
-          ]}
-          activeOpacity={0.75}
+          style={[styles.queryCard, { backgroundColor: c.surface, borderColor: c.border }]}
+          activeOpacity={0.7}
           onPress={() => router.push(`/(tabs)/chat/${ticket.id}`)}
         >
           <View style={styles.queryCardTop}>
-            <Text style={[styles.queryId, { color: c.text, fontFamily: Font.extraBold }]}>#{ticketCode(ticket.id)}</Text>
+            <Text style={[styles.queryId, { color: c.text, fontFamily: Font.semibold }]}>#{ticketCode(ticket.id)}</Text>
             <StatusPill status={ticket.status} isDark={isDark} />
           </View>
           <Text style={[styles.querySnippet, { color: subtleText, fontFamily: Font.regular }]} numberOfLines={2}>
             {ticket.subject}
+          </Text>
+          <Text style={[styles.queryMeta, { color: subtleText, fontFamily: Font.medium }]} numberOfLines={1}>
+            {formatTicketCardDetails(ticket)}
           </Text>
         </TouchableOpacity>
       ))}
 
       {recentQueries.length === 0 && (
         <Text style={[styles.emptyHint, { color: subtleText, fontFamily: Font.regular }]}>
-          No queries yet. Pull to refresh.
+          No tickets yet. Pull to refresh.
         </Text>
       )}
-
-      <View style={{ height: Spacing.xxl }} />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -271,11 +298,11 @@ function OverviewStatCard({
   label,
   activeTag,
   variant,
-  backgroundColor,
   borderColor,
-  isDark,
   textColor,
   subtleColor,
+  surface,
+  accentBorder,
 }: {
   icon: keyof typeof Feather.glyphMap;
   iconColor: string;
@@ -283,204 +310,223 @@ function OverviewStatCard({
   label: string;
   activeTag?: boolean;
   variant?: 'danger';
-  backgroundColor: string;
   borderColor: string;
-  isDark: boolean;
   textColor: string;
   subtleColor: string;
+  surface: string;
+  accentBorder?: boolean;
 }) {
+  const countColor = variant === 'danger' ? Palette.danger : textColor;
+  const labelColor = variant === 'danger' ? Palette.danger : subtleColor;
+
   return (
     <View
       style={[
         styles.statCardOuter,
         {
-          backgroundColor,
+          backgroundColor: surface,
           borderColor,
-          ...Platform.select({
-            ios: {
-              shadowColor: '#0f172a',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: isDark ? 0.25 : 0.05,
-              shadowRadius: 6,
-            },
-            android: { elevation: isDark ? 2 : 1 },
-          }),
+          borderLeftWidth: accentBorder ? 3 : 1,
+          borderLeftColor: accentBorder ? Palette.danger : borderColor,
         },
       ]}
     >
       <View style={styles.statCardTop}>
-        <View style={[styles.statIconCircle, { backgroundColor: isDark ? '#334155' : '#eff6ff' }]}>
-          <Feather name={icon} size={20} color={iconColor} />
+        <View style={[styles.statIconCircle, { borderColor }]}>
+          <Feather name={icon} size={18} color={iconColor} />
         </View>
         {activeTag ? (
-          <View style={[styles.activeTag, { backgroundColor: isDark ? '#1e3a5f' : '#dbeafe' }]}>
-            <Text style={[styles.activeTagText, { color: isDark ? '#93c5fd' : Palette.primary, fontFamily: Font.extraBold }]}>
-              ACTIVE
-            </Text>
+          <View style={[styles.activeTag, { borderColor: `${Palette.primary}66` }]}>
+            <Text style={[styles.activeTagText, { color: Palette.primary, fontFamily: Font.medium }]}>Active</Text>
           </View>
         ) : null}
       </View>
-      <Text
-        style={[
-          styles.statCount,
-          { color: variant === 'danger' ? iconColor : textColor, fontFamily: Font.extraBold },
-        ]}
-      >
-        {count}
-      </Text>
-      <Text
-        style={[
-          styles.statLabel,
-          { color: variant === 'danger' ? iconColor : subtleColor, fontFamily: Font.semibold },
-        ]}
-      >
-        {label}
-      </Text>
+      <Text style={[styles.statCount, { color: countColor, fontFamily: Font.semibold }]}>{count}</Text>
+      <Text style={[styles.statLabel, { color: labelColor, fontFamily: Font.regular }]}>{label}</Text>
     </View>
   );
 }
 
 function StatusPill({ status, isDark }: { status: string; isDark: boolean }) {
   const s = status.toLowerCase();
-  let bg = '#64748b';
-  let fg = '#fff';
+  let bg = 'transparent';
+  let fg = isDark ? '#94a3b8' : '#64748b';
+  let border = isDark ? '#475569' : '#e2e8f0';
 
   if (s === 'pending') {
-    bg = isDark ? '#475569' : '#e2e8f0';
-    fg = isDark ? '#f1f5f9' : '#475569';
+    bg = 'transparent';
+    fg = isDark ? '#94a3b8' : '#64748b';
+    border = isDark ? '#475569' : '#e2e8f0';
   } else if (s === 'assigned') {
-    bg = Palette.primary;
-    fg = '#fff';
+    bg = 'transparent';
+    fg = Palette.primary;
+    border = `${Palette.primary}44`;
   } else if (s === 'resolved') {
-    bg = isDark ? '#14532d' : '#d1fae5';
-    fg = isDark ? '#bbf7d0' : '#047857';
+    bg = 'transparent';
+    fg = Palette.success;
+    border = `${Palette.success}44`;
   } else if (s === 'escalated') {
-    bg = isDark ? '#7f1d1d' : '#fee2e2';
-    fg = isDark ? '#fecaca' : '#b91c1c';
+    bg = 'transparent';
+    fg = Palette.danger;
+    border = `${Palette.danger}44`;
   }
 
   return (
-    <View style={[styles.pill, { backgroundColor: bg }]}>
-      <Text style={[styles.pillText, { color: fg, fontFamily: Font.extraBold }]}>{status.toUpperCase()}</Text>
+    <View style={[styles.pill, { backgroundColor: bg, borderColor: border, borderWidth: 1 }]}>
+      <Text style={[styles.pillText, { color: fg, fontFamily: Font.medium }]}>{status.toUpperCase()}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screenRoot: {
     flex: 1,
   },
-  content: {
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.sm,
+  headerBar: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingBottom: Spacing.md,
   },
-  overviewHeader: {
+  headerInner: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Spacing.xl,
+    minHeight: 44,
   },
-  overviewHeaderLeft: {
+  scrollFlex: {
     flex: 1,
   },
-  overviewTitle: {
-    fontSize: 30,
-    letterSpacing: -0.6,
+  scrollContent: {
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.lg,
   },
-  liveUpdates: {
-    marginTop: Spacing.sm,
-    fontSize: 11,
-    letterSpacing: 1.4,
-    color: Palette.primary,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
+  topBarText: {
+    flex: 1,
+    minWidth: 0,
+    paddingRight: Spacing.md,
     justifyContent: 'center',
   },
+  screenTitle: {
+    fontSize: 22,
+    letterSpacing: -0.3,
+  },
+  screenSubtitle: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 2,
+  },
+  topBarActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexShrink: 0,
+    gap: Spacing.xs,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
   avatarText: {
-    color: '#fff',
-    fontSize: 16,
+    fontSize: 13,
+  },
+  iconBtn: {
+    padding: Spacing.sm,
+  },
+  sectionLabel: {
+    fontSize: 11,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: Spacing.md,
   },
   grid: {
-    gap: Spacing.md,
+    gap: Spacing.sm,
   },
   gridRow: {
     flexDirection: 'row',
-    gap: Spacing.md,
+    gap: Spacing.sm,
   },
   statCardOuter: {
     flex: 1,
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
+    borderRadius: Radius.md,
+    padding: Spacing.md,
     borderWidth: 1,
-    minHeight: 132,
+    minHeight: 118,
   },
   statCardTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm,
   },
   statIconCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: Radius.md,
+    width: 36,
+    height: 36,
+    borderRadius: Radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
   },
   activeTag: {
     paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
+    paddingVertical: 3,
     borderRadius: Radius.sm,
+    borderWidth: 1,
+    backgroundColor: 'transparent',
   },
   activeTagText: {
-    fontSize: 9,
-    letterSpacing: 0.8,
+    fontSize: 10,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
   },
   statCount: {
-    fontSize: 30,
-    letterSpacing: -0.5,
+    fontSize: 26,
+    letterSpacing: -0.4,
   },
   statLabel: {
-    fontSize: 14,
-    marginTop: Spacing.xs,
+    fontSize: 13,
+    marginTop: 2,
   },
   sectionHeading: {
-    fontSize: 18,
+    fontSize: 15,
     marginTop: Spacing.xxl,
     marginBottom: Spacing.md,
-    letterSpacing: -0.2,
+    letterSpacing: -0.1,
   },
   actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: Spacing.lg,
-    paddingHorizontal: Spacing.lg,
-    borderRadius: Radius.lg,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    borderRadius: Radius.md,
+    borderWidth: 1,
     gap: Spacing.md,
   },
+  actionRowAlert: {
+    borderLeftWidth: 3,
+    borderLeftColor: Palette.danger,
+  },
   actionIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: Radius.md,
+    width: 40,
+    height: 40,
+    borderRadius: Radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    backgroundColor: 'transparent',
   },
   actionTextWrap: {
     flex: 1,
   },
   actionTitle: {
-    fontSize: 16,
-    lineHeight: 22,
+    fontSize: 15,
+    lineHeight: 20,
   },
   actionSubtitle: {
     fontSize: 13,
     lineHeight: 18,
-    marginTop: Spacing.xs,
+    marginTop: 2,
   },
   recentHeader: {
     flexDirection: 'row',
@@ -494,33 +540,38 @@ const styles = StyleSheet.create({
     color: Palette.primary,
   },
   queryCard: {
-    borderRadius: Radius.lg,
+    borderRadius: Radius.md,
     borderWidth: 1,
-    padding: Spacing.lg,
-    marginBottom: Spacing.md,
+    padding: Spacing.md,
+    marginBottom: Spacing.sm,
   },
   queryCardTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm,
   },
   queryId: {
-    fontSize: 15,
-    letterSpacing: 0.4,
+    fontSize: 14,
+    letterSpacing: 0.3,
   },
   querySnippet: {
     fontSize: 14,
-    lineHeight: 21,
+    lineHeight: 20,
+  },
+  queryMeta: {
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: Spacing.xs,
   },
   pill: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs + 1,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
     borderRadius: Radius.sm,
   },
   pillText: {
     fontSize: 10,
-    letterSpacing: 0.7,
+    letterSpacing: 0.5,
   },
   emptyHint: {
     textAlign: 'center',

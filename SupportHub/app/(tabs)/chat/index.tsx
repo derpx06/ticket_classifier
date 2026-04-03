@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { getTickets, getMyTickets, Ticket } from '@/services/ticket-service';
+import { getTickets, getMyTickets, formatTicketCardDetails, Ticket } from '@/services/ticket-service';
 import { useAuth } from '@/context/AuthContext';
 import { Colors, Spacing, Radius, Palette } from '@/constants/theme';
 import { Font } from '@/constants/typography';
@@ -23,6 +23,10 @@ export default function ChatListScreen() {
   const fetchData = async () => {
     try {
       const data = user?.role === 'admin' ? await getTickets() : await getMyTickets();
+      if (__DEV__) {
+        console.log('[Chat list] tickets count', data.length);
+        if (data[0]) console.log('[Chat list] sample ticket', JSON.stringify(data[0], null, 2));
+      }
       setTickets(data);
     } catch (e) {
       console.error('Failed to fetch chat tickets:', e);
@@ -58,8 +62,8 @@ export default function ChatListScreen() {
         <Text style={[styles.chatSubject, { color: c.text, fontFamily: Font.semibold }]} numberOfLines={1}>
           {item.subject}
         </Text>
-        <Text style={[styles.chatDesc, { color: c.textSecondary, fontFamily: Font.regular }]} numberOfLines={1}>
-          #{ticketShortId(item.id)} · {item.status}
+        <Text style={[styles.chatDesc, { color: c.textSecondary, fontFamily: Font.regular }]} numberOfLines={2}>
+          #{ticketShortId(item.id)} · {item.status} · {formatTicketCardDetails(item)}
         </Text>
       </View>
       <Feather name="chevron-right" size={20} color={c.icon} />

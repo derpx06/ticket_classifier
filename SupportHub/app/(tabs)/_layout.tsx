@@ -1,19 +1,43 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform, Pressable } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Feather, Ionicons } from '@expo/vector-icons';
 
 import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors, Spacing } from '@/constants/theme';
 import { Font } from '@/constants/typography';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuth } from '@/context/AuthContext';
-import { Feather } from '@expo/vector-icons';
+
+const TAB_ICON_SIZE = 24;
+
+type IonName = keyof typeof Ionicons.glyphMap;
+
+function TabBarIcon({
+  outline,
+  solid,
+  color,
+  focused,
+}: {
+  outline: IonName;
+  solid: IonName;
+  color: string;
+  focused: boolean;
+}) {
+  return (
+    <View style={styles.tabIconWrap}>
+      <Ionicons name={focused ? solid : outline} size={TAB_ICON_SIZE} color={color} />
+    </View>
+  );
+}
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const { signOut } = useAuth();
   const colors = Colors[colorScheme ?? 'light'];
+  const insets = useSafeAreaInsets();
+  const tabPadBottom = Math.max(insets.bottom, Spacing.sm);
 
   return (
     <Tabs
@@ -21,37 +45,48 @@ export default function TabLayout() {
         tabBarActiveTintColor: colors.tint,
         tabBarInactiveTintColor: colors.tabIconDefault,
         headerShown: true,
+        headerShadowVisible: false,
         headerStyle: {
           backgroundColor: colors.surface,
+          borderBottomWidth: StyleSheet.hairlineWidth,
           borderBottomColor: colors.border,
-          borderBottomWidth: 1,
+          elevation: 0,
         },
         headerTitleStyle: {
           fontFamily: Font.semibold,
-          fontSize: 18,
+          fontSize: 17,
           color: colors.text,
         },
+        headerTitleAlign: 'left',
         headerTintColor: colors.text,
         tabBarButton: HapticTab,
         tabBarStyle: {
           backgroundColor: colors.surface,
+          borderTopWidth: StyleSheet.hairlineWidth,
           borderTopColor: colors.border,
-          borderTopWidth: 1,
-          paddingTop: 4,
-          ...Platform.select({
-            ios: { position: 'absolute' },
-            default: {},
-          }),
+          paddingTop: Spacing.sm,
+          paddingBottom: tabPadBottom,
+          elevation: 0,
         },
         tabBarLabelStyle: {
           fontFamily: Font.medium,
-          fontSize: 11,
-          marginTop: -2,
+          fontSize: 10,
+          marginTop: 2,
+          letterSpacing: 0.2,
+        },
+        tabBarItemStyle: {
+          paddingTop: 6,
+        },
+        tabBarIconStyle: {
+          marginTop: 0,
         },
         headerRight: () => (
           <Pressable
             onPress={signOut}
-            style={{ marginRight: Spacing.lg, padding: Spacing.sm }}
+            style={({ pressed }) => [
+              styles.headerIconBtn,
+              { opacity: pressed ? 0.55 : 1 },
+            ]}
             accessibilityRole="button"
             accessibilityLabel="Sign out"
           >
@@ -63,16 +98,25 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Dashboard',
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="house.fill" color={color} />,
+          title: '',
+          headerShown: false,
+          tabBarLabel: 'Home',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon outline="home-outline" solid="home" color={color} focused={focused} />
+          ),
         }}
       />
       <Tabs.Screen
         name="queries"
         options={{
           title: 'Queries',
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={26} name="list.bullet.clipboard.fill" color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon
+              outline="file-tray-stacked-outline"
+              solid="file-tray-stacked"
+              color={color}
+              focused={focused}
+            />
           ),
         }}
       />
@@ -81,11 +125,28 @@ export default function TabLayout() {
         options={{
           title: 'Chat',
           headerShown: false,
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={26} name="bubble.left.and.bubble.right.fill" color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon
+              outline="chatbubbles-outline"
+              solid="chatbubbles"
+              color={color}
+              focused={focused}
+            />
           ),
         }}
       />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  tabIconWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: TAB_ICON_SIZE + 2,
+  },
+  headerIconBtn: {
+    marginRight: Spacing.lg,
+    padding: Spacing.sm,
+  },
+});

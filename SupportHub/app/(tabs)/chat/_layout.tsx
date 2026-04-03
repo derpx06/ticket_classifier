@@ -15,9 +15,10 @@ export default function ChatLayout() {
         },
         headerTitleStyle: {
           fontFamily: Font.semibold,
-          fontSize: 18,
+          fontSize: 17,
           color: colors.text,
         },
+        headerTitleAlign: 'left',
         headerTintColor: colors.text,
         headerShadowVisible: false,
       }}

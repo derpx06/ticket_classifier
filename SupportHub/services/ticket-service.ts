@@ -1,16 +1,24 @@
 import api from './api';
 
+export type TicketPriority = 'low' | 'medium' | 'high' | 'critical';
+export type TicketStatus = 'pending' | 'assigned' | 'resolved' | 'escalated' | 'closed';
+
 export interface Ticket {
   id: string;
   uuid?: string;
   subject: string;
   category: string;
-  priority: 'low' | 'medium' | 'high';
-  status: 'pending' | 'assigned' | 'resolved' | 'escalated' | 'closed';
+  priority: TicketPriority;
+  status: TicketStatus;
   createdAt: string;
   updatedAt: string;
   customerId?: string;
   agentId?: string;
+  /** From API `customerName` */
+  customerName?: string;
+  /** Set when API `urgency` differs from `priority`. */
+  urgency?: TicketPriority;
+  assignedRoleName?: string;
 }
 
 export interface Message {
@@ -21,13 +29,28 @@ export interface Message {
   createdAt: string;
 }
 
-type TicketPriority = Ticket['priority'];
-type TicketStatus = Ticket['status'];
 type MessageSender = Message['sender'];
 
-const PRIORITIES: TicketPriority[] = ['low', 'medium', 'high'];
+const PRIORITIES: TicketPriority[] = ['low', 'medium', 'high', 'critical'];
 const STATUSES: TicketStatus[] = ['pending', 'assigned', 'resolved', 'escalated', 'closed'];
 const SENDERS: MessageSender[] = ['user', 'agent', 'bot'];
+
+function titleCaseWord(s: string): string {
+  const t = s.trim();
+  if (!t) return '';
+  return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
+}
+
+/** Single line of real ticket fields for list cards (category, priority, customer, etc.). */
+export function formatTicketCardDetails(t: Ticket): string {
+  const parts: string[] = [];
+  if (t.category?.trim()) parts.push(titleCaseWord(t.category));
+  parts.push(titleCaseWord(t.priority));
+  if (t.customerName?.trim()) parts.push(t.customerName.trim());
+  if (t.urgency) parts.push(`Urgency ${titleCaseWord(t.urgency)}`);
+  if (t.assignedRoleName?.trim()) parts.push(t.assignedRoleName.trim());
+  return parts.join(' · ');
+}
 
 function pickString(v: unknown): string {
   if (v == null) return '';
@@ -59,6 +82,10 @@ export function normalizeTicket(raw: unknown): Ticket {
   const s = String(o.status ?? '').toLowerCase();
   const status = STATUSES.includes(s as TicketStatus) ? (s as TicketStatus) : 'pending';
 
+  const uRaw = String(o.urgency ?? '').trim().toLowerCase();
+  const urgencyParsed = PRIORITIES.includes(uRaw as TicketPriority) ? (uRaw as TicketPriority) : undefined;
+  const urgency = urgencyParsed && urgencyParsed !== priority ? urgencyParsed : undefined;
+
   return {
     id,
     subject,
@@ -69,6 +96,9 @@ export function normalizeTicket(raw: unknown): Ticket {
     updatedAt: toIsoDate(o.updatedAt),
     customerId: pickString(o.customerId) || undefined,
     agentId: pickString(o.agentId) || pickString(o.assignedTo) || undefined,
+    customerName: pickString(o.customerName).trim() || undefined,
+    urgency,
+    assignedRoleName: pickString(o.assignedRoleName).trim() || undefined,
   };
 }
 
