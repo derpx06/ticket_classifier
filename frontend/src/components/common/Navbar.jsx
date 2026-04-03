@@ -47,7 +47,7 @@ const Navbar = ({ toggleMobileMenu }) => {
             </div>
             <div className="hidden md:flex flex-col items-start leading-tight">
               <span className="text-sm font-semibold text-slate-800">
-                {user?.name || 'Reimbursement User'}
+                {user?.name || 'Ticket Support Hub User'}
               </span>
               <span className="text-xs text-slate-500 truncate max-w-[120px]">
                 {user?.email || 'user@company.com'}

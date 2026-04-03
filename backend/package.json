@@ -1,9 +1,9 @@
 {
-  "name": "reimbursement-management-backend",
+  "name": "ticket-support-hub-backend",
   "version": "1.0.0",
   "description": "",
   "main": "dist/index.js",
-  "scripts": {
+  "scripts": {  
     "test": "vitest run",
     "test:watch": "vitest",
     "test:unit": "vitest run src/utils/reportingTree.test.ts src/schemas/hierarchySchemas.test.ts",
