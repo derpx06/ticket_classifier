@@ -34,6 +34,7 @@ const Chat = () => {
   const [conversations, setConversations] = useState([]);
   const [activeId, setActiveId] = useState('');
   const [messagesByTicket, setMessagesByTicket] = useState({});
+  const [conversationSearch, setConversationSearch] = useState('');
   const [draft, setDraft] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isSocketConnected, setIsSocketConnected] = useState(false);
@@ -48,6 +49,21 @@ const Chat = () => {
     [activeId, conversations]
   );
   const activeMessages = messagesByTicket[activeId] || [];
+  const filteredConversations = useMemo(() => {
+    const query = conversationSearch.trim().toLowerCase();
+    if (!query) return conversations;
+
+    return conversations.filter((conversation) => {
+      const conversationId = String(conversation._id || conversation.id || '');
+      const lastMessage = (messagesByTicket[conversationId] || []).at(-1);
+      return (
+        (conversation.message || '').toLowerCase().includes(query)
+        || (conversation.customerName || '').toLowerCase().includes(query)
+        || String(conversation.ticketCode || conversationId).toLowerCase().includes(query)
+        || (lastMessage?.text || '').toLowerCase().includes(query)
+      );
+    });
+  }, [conversations, messagesByTicket, conversationSearch]);
 
   useEffect(() => {
     const loadConversations = async () => {
@@ -289,12 +305,20 @@ const Chat = () => {
           <p className="mt-1 text-xs text-slate-200">
             {isAdmin ? 'Company-wide customer conversations' : 'Assigned customer conversations'}
           </p>
+          <div className="mt-3">
+            <input
+              type="text"
+              value={conversationSearch}
+              onChange={(event) => setConversationSearch(event.target.value)}
+              placeholder="Search conversations..."
+              className="w-full rounded-xl border border-white/25 bg-white/10 px-3 py-2 text-sm text-white outline-none placeholder:text-slate-300 focus:border-white/40 focus:bg-white/15"
+            />
+          </div>
         </div>
 
         <div className="relative max-h-[640px] space-y-2.5 overflow-y-auto bg-slate-50/65 p-3 lg:max-h-[calc(100vh-250px)]">
-          {conversations.map((conversation) => {
+          {filteredConversations.map((conversation) => {
             const conversationId = conversation._id || conversation.id;
-            const lastMessage = (messagesByTicket[conversationId] || []).at(-1);
             return (
               <button
                 key={conversationId}
@@ -308,27 +332,23 @@ const Chat = () => {
               >
                 <div className="mb-1.5 flex items-center justify-between gap-2">
                   <p className="truncate text-sm font-semibold text-slate-900">
-                    {conversation.message}
+                    {conversation.customerName || '-'}
                   </p>
                   <span
                     className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                       statusStyles[conversation.status] || 'bg-slate-100 text-slate-700'
                     }`}
-                  >
-                    {formatLabel(conversation.status)}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500">{conversation.customerName || '-'}</p>
-                <p className="mt-2 truncate rounded-lg border border-slate-200/80 bg-slate-100/80 px-2 py-1 text-xs text-slate-600">
-                  {lastMessage?.text || 'No messages yet'}
-                </p>
+                >
+                  {formatLabel(conversation.status)}
+                </span>
+              </div>
                 <p className="mt-2 text-[11px] font-medium text-slate-400">
                   {conversation.ticketCode || conversationId}
                 </p>
               </button>
             );
           })}
-          {!isLoadingConversations && conversations.length === 0 && (
+          {!isLoadingConversations && filteredConversations.length === 0 && (
             <p className="rounded-2xl border border-dashed border-slate-300 bg-white/80 p-3 text-xs text-slate-500">
               No assigned conversations.
             </p>
