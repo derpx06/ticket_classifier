@@ -922,8 +922,12 @@ createChatbotWidget({
                                 ))}
 
                                 {chatLoading && (
-                                    <div className="mr-auto inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-100 px-4 py-2.5 text-sm text-slate-700">
-                                        <Loader2 size={14} className="animate-spin" /> Thinking...
+                                    <div className="mr-auto max-w-[85%] rounded-2xl border border-slate-200 bg-slate-100 px-4 py-2.5">
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="h-2 w-2 rounded-full bg-slate-400 animate-bounce [animation-delay:0ms]" />
+                                            <span className="h-2 w-2 rounded-full bg-slate-400 animate-bounce [animation-delay:120ms]" />
+                                            <span className="h-2 w-2 rounded-full bg-slate-400 animate-bounce [animation-delay:240ms]" />
+                                        </div>
                                     </div>
                                 )}
                             </div>

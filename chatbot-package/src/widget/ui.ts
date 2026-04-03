@@ -1,20 +1,5 @@
 import type { ResolvedOptions } from './types'
-import { renderMarkdown } from './markdown'
-
-export const createBubble = (
-  text: string,
-  role: 'user' | 'bot' | 'system',
-  renderAsMarkdown = false,
-): HTMLDivElement => {
-  const bubble = document.createElement('div')
-  bubble.className = `chatbot-bubble ${role}`
-  if (renderAsMarkdown) {
-    bubble.innerHTML = renderMarkdown(text)
-  } else {
-    bubble.textContent = text
-  }
-  return bubble
-}
+import { createBubble } from './chatBubble'
 
 export const createControlButton = (
   iconName: string,

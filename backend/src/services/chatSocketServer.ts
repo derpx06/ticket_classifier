@@ -266,6 +266,11 @@ export function createChatSocketServer(httpServer: HttpServer): Server {
         return;
       }
 
+      if (context.role !== "admin" && ticket.assignedTo !== context.userId) {
+        socket.emit("chat:error", { message: "You are not assigned to this ticket." });
+        return;
+      }
+
       socket.join(ticketRoom(ticketId));
       socket.emit("agent:joined_ticket", { ticketId });
     });
@@ -295,6 +300,11 @@ export function createChatSocketServer(httpServer: HttpServer): Server {
       });
       if (!ticket) {
         socket.emit("chat:error", { message: "Ticket not found." });
+        return;
+      }
+
+      if (context.role !== "admin" && ticket.assignedTo !== context.userId) {
+        socket.emit("chat:error", { message: "You are not assigned to this ticket." });
         return;
       }
 

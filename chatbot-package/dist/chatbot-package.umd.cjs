@@ -301,6 +301,7 @@
   display: flex;
 }
 
+<<<<<<< HEAD
 .chatbot-recent-history {
   display: flex;
   flex-direction: column;
@@ -315,30 +316,63 @@
   text-transform: uppercase;
   color: #94a3b8;
 }
+=======
+>>>>>>> 7302a3562e10953fd18a6fc58d165f21b20256dc
 
 .chatbot-bubble {
-  max-width: 86%;
-  border-radius: 12px;
+  position: relative;
+  max-width: 84%;
+  border-radius: 14px;
   padding: 8px 10px;
-  line-height: 1.45;
-  font-size: 13px;
+  line-height: 1.42;
+  font-size: 12.5px;
   white-space: pre-wrap;
+  word-break: break-word;
+  animation: chatbot-bubble-in 0.22s ease;
 }
 
 .chatbot-bubble.user {
   align-self: flex-end;
-  background: linear-gradient(135deg, var(--chatbot-primary), #1d4ed8);
+  background: linear-gradient(145deg, var(--chatbot-primary), #1d4ed8);
   color: #ffffff;
-  border-bottom-right-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom-right-radius: 6px;
+  box-shadow: 0 10px 26px rgba(37, 99, 235, 0.28);
+}
+
+.chatbot-bubble.user::after {
+  content: "";
+  position: absolute;
+  right: -6px;
+  bottom: 8px;
+  width: 12px;
+  height: 12px;
+  background: #1d4ed8;
+  border-radius: 2px 0 10px 0;
+  transform: rotate(35deg);
 }
 
 .chatbot-bubble.bot {
   align-self: flex-start;
-  background: #ffffff;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
   color: #0f172a;
-  border: 1px solid #dbe4f5;
-  border-bottom-left-radius: 4px;
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+  border: 1px solid #d7e3f8;
+  border-bottom-left-radius: 6px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);
+}
+
+.chatbot-bubble.bot::after {
+  content: "";
+  position: absolute;
+  left: -6px;
+  bottom: 8px;
+  width: 12px;
+  height: 12px;
+  background: #ffffff;
+  border-left: 1px solid #d7e3f8;
+  border-bottom: 1px solid #d7e3f8;
+  border-radius: 0 0 0 9px;
+  transform: rotate(35deg);
 }
 
 .chatbot-bubble.system {
@@ -351,6 +385,37 @@
   border-radius: 999px;
   background: #dbeafe;
   color: #1e3a8a;
+}
+
+.chatbot-bubble.typing {
+  min-width: 44px;
+  padding: 6px 8px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.chatbot-bubble.typing .chatbot-typing {
+  justify-content: center;
+}
+
+.chatbot-bubble p,
+.chatbot-bubble ul,
+.chatbot-bubble ol,
+.chatbot-bubble pre {
+  margin: 0;
+}
+
+.chatbot-bubble ul,
+.chatbot-bubble ol {
+  padding-left: 18px;
+  margin-top: 6px;
+}
+
+.chatbot-bubble li + li {
+  margin-top: 3px;
+}
+
+.chatbot-bubble.user a {
+  color: #dbeafe;
 }
 
 .chatbot-md-h1 {
@@ -385,8 +450,10 @@
   border-radius: 10px;
   padding: 8px;
   overflow-x: auto;
+  margin-top: 6px;
 }
 
+<<<<<<< HEAD
 .chatbot-ref-chips {
   display: flex;
   flex-wrap: wrap;
@@ -412,6 +479,55 @@
   background: #e0e7ff;
 }
 
+=======
+.chatbot-typing {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #475569;
+  font-weight: 500;
+}
+
+.chatbot-typing span {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: #94a3b8;
+  animation: typing-bounce 1.2s infinite ease-in-out;
+}
+
+.chatbot-typing span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.chatbot-typing span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes chatbot-bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+>>>>>>> 7302a3562e10953fd18a6fc58d165f21b20256dc
 .chatbot-footer {
   border-top: 1px solid #dbe4f5;
   padding: 12px;
@@ -669,31 +785,6 @@
   display: none;
 }
 
-.chatbot-typing {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: #475569;
-  font-weight: 500;
-}
-
-.chatbot-typing span {
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: #94a3b8;
-  animation: typing-bounce 1.2s infinite ease-in-out;
-}
-
-.chatbot-typing span:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.chatbot-typing span:nth-child(3) {
-  animation-delay: 0.4s;
-}
-
 .chatbot-error {
   color: #dc2626;
   font-size: 12px;
@@ -714,16 +805,6 @@
 
 .chatbot-human-note span {
   font-weight: 600;
-}
-
-@keyframes typing-bounce {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-5px);
-  }
 }
 
 @media (max-width: 520px) {
@@ -754,5 +835,16 @@
 `,Qe=()=>{if(document.getElementById(`chatbot-package-styles`))return;let e=document.createElement(`style`);e.id=Ye,e.textContent=Ze,document.head.appendChild(e)},$e={xmlns:`http://www.w3.org/2000/svg`,width:24,height:24,viewBox:`0 0 24 24`,fill:`none`,stroke:`currentColor`,"stroke-width":2,"stroke-linecap":`round`,"stroke-linejoin":`round`},et=([e,t,n])=>{let r=document.createElementNS(`http://www.w3.org/2000/svg`,e);return Object.keys(t).forEach(e=>{r.setAttribute(e,String(t[e]))}),n?.length&&n.forEach(e=>{let t=et(e);r.appendChild(t)}),r},tt=(e,t={})=>et([`svg`,{...$e,...t},e]),nt=e=>{for(let t in e)if(t.startsWith(`aria-`)||t===`role`||t===`title`)return!0;return!1},rt=(...e)=>e.filter((e,t,n)=>!!e&&e.trim()!==``&&n.indexOf(e)===t).join(` `).trim(),it=e=>e.replace(/^([A-Z])|[\s-_]+(\w)/g,(e,t,n)=>n?n.toUpperCase():t.toLowerCase()),at=e=>{let t=it(e);return t.charAt(0).toUpperCase()+t.slice(1)},ot=e=>Array.from(e.attributes).reduce((e,t)=>(e[t.name]=t.value,e),{}),st=e=>typeof e==`string`?e:!e||!e.class?``:e.class&&typeof e.class==`string`?e.class.split(` `):e.class&&Array.isArray(e.class)?e.class:``,ct=(e,{nameAttr:t,icons:n,attrs:r})=>{let i=e.getAttribute(t);if(i==null)return;let a=n[at(i)];if(!a)return console.warn(`${e.outerHTML} icon name was not found in the provided icons object.`);let o=ot(e),s=nt(o)?{}:{"aria-hidden":`true`},c={...$e,"data-lucide":i,...s,...r,...o},l=st(o),u=st(r),d=rt(`lucide`,`lucide-${i}`,...l,...u);d&&Object.assign(c,{class:d});let f=tt(a,c);return e.parentNode?.replaceChild(f,e)},lt=[[`path`,{d:`m12 19-7-7 7-7`}],[`path`,{d:`M19 12H5`}]],ut=[[`path`,{d:`M12 8V4H8`}],[`rect`,{width:`16`,height:`12`,x:`4`,y:`8`,rx:`2`}],[`path`,{d:`M2 14h2`}],[`path`,{d:`M20 14h2`}],[`path`,{d:`M15 13v2`}],[`path`,{d:`M9 13v2`}]],dt=[[`path`,{d:`M21.801 10A10 10 0 1 1 17 3.335`}],[`path`,{d:`m9 11 3 3L22 4`}]],ft=[[`path`,{d:`M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719`}]],pt=[[`path`,{d:`M5 12h14`}],[`path`,{d:`M12 5v14`}]],mt=[[`path`,{d:`M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z`}],[`path`,{d:`M6 12h16`}]],ht=[[`circle`,{cx:`12`,cy:`8`,r:`5`}],[`path`,{d:`M20 21a8 8 0 0 0-16 0`}]],gt=[[`path`,{d:`M18 6 6 18`}],[`path`,{d:`m6 6 12 12`}]],_t=({icons:e={},nameAttr:t=`data-lucide`,attrs:n={},root:r=document,inTemplates:i}={})=>{if(!Object.values(e).length)throw Error(`Please provide an icons object.
 If you want to use all the icons you can import it like:
  \`import { createIcons, icons } from 'lucide';
+<<<<<<< HEAD
 lucide.createIcons({icons});\``);if(r===void 0)throw Error("`createIcons()` only works in a browser environment.");if(Array.from(r.querySelectorAll(`[${t}]`)).forEach(r=>ct(r,{nameAttr:t,icons:e,attrs:n})),i&&Array.from(r.querySelectorAll(`template`)).forEach(r=>_t({icons:e,nameAttr:t,attrs:n,root:r.content,inTemplates:i})),t===`data-lucide`){let t=r.querySelectorAll(`[icon-name]`);t.length>0&&(console.warn(`[Lucide] Some icons were found with the now deprecated icon-name attribute. These will still be replaced for backwards compatibility, but will no longer be supported in v1.0 and you should switch to data-lucide`),Array.from(t).forEach(t=>ct(t,{nameAttr:`icon-name`,icons:e,attrs:n})))}},Q=()=>{_t({icons:{Bot:ut,MessageCircle:ft,SendHorizontal:mt,UserRound:ht,X:gt,Plus:pt,CheckCircle:dt,ArrowLeft:lt}})},vt=e=>{let t=String(e||``).trim().replace(/\/+$/,``);return!t||/^https?:\/\//i.test(t)?t:t.startsWith(`/`)?`${window.location.origin}${t}`:t},yt=e=>e.startsWith(`/`)?e:`/${e}`,bt=e=>e.replace(/\/api\/?$/i,``),xt=e=>e&&typeof e==`object`&&`data`in e?e.data:e,St=e=>{let t=`chatbot_ai_history`,n=e?.aiSupport?.apiKey||e?.humanSupport?.widgetKey||``;return n?`${t}:${n}`:typeof window<`u`?`${t}:${window.location.origin}`:t},Ct=e=>{if(typeof localStorage>`u`)return[];try{let t=localStorage.getItem(e);if(!t)return[];let n=JSON.parse(t);return Array.isArray(n)?n.filter(e=>e&&(e.role===`user`||e.role===`bot`)).map(e=>({role:e.role,text:String(e.text||``)})):[]}catch{return[]}},wt=(e,t)=>{if(!(typeof localStorage>`u`))try{localStorage.setItem(e,JSON.stringify(t))}catch{}},Tt=(e,t,n)=>{t.push(n),wt(e,t)},Et=(e,t)=>{if(t.splice(0,t.length),!(typeof localStorage>`u`))try{localStorage.removeItem(e)}catch{}},Dt=e=>e.replace(/&/g,`&amp;`).replace(/</g,`&lt;`).replace(/>/g,`&gt;`).replace(/"/g,`&quot;`).replace(/'/g,`&#39;`),Ot=e=>e.replace(/^###\s+(.+)$/gm,`<div class="chatbot-md-h3">$1</div>`).replace(/^##\s+(.+)$/gm,`<div class="chatbot-md-h2">$1</div>`).replace(/^#\s+(.+)$/gm,`<div class="chatbot-md-h1">$1</div>`).replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,(e,t,n)=>`<a href="${n}" target="_blank" rel="noopener noreferrer">${t}</a>`).replace(/&lt;(https?:\/\/[^&]+)&gt;/g,(e,t)=>`<a href="${t}" target="_blank" rel="noopener noreferrer">${t}</a>`).replace(/\*\*([^*]+)\*\*/g,`<strong>$1</strong>`).replace(/\*([^*]+)\*/g,`<em>$1</em>`).replace(/`([^`]+)`/g,`<code>$1</code>`).replace(/^\s*-\s+/gm,`• `).replace(/\n/g,`<br>`),kt=e=>{let t=String(e||``),n=t.match(/^##+\s+References\s*$/im)||t.match(/^References\s*$/im);if(!n||n.index==null)return[];let r=n.index+n[0].length,i=t.slice(r).split(/\r?\n/),a=[];for(let e of i){let t=e.trim();if(!t)continue;if(/^##+/.test(t))break;let n=t.match(/^\s*[-*]\s*\[([^\]]+)\]\((https?:\/\/[^)]+)\)/i);if(n){a.push({label:n[1],url:n[2]});continue}let r=t.match(/(https?:\/\/\S+)/i);r&&a.push({label:r[1],url:r[1]})}return a},At=e=>{let t=String(e||``),n=t.match(/^##+\s+References\s*$/im)||t.match(/^References\s*$/im);return!n||n.index==null?t:t.slice(0,n.index).trimEnd()},jt=e=>{let t=kt(e),n=At(e),r=String(n||``).split(/```/).map((e,t)=>t%2==1?`<pre><code>${Dt(e.trim())}</code></pre>`:Ot(Dt(e))).join(``);return t.length===0?r:`${r}<div class="chatbot-ref-chips">${t.map(e=>`<a class="chatbot-ref-chip" href="${e.url}" target="_blank" rel="noopener noreferrer">${Dt(e.label)}</a>`).join(``)}</div>`},$=(e,t,n=!1)=>{let r=document.createElement(`div`);return r.className=`chatbot-bubble ${t}`,n?r.innerHTML=jt(e):r.textContent=e,r},Mt=(e,t,n)=>{let r=document.createElement(`button`);return r.type=`button`,r.innerHTML=`<i data-lucide="${e}" aria-hidden="true"></i>`,r.setAttribute(`aria-label`,t),n&&r.addEventListener(`click`,n),r},Nt=(e,t)=>{let n=document.createElement(`header`);n.className=`chatbot-header`;let r=document.createElement(`div`);r.className=`chatbot-header-left`;let i=document.createElement(`div`);i.className=`chatbot-avatar`,i.innerHTML=`<i data-lucide="bot" aria-hidden="true"></i>`;let a=document.createElement(`div`);a.className=`chatbot-header-info`;let o=document.createElement(`h2`);o.textContent=e.title;let s=document.createElement(`div`);s.className=`chatbot-status`;let c=document.createElement(`span`);c.className=`chatbot-status-dot`;let l=document.createElement(`span`);l.textContent=e.subtitle,s.append(c,l),a.append(o,s),r.append(i,a);let u=document.createElement(`div`);u.className=`chatbot-controls`;let d=Mt(`x`,`Close chat`,t);return u.append(d),n.append(r,u),{header:n,statusText:l}},Pt=e=>{let t=document.createElement(`div`);t.className=`chatbot-body`;let n=document.createElement(`section`);n.className=`chatbot-intro`;let r=document.createElement(`div`);r.className=`chatbot-intro-icon`,r.textContent=`?`;let i=document.createElement(`h3`);i.textContent=`Hi there!`;let a=document.createElement(`p`);a.textContent=`I am your AI support assistant. Ask me anything.`;let o=document.createElement(`p`);o.className=`chatbot-human-note`,o.textContent=`If I cannot help, you can connect with our human support team.`,n.append(r,i,a,o);let s=document.createElement(`section`);s.className=`chatbot-human-hero`;let c=document.createElement(`h3`);c.textContent=`Talk to Support`;let l=document.createElement(`p`);l.textContent=`Our team typically replies in a few minutes.`;let u=document.createElement(`div`);u.className=`chatbot-history-label`,u.textContent=`Previous Messages`,s.append(c,l,u);let d=document.createElement(`div`);d.className=`chatbot-divider`,d.textContent=`Previous Messages`;let f=document.createElement(`div`);return f.className=`chatbot-messages`,f.setAttribute(`aria-live`,`polite`),f.appendChild($(e.welcomeMessage,`bot`,!0)),t.append(n,s,f),{body:t,humanDivider:d,messages:f}},Ft=e=>{let t=document.createElement(`div`);t.className=`chatbot-footer`;let n=document.createElement(`form`);n.className=`chatbot-input-row`;let r=document.createElement(`textarea`);r.className=`chatbot-input`,r.rows=1,r.placeholder=e.placeholder;let i=document.createElement(`button`);i.type=`submit`,i.className=`chatbot-send`,i.setAttribute(`aria-label`,`Send message`),i.innerHTML=`<i data-lucide="send-horizontal" aria-hidden="true"></i>`,n.append(r,i);let a=document.createElement(`button`);a.type=`button`,a.className=`chatbot-human-button`;let o=document.createElement(`p`);return o.className=`chatbot-powered`,o.innerHTML=`Powered by <strong>AI assistant</strong>`,t.append(n,a,o),{footer:t,inputRow:n,input:r,humanButton:a}},It=()=>{let e=document.createElement(`div`);e.className=`chatbot-human-container`;let t=document.createElement(`div`);t.className=`chatbot-human-header`;let n=document.createElement(`h3`);n.textContent=`Contact Support`;let r=document.createElement(`p`);r.textContent=`Please provide your details and we will get back to you shortly.`,t.append(n,r);let i=document.createElement(`form`);i.className=`chatbot-human-form`;let a=(e,t)=>{let n=document.createElement(`div`);n.className=`chatbot-form-group`;let r=document.createElement(`label`);return r.textContent=e,n.append(r,t),n},o=document.createElement(`input`);o.type=`text`,o.placeholder=`John Doe`,o.required=!0;let s=document.createElement(`input`);s.type=`email`,s.placeholder=`john@example.com`,s.required=!0;let c=document.createElement(`textarea`);c.placeholder=`How can we help you?`,c.required=!0;let l=document.createElement(`div`);l.className=`chatbot-form-actions`;let u=document.createElement(`button`);u.type=`button`,u.className=`chatbot-btn-secondary`,u.innerHTML=`<i data-lucide="arrow-left" aria-hidden="true" style="width: 16px; height: 16px;"></i> Back`;let d=document.createElement(`button`);d.type=`submit`,d.className=`chatbot-btn-primary`,d.textContent=`Send Message`,l.append(u,d),i.append(a(`Name`,o),a(`Email`,s),a(`Description`,c),l);let f=document.createElement(`div`);f.className=`chatbot-human-success`;let p=document.createElement(`div`);p.className=`chatbot-success-icon`,p.innerHTML=`<i data-lucide="check-circle" aria-hidden="true"></i>`;let m=document.createElement(`h3`);m.textContent=`Message Sent!`;let h=document.createElement(`p`);h.textContent=`Our support team will reach out to you via email shortly.`;let g=document.createElement(`button`);return g.type=`button`,g.className=`chatbot-btn-primary`,g.textContent=`Back to Chat`,f.append(p,m,h,g),e.append(t,i,f),{humanContainer:e,humanForm:i,cancelBtn:u,successBackBtn:g}};e.createChatbotWidget=(e={})=>{if(typeof window>`u`||typeof document>`u`)throw Error(`chatbot-package can only run in a browser environment.`);Qe();let t={...Xe,...e},n=document.createElement(`div`);n.className=`chatbot-widget-root ${t.position===`bottom-left`?`left`:`right`}`,n.style.setProperty(`--chatbot-primary`,t.primaryColor),n.style.zIndex=String(t.zIndex);let r=document.createElement(`button`);r.type=`button`,r.className=`chatbot-launcher`,r.setAttribute(`aria-label`,`Open chatbot`),r.setAttribute(`aria-expanded`,`false`),r.innerHTML=`<i data-lucide="message-circle" aria-hidden="true"></i>`;let i=document.createElement(`section`);i.className=`chatbot-panel`,i.setAttribute(`role`,`dialog`),i.setAttribute(`aria-label`,t.title);let{header:a,statusText:o}=Nt(t,()=>{n.classList.remove(`open`),r.setAttribute(`aria-expanded`,`false`)}),{body:s,humanDivider:c,messages:l}=Pt(t),{footer:u,inputRow:d,input:f,humanButton:p}=Ft(t),m=`<i data-lucide="user-round" aria-hidden="true"></i><span>Talk to a real human</span>`,h=`<i data-lucide="bot" aria-hidden="true"></i><span>Talk to AI</span>`;p.innerHTML=m;let{humanContainer:g,humanForm:ee,cancelBtn:te,successBackBtn:ne}=It(),_=St(e),v=Ct(_),y=[],b=[],x=!0,S=Math.max(v.length-30,0),C=!1,w=()=>l.contains(c)?c.nextSibling:l.firstChild,re=()=>{l.innerHTML=``;let e=v.slice(S);e.length!==0&&(s.classList.add(`has-messages`),e.forEach(e=>{l.appendChild($(e.text,e.role,e.role===`bot`))}),s.scrollTop=s.scrollHeight)},T=()=>{if(l.innerHTML=``,y.length===0){let e=b.length>0?b[b.length-1]:[];if(e.length===0||!x){s.classList.remove(`has-messages`);return}s.classList.add(`has-messages`);let t=document.createElement(`div`);t.className=`chatbot-recent-history`;let n=document.createElement(`div`);n.className=`chatbot-recent-label`,n.textContent=`Previous Messages`,t.appendChild(n),e.slice(-6).forEach(e=>{let n=e.role===`bot`||(typeof e.markdown==`boolean`?e.markdown:!1);t.appendChild($(e.text,e.role,n))}),l.appendChild(t),s.scrollTop=s.scrollHeight;return}s.classList.add(`has-messages`),y.forEach(e=>{l.appendChild($(e.text,e.role,e.markdown??!1))}),s.scrollTop=s.scrollHeight},ie=()=>{if(C||S===0)return;C=!0;let e=Math.max(S-30,0),t=v.slice(e,S);if(t.length===0){C=!1;return}let n=s.scrollHeight,r=s.scrollTop,i=w();t.forEach(e=>{l.insertBefore($(e.text,e.role,e.role===`bot`),i)}),S=e,s.scrollTop=r+(s.scrollHeight-n),C=!1},E=()=>{S!==0&&s.scrollTop<=12&&ie()};v.length>0&&re(),s.addEventListener(`scroll`,E),i.append(a,s,u,g),n.append(i,r),document.body.appendChild(n),Q();let D=!1,O=!1,k=!1,A=!1,ae=!1,j=!1,M=!1,N=null,P=null,F=null,oe=new Set,I=(e,t)=>{e.trim()&&(s.classList.add(`has-messages`),l.appendChild($(e.trim(),`bot`,t?.markdown??!1)),s.scrollTop=s.scrollHeight,t?.store&&!k&&!M&&Tt(_,v,{role:`bot`,text:e.trim()}))},L=(e,t,n)=>{e.trim()&&(s.classList.add(`has-messages`),y.push({role:t,text:e.trim(),markdown:n?.markdown??!1}),l.appendChild($(e.trim(),t,n?.markdown??!1)),s.scrollTop=s.scrollHeight)},R=e=>{s.classList.toggle(`human-mode`,e),e?(l.contains(c)||l.insertBefore(c,l.firstChild),p.innerHTML=h):(l.contains(c)&&c.remove(),p.innerHTML=m),Q()},z=a.querySelector(`.chatbot-controls`);if(z){let e=document.createElement(`button`);e.type=`button`,e.setAttribute(`aria-label`,`Clear AI chat`),e.innerHTML=`<i data-lucide="x" aria-hidden="true"></i>`,z.appendChild(e);let n=document.createElement(`button`);n.type=`button`,n.setAttribute(`aria-label`,`Start new human session`),n.innerHTML=`<i data-lucide="plus" aria-hidden="true"></i>`,z.appendChild(n);let r=t=>{e.style.display=t?`none`:`grid`,n.style.display=t?`grid`:`none`};r(!1),e.addEventListener(`click`,()=>{k||(Et(_,v),S=Math.max(v.length-30,0),l.innerHTML=``,s.classList.remove(`has-messages`),l.appendChild($(t.welcomeMessage,`bot`,!0)),s.scrollTop=s.scrollHeight)}),n.addEventListener(`click`,()=>{y.length>0&&b.push([...y]),N&&=(N.close(),null),P=null,F=null,k=!1,A=!1,j=!1,M=!0,y.splice(0,y.length),x=!1,R(!0),T(),L(`Please describe the issue you are facing.`,`bot`),p.innerHTML=h,Q()});let i=R;R=e=>{i(e),r(e),e?(x=!0,T()):v.length>0?(S=Math.max(v.length-30,0),re()):(l.innerHTML=``,s.classList.remove(`has-messages`),l.appendChild($(t.welcomeMessage,`bot`,!0)))}}let B=e=>{O||(D=e,n.classList.toggle(`open`,D),r.setAttribute(`aria-expanded`,String(D)),D&&window.setTimeout(()=>f.focus(),0))},se=async n=>{if(k&&N){N.emit(`widget:message`,{text:n});return}if(e.onUserMessage){let t=await e.onUserMessage(n);typeof t==`string`&&t.trim()&&I(t,{store:!0});return}if(e.aiSupport){try{let t=vt(e.aiSupport.apiBaseUrl),r=yt(e.aiSupport.chatPath||`/rag/chat`),i=await fetch(`${t}${r}`,{method:`POST`,headers:{"Content-Type":`application/json`,"x-api-key":e.aiSupport.apiKey},body:JSON.stringify({query:n})});if(!i.ok)throw Error(`Unable to fetch chatbot response right now.`);let a=xt(await i.json());if(I(typeof a?.answer==`string`&&a.answer||typeof a?.response==`string`&&a.response||typeof a?.message==`string`&&a.message||`I processed your question, but no answer text was returned.`,{markdown:!0,store:!0}),a?.raise_ticket&&a?.ticket_payload){let e=a.ticket_payload,t=a?.ticket?._id||a?.ticketId||a?.ticket_id;I([`### Ticket Details`,e?.summary?`- Summary: ${e.summary}`:null,e?.priority?`- Priority: ${String(e.priority).toUpperCase()}`:null,e?.urgency?`- Urgency: ${String(e.urgency).toUpperCase()}`:null,t?`- Ticket ID: ${t}`:null,`- Status: Pending`].filter(Boolean).join(`
 `),{markdown:!0,store:!0})}}catch(e){let t=e instanceof Error?e.message:`Sorry, I am having trouble connecting right now.`;I(t.includes(`Failed to fetch`)?`Unable to reach the AI server. Please try again.`:t)}return}I(`Thanks! ${t.botName} received: "${n}"`,{store:!0})},ce=async n=>{if(!t.humanSupport){L(`Human support is not configured for this widget yet.`,`bot`);return}let r=t.humanSupport.widgetKey||e.aiSupport?.apiKey;if(!r)throw Error(`Human support requires a widget key or aiSupport.apiKey.`);let i=vt(t.humanSupport.apiBaseUrl),a=await fetch(`${i}/widget/session`,{method:`POST`,headers:{"Content-Type":`application/json`},body:JSON.stringify({widgetKey:r,visitorName:n.name,visitorEmail:n.email,issue:n.issue,chatHistory:v})});if(!a.ok){let e=await a.json().catch(()=>null),t=e?.message||e?.error||`Unable to connect to human support right now.`;throw Error(t)}let s=xt(await a.json());P=s.sessionId,F=s.ticketId,k=!0,R(!0);let c=Z(bt(i),{path:`/socket.io`,transports:[`websocket`],auth:{token:s.chatToken}});N=c,c.on(`connect`,()=>{o.textContent=`Connecting to a human agent...`}),c.on(`disconnect`,()=>{k&&(o.textContent=`Reconnecting to human support...`)}),c.on(`chat:message`,e=>{e.sessionId===P&&(e._id&&oe.has(e._id)||(e._id&&oe.add(e._id),e.sender===`agent`&&typeof e.text==`string`&&(A||(L(`You are now connected to a human agent.`,`bot`),L(`AGENT JOINED THE SESSION`,`system`),j=!0),L(e.text,`bot`),A=!0)))}),c.on(`chat:ticket_status`,e=>{if(e.sessionId&&e.sessionId===P||e.ticketId&&e.ticketId===F){if(e.status===`assigned`){A||L(`A human agent has accepted your chat. You are now connected.`,`bot`),A=!0,j||=(L(`AGENT JOINED THE SESSION`,`system`),!0),o.textContent=`Connected with human support`;return}e.status===`pending`&&(o.textContent=`Connecting to a human agent...`)}}),c.on(`chat:error`,e=>{L(e.message||`Support connection error. Please try again.`,`bot`)}),c.emit(`widget:request_human`,{name:n.name,email:n.email,issue:n.issue}),o.textContent=`Connecting to a human agent...`},V=async e=>{let t=e.trim();if(!(!t||O)){if(M){s.classList.add(`has-messages`),R(!0),L(t,`user`),!k&&!M&&Tt(_,v,{role:`user`,text:t}),f.value=``,s.scrollTop=s.scrollHeight,M=!1;try{await ce({name:`Website Visitor`,email:``,issue:t}),L(`You're now connected to a support agent. Please wait...`,`bot`),p.innerHTML=h,Q()}catch(e){L(e instanceof Error?e.message:`Unable to connect to support right now.`,`bot`),M=!0}return}s.classList.add(`has-messages`),R(k),k?L(t,`user`):l.appendChild($(t,`user`)),!k&&!M&&Tt(_,v,{role:`user`,text:t}),f.value=``,s.scrollTop=s.scrollHeight,await se(t)}};return r.addEventListener(`click`,()=>{B(!D)}),d.addEventListener(`submit`,async e=>{e.preventDefault(),await V(f.value)}),f.addEventListener(`keydown`,async e=>{e.key===`Enter`&&!e.shiftKey&&(e.preventDefault(),await V(f.value))}),p.addEventListener(`click`,async()=>{if(!k&&M){M=!1,R(!1),p.innerHTML=m,Q();return}if(k){y.length>0&&(b.push([...y]),y.splice(0,y.length)),k=!1,A=!1,M=!1,R(!1),I(`You are now chatting with AI again.`),p.innerHTML=m,Q();return}if(!ae){ae=!0,R(!0),M||=(L(`Please describe the issue you are facing.`,`bot`),!0);try{p.innerHTML=h,Q()}catch(e){let t=e instanceof Error?e.message:`Unable to connect to support right now.`;I(t.includes(`Failed to fetch`)?`Unable to reach support server. Please try again.`:t),k=!1,A=!1,M=!1,R(!1),p.innerHTML=m,Q()}finally{ae=!1}}}),te.addEventListener(`click`,()=>{}),ee.addEventListener(`submit`,async e=>{e.preventDefault()}),ne.addEventListener(`click`,()=>{n.classList.remove(`show-human-form`),n.classList.remove(`show-human-success`),ee.reset(),s.classList.add(`has-messages`),l.appendChild($(k&&F?A?`You are now connected with our support team (ticket ${F.slice(-6)}).`:`Your ticket ${F.slice(-6)} is waiting for an available human agent.`:`Your issue has been submitted. A human agent will contact you soon.`,`bot`)),s.scrollTop=s.scrollHeight}),{open:()=>B(!0),close:()=>B(!1),toggle:()=>B(!D),sendMessage:V,destroy:()=>{O||(O=!0,s.removeEventListener(`scroll`,E),N&&=(N.close(),null),n.remove())}}}});
+=======
+lucide.createIcons({icons});\``);if(r===void 0)throw Error("`createIcons()` only works in a browser environment.");if(Array.from(r.querySelectorAll(`[${t}]`)).forEach(r=>ct(r,{nameAttr:t,icons:e,attrs:n})),i&&Array.from(r.querySelectorAll(`template`)).forEach(r=>_t({icons:e,nameAttr:t,attrs:n,root:r.content,inTemplates:i})),t===`data-lucide`){let t=r.querySelectorAll(`[icon-name]`);t.length>0&&(console.warn(`[Lucide] Some icons were found with the now deprecated icon-name attribute. These will still be replaced for backwards compatibility, but will no longer be supported in v1.0 and you should switch to data-lucide`),Array.from(t).forEach(t=>ct(t,{nameAttr:`icon-name`,icons:e,attrs:n})))}},Q=()=>{_t({icons:{Bot:ut,MessageCircle:ft,SendHorizontal:mt,UserRound:ht,X:gt,Plus:pt,CheckCircle:dt,ArrowLeft:lt}})},vt=e=>{let t=String(e||``).trim().replace(/\/+$/,``);return!t||/^https?:\/\//i.test(t)?t:t.startsWith(`/`)?`${window.location.origin}${t}`:t},yt=e=>e.startsWith(`/`)?e:`/${e}`,bt=e=>e.replace(/\/api\/?$/i,``),xt=e=>e&&typeof e==`object`&&`data`in e?e.data:e,St=e=>{let t=`chatbot_ai_history`,n=e?.aiSupport?.apiKey||e?.humanSupport?.widgetKey||``;return n?`${t}:${n}`:typeof window<`u`?`${t}:${window.location.origin}`:t},Ct=e=>{if(typeof localStorage>`u`)return[];try{let t=localStorage.getItem(e);if(!t)return[];let n=JSON.parse(t);return Array.isArray(n)?n.filter(e=>e&&(e.role===`user`||e.role===`bot`)).map(e=>({role:e.role,text:String(e.text||``)})):[]}catch{return[]}},wt=(e,t)=>{if(!(typeof localStorage>`u`))try{localStorage.setItem(e,JSON.stringify(t))}catch{}},Tt=(e,t,n)=>{t.push(n),wt(e,t)},Et=(e,t)=>{if(t.splice(0,t.length),!(typeof localStorage>`u`))try{localStorage.removeItem(e)}catch{}},Dt=e=>e.replace(/&/g,`&amp;`).replace(/</g,`&lt;`).replace(/>/g,`&gt;`).replace(/"/g,`&quot;`).replace(/'/g,`&#39;`),Ot=e=>e.replace(/^###\s+(.+)$/gm,`<div class="chatbot-md-h3">$1</div>`).replace(/^##\s+(.+)$/gm,`<div class="chatbot-md-h2">$1</div>`).replace(/^#\s+(.+)$/gm,`<div class="chatbot-md-h1">$1</div>`).replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,(e,t,n)=>`<a href="${n}" target="_blank" rel="noopener noreferrer">${t}</a>`).replace(/\*\*([^*]+)\*\*/g,`<strong>$1</strong>`).replace(/\*([^*]+)\*/g,`<em>$1</em>`).replace(/`([^`]+)`/g,`<code>$1</code>`).replace(/^\s*-\s+/gm,`• `).replace(/\n/g,`<br>`),kt=e=>String(e||``).split(/```/).map((e,t)=>t%2==1?`<pre><code>${Dt(e.trim())}</code></pre>`:Ot(Dt(e))).join(``),$=(e,t,n=!1)=>{let r=document.createElement(`div`);return r.className=`chatbot-bubble ${t}`,n?r.innerHTML=kt(e):r.textContent=e,r},At=()=>{let e=document.createElement(`div`);return e.className=`chatbot-bubble bot typing`,e.setAttribute(`aria-label`,`Assistant is typing`),e.innerHTML=`
+    <div class="chatbot-typing" aria-hidden="true">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+  `,e},jt=(e,t,n)=>{let r=document.createElement(`button`);return r.type=`button`,r.innerHTML=`<i data-lucide="${e}" aria-hidden="true"></i>`,r.setAttribute(`aria-label`,t),n&&r.addEventListener(`click`,n),r},Mt=(e,t)=>{let n=document.createElement(`header`);n.className=`chatbot-header`;let r=document.createElement(`div`);r.className=`chatbot-header-left`;let i=document.createElement(`div`);i.className=`chatbot-avatar`,i.innerHTML=`<i data-lucide="bot" aria-hidden="true"></i>`;let a=document.createElement(`div`);a.className=`chatbot-header-info`;let o=document.createElement(`h2`);o.textContent=e.title;let s=document.createElement(`div`);s.className=`chatbot-status`;let c=document.createElement(`span`);c.className=`chatbot-status-dot`;let l=document.createElement(`span`);l.textContent=e.subtitle,s.append(c,l),a.append(o,s),r.append(i,a);let u=document.createElement(`div`);u.className=`chatbot-controls`;let d=jt(`x`,`Close chat`,t);return u.append(d),n.append(r,u),{header:n,statusText:l}},Nt=e=>{let t=document.createElement(`div`);t.className=`chatbot-body`;let n=document.createElement(`section`);n.className=`chatbot-intro`;let r=document.createElement(`div`);r.className=`chatbot-intro-icon`,r.textContent=`?`;let i=document.createElement(`h3`);i.textContent=`Hi there!`;let a=document.createElement(`p`);a.textContent=`I am your AI support assistant. Ask me anything.`;let o=document.createElement(`p`);o.className=`chatbot-human-note`,o.textContent=`If I cannot help, you can connect with our human support team.`,n.append(r,i,a,o);let s=document.createElement(`section`);s.className=`chatbot-human-hero`;let c=document.createElement(`h3`);c.textContent=`Talk to Support`;let l=document.createElement(`p`);l.textContent=`Our team typically replies in a few minutes.`;let u=document.createElement(`div`);u.className=`chatbot-history-label`,u.textContent=`Previous Messages`,s.append(c,l,u);let d=document.createElement(`div`);d.className=`chatbot-divider`,d.textContent=`Previous AI Interaction`;let f=document.createElement(`div`);return f.className=`chatbot-messages`,f.setAttribute(`aria-live`,`polite`),f.appendChild($(e.welcomeMessage,`bot`,!0)),t.append(n,s,f),{body:t,humanDivider:d,messages:f}},Pt=e=>{let t=document.createElement(`div`);t.className=`chatbot-footer`;let n=document.createElement(`form`);n.className=`chatbot-input-row`;let r=document.createElement(`textarea`);r.className=`chatbot-input`,r.rows=1,r.placeholder=e.placeholder;let i=document.createElement(`button`);i.type=`submit`,i.className=`chatbot-send`,i.setAttribute(`aria-label`,`Send message`),i.innerHTML=`<i data-lucide="send-horizontal" aria-hidden="true"></i>`,n.append(r,i);let a=document.createElement(`button`);a.type=`button`,a.className=`chatbot-human-button`;let o=document.createElement(`p`);return o.className=`chatbot-powered`,o.innerHTML=`Powered by <strong>AI assistant</strong>`,t.append(n,a,o),{footer:t,inputRow:n,input:r,humanButton:a}},Ft=()=>{let e=document.createElement(`div`);e.className=`chatbot-human-container`;let t=document.createElement(`div`);t.className=`chatbot-human-header`;let n=document.createElement(`h3`);n.textContent=`Contact Support`;let r=document.createElement(`p`);r.textContent=`Please provide your details and we will get back to you shortly.`,t.append(n,r);let i=document.createElement(`form`);i.className=`chatbot-human-form`;let a=(e,t)=>{let n=document.createElement(`div`);n.className=`chatbot-form-group`;let r=document.createElement(`label`);return r.textContent=e,n.append(r,t),n},o=document.createElement(`input`);o.type=`text`,o.placeholder=`John Doe`,o.required=!0;let s=document.createElement(`input`);s.type=`email`,s.placeholder=`john@example.com`,s.required=!0;let c=document.createElement(`textarea`);c.placeholder=`How can we help you?`,c.required=!0;let l=document.createElement(`div`);l.className=`chatbot-form-actions`;let u=document.createElement(`button`);u.type=`button`,u.className=`chatbot-btn-secondary`,u.innerHTML=`<i data-lucide="arrow-left" aria-hidden="true" style="width: 16px; height: 16px;"></i> Back`;let d=document.createElement(`button`);d.type=`submit`,d.className=`chatbot-btn-primary`,d.textContent=`Send Message`,l.append(u,d),i.append(a(`Name`,o),a(`Email`,s),a(`Description`,c),l);let f=document.createElement(`div`);f.className=`chatbot-human-success`;let p=document.createElement(`div`);p.className=`chatbot-success-icon`,p.innerHTML=`<i data-lucide="check-circle" aria-hidden="true"></i>`;let m=document.createElement(`h3`);m.textContent=`Message Sent!`;let h=document.createElement(`p`);h.textContent=`Our support team will reach out to you via email shortly.`;let g=document.createElement(`button`);return g.type=`button`,g.className=`chatbot-btn-primary`,g.textContent=`Back to Chat`,f.append(p,m,h,g),e.append(t,i,f),{humanContainer:e,humanForm:i,cancelBtn:u,successBackBtn:g}};e.createChatbotWidget=(e={})=>{if(typeof window>`u`||typeof document>`u`)throw Error(`chatbot-package can only run in a browser environment.`);Qe();let t={...Xe,...e},n=document.createElement(`div`);n.className=`chatbot-widget-root ${t.position===`bottom-left`?`left`:`right`}`,n.style.setProperty(`--chatbot-primary`,t.primaryColor),n.style.zIndex=String(t.zIndex);let r=document.createElement(`button`);r.type=`button`,r.className=`chatbot-launcher`,r.setAttribute(`aria-label`,`Open chatbot`),r.setAttribute(`aria-expanded`,`false`),r.innerHTML=`<i data-lucide="message-circle" aria-hidden="true"></i>`;let i=document.createElement(`section`);i.className=`chatbot-panel`,i.setAttribute(`role`,`dialog`),i.setAttribute(`aria-label`,t.title);let{header:a,statusText:o}=Mt(t,()=>{n.classList.remove(`open`),r.setAttribute(`aria-expanded`,`false`)}),{body:s,humanDivider:c,messages:l}=Nt(t),{footer:u,inputRow:d,input:f,humanButton:p}=Pt(t),m=`<i data-lucide="user-round" aria-hidden="true"></i><span>Talk to a real human</span>`,h=`<i data-lucide="bot" aria-hidden="true"></i><span>Talk to AI</span>`;p.innerHTML=m;let{humanContainer:g,humanForm:ee,cancelBtn:_,successBackBtn:te}=Ft(),v=St(e),y=Ct(v),b=Math.max(y.length-30,0),x=!1,ne=()=>l.contains(c)?c.nextSibling:l.firstChild,S=()=>{l.innerHTML=``;let e=y.slice(b);e.length!==0&&(s.classList.add(`has-messages`),e.forEach(e=>{l.appendChild($(e.text,e.role,e.role===`bot`))}),s.scrollTop=s.scrollHeight)},C=()=>{if(x||b===0)return;x=!0;let e=Math.max(b-30,0),t=y.slice(e,b);if(t.length===0){x=!1;return}let n=s.scrollHeight,r=s.scrollTop,i=ne();t.forEach(e=>{l.insertBefore($(e.text,e.role,e.role===`bot`),i)}),b=e,s.scrollTop=r+(s.scrollHeight-n),x=!1},w=()=>{b!==0&&s.scrollTop<=12&&C()};y.length>0&&S(),s.addEventListener(`scroll`,w),i.append(a,s,u,g),n.append(i,r),document.body.appendChild(n),Q();let T=!1,E=!1,D=!1,O=!1,k=!1,A=!1,j=!1,M=null,N=null,P=null,re=new Set,F=(e,t)=>{e.trim()&&(s.classList.add(`has-messages`),l.appendChild($(e.trim(),`bot`,t?.markdown??!1)),s.scrollTop=s.scrollHeight,t?.store&&!D&&Tt(v,y,{role:`bot`,text:e.trim()}))},I=e=>{s.classList.toggle(`human-mode`,e),e?(l.contains(c)||l.insertBefore(c,l.firstChild),p.innerHTML=h):(l.contains(c)&&c.remove(),p.innerHTML=m),Q()},L=a.querySelector(`.chatbot-controls`);if(L){let e=document.createElement(`button`);e.type=`button`,e.setAttribute(`aria-label`,`Clear AI chat`),e.innerHTML=`<i data-lucide="x" aria-hidden="true"></i>`,L.appendChild(e);let n=document.createElement(`button`);n.type=`button`,n.setAttribute(`aria-label`,`Start new human session`),n.innerHTML=`<i data-lucide="plus" aria-hidden="true"></i>`,L.appendChild(n);let r=t=>{e.style.display=t?`none`:`grid`,n.style.display=t?`grid`:`none`};r(!1),e.addEventListener(`click`,()=>{D||(Et(v,y),b=Math.max(y.length-30,0),l.innerHTML=``,s.classList.remove(`has-messages`),l.appendChild($(t.welcomeMessage,`bot`,!0)),s.scrollTop=s.scrollHeight)}),n.addEventListener(`click`,()=>{M&&=(M.close(),null),N=null,P=null,D=!1,O=!1,A=!1,j=!0,l.innerHTML=``,y.length>0?(b=Math.max(y.length-30,0),S()):(l.appendChild($(t.welcomeMessage,`bot`,!0)),s.classList.add(`has-messages`)),I(!0),F(`Please describe the issue you are facing.`),p.innerHTML=h,Q()});let i=I;I=e=>{i(e),r(e)}}let R=e=>{E||(T=e,n.classList.toggle(`open`,T),r.setAttribute(`aria-expanded`,String(T)),T&&window.setTimeout(()=>f.focus(),0))},ie=async n=>{if(D&&M){M.emit(`widget:message`,{text:n});return}if(e.onUserMessage){let t=await e.onUserMessage(n);typeof t==`string`&&t.trim()&&F(t,{store:!0});return}if(e.aiSupport){try{let t=vt(e.aiSupport.apiBaseUrl),r=yt(e.aiSupport.chatPath||`/rag/chat`),i=await fetch(`${t}${r}`,{method:`POST`,headers:{"Content-Type":`application/json`,"x-api-key":e.aiSupport.apiKey},body:JSON.stringify({query:n})});if(!i.ok)throw Error(`Unable to fetch chatbot response right now.`);let a=xt(await i.json());if(F(typeof a?.answer==`string`&&a.answer||typeof a?.response==`string`&&a.response||typeof a?.message==`string`&&a.message||`I processed your question, but no answer text was returned.`,{markdown:!0,store:!0}),a?.raise_ticket&&a?.ticket_payload){let e=a.ticket_payload,t=a?.ticket?._id||a?.ticketId||a?.ticket_id;F([`### Ticket Details`,e?.summary?`- Summary: ${e.summary}`:null,e?.priority?`- Priority: ${String(e.priority).toUpperCase()}`:null,e?.urgency?`- Urgency: ${String(e.urgency).toUpperCase()}`:null,t?`- Ticket ID: ${t}`:null,`- Status: Pending`].filter(Boolean).join(`
+`),{markdown:!0,store:!0})}}catch(e){let t=e instanceof Error?e.message:`Sorry, I am having trouble connecting right now.`;F(t.includes(`Failed to fetch`)?`Unable to reach the AI server. Please try again.`:t)}return}F(`Thanks! ${t.botName} received: "${n}"`,{store:!0})},ae=async n=>{if(!t.humanSupport){F(`Human support is not configured for this widget yet.`);return}let r=t.humanSupport.widgetKey||e.aiSupport?.apiKey;if(!r)throw Error(`Human support requires a widget key or aiSupport.apiKey.`);let i=vt(t.humanSupport.apiBaseUrl),a=await fetch(`${i}/widget/session`,{method:`POST`,headers:{"Content-Type":`application/json`},body:JSON.stringify({widgetKey:r,visitorName:n.name,visitorEmail:n.email,issue:n.issue,chatHistory:y})});if(!a.ok){let e=await a.json().catch(()=>null),t=e?.message||e?.error||`Unable to connect to human support right now.`;throw Error(t)}let s=xt(await a.json());N=s.sessionId,P=s.ticketId,D=!0,I(!0);let c=Z(bt(i),{path:`/socket.io`,transports:[`websocket`],auth:{token:s.chatToken}});M=c,c.on(`connect`,()=>{o.textContent=`Connecting to a human agent...`}),c.on(`disconnect`,()=>{D&&(o.textContent=`Reconnecting to human support...`)}),c.on(`chat:message`,e=>{e.sessionId===N&&(e._id&&re.has(e._id)||(e._id&&re.add(e._id),e.sender===`agent`&&typeof e.text==`string`&&(O||(F(`You are now connected to a human agent.`),l.appendChild($(`AGENT JOINED THE SESSION`,`system`)),A=!0),F(e.text),O=!0)))}),c.on(`chat:ticket_status`,e=>{if(e.sessionId&&e.sessionId===N||e.ticketId&&e.ticketId===P){if(e.status===`assigned`){O||F(`A human agent has accepted your chat. You are now connected.`),O=!0,A||=(l.appendChild($(`AGENT JOINED THE SESSION`,`system`)),!0),o.textContent=`Connected with human support`;return}e.status===`pending`&&(o.textContent=`Connecting to a human agent...`)}}),c.on(`chat:error`,e=>{F(e.message||`Support connection error. Please try again.`)}),c.emit(`widget:request_human`,{name:n.name,email:n.email,issue:n.issue}),o.textContent=`Connecting to a human agent...`},z=async e=>{let t=e.trim();if(!t||E)return;if(j){s.classList.add(`has-messages`),I(!0),l.appendChild($(t,`user`)),D||Tt(v,y,{role:`user`,text:t}),f.value=``,s.scrollTop=s.scrollHeight,j=!1;try{await ae({name:`Website Visitor`,email:``,issue:t}),F(`You're now connected to a support agent. Please wait...`),p.innerHTML=h,Q()}catch(e){F(e instanceof Error?e.message:`Unable to connect to support right now.`),j=!0}return}s.classList.add(`has-messages`),I(D),l.appendChild($(t,`user`)),D||Tt(v,y,{role:`user`,text:t}),f.value=``,s.scrollTop=s.scrollHeight;let n=D?null:At();n&&(l.appendChild(n),s.scrollTop=s.scrollHeight);try{await ie(t)}finally{n?.isConnected&&n.remove()}};return r.addEventListener(`click`,()=>{R(!T)}),d.addEventListener(`submit`,async e=>{e.preventDefault(),await z(f.value)}),f.addEventListener(`keydown`,async e=>{e.key===`Enter`&&!e.shiftKey&&(e.preventDefault(),await z(f.value))}),p.addEventListener(`click`,async()=>{if(D){D=!1,O=!1,j=!1,I(!1),F(`You are now chatting with AI again.`),p.innerHTML=m,Q();return}if(!k){k=!0,I(!0),j||=(F(`Please describe the issue you are facing.`),!0);try{p.innerHTML=h,Q()}catch(e){let t=e instanceof Error?e.message:`Unable to connect to support right now.`;F(t.includes(`Failed to fetch`)?`Unable to reach support server. Please try again.`:t),D=!1,O=!1,j=!1,I(!1),p.innerHTML=m,Q()}finally{k=!1}}}),_.addEventListener(`click`,()=>{}),ee.addEventListener(`submit`,async e=>{e.preventDefault()}),te.addEventListener(`click`,()=>{n.classList.remove(`show-human-form`),n.classList.remove(`show-human-success`),ee.reset(),s.classList.add(`has-messages`),l.appendChild($(D&&P?O?`You are now connected with our support team (ticket ${P.slice(-6)}).`:`Your ticket ${P.slice(-6)} is waiting for an available human agent.`:`Your issue has been submitted. A human agent will contact you soon.`,`bot`)),s.scrollTop=s.scrollHeight}),{open:()=>R(!0),close:()=>R(!1),toggle:()=>R(!T),sendMessage:z,destroy:()=>{E||(E=!0,s.removeEventListener(`scroll`,w),M&&=(M.close(),null),n.remove())}}}});
+>>>>>>> 7302a3562e10953fd18a6fc58d165f21b20256dc

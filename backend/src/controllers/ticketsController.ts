@@ -182,12 +182,21 @@ export async function getMessagesByTicket(req: Request, res: Response): Promise<
       return;
     }
 
+    if (req.auth.role !== "admin" && ticket.assignedTo !== req.auth.userId) {
+      res.status(403).json({ message: "You are not assigned to this ticket." });
+      return;
+    }
+
     const includeBot = String(req.query?.includeBot ?? "")
       .trim()
       .toLowerCase() === "true";
     const messageFilter = includeBot
       ? { ticketId: ticketObjectId, companyId: req.auth.companyId }
-      : { ticketId: ticketObjectId, companyId: req.auth.companyId, sender: { $in: ["user", "agent"] } };
+      : {
+          ticketId: ticketObjectId,
+          companyId: req.auth.companyId,
+          sender: { $in: ["user", "agent"] },
+        };
 
     const messages = await db
       .collection("messages")
@@ -235,6 +244,11 @@ export async function createMessage(req: Request, res: Response): Promise<void> 
     });
     if (!ticket) {
       res.status(404).json({ message: "Ticket not found." });
+      return;
+    }
+
+    if (req.auth.role !== "admin" && ticket.assignedTo !== req.auth.userId) {
+      res.status(403).json({ message: "You are not assigned to this ticket." });
       return;
     }
 
@@ -446,15 +460,47 @@ export async function updateTicket(req: Request, res: Response): Promise<void> {
       updates.priority = priority;
     }
 
+    const { users } = await getCollections();
+    const db = users.db;
+
+    if (req.body?.assignedTo !== undefined) {
+      if (req.auth.role !== "admin") {
+        res.status(403).json({ message: "Only admins can assign tickets." });
+        return;
+      }
+
+      const rawAssignedTo = req.body.assignedTo;
+      if (rawAssignedTo === null || rawAssignedTo === "") {
+        updates.assignedTo = null;
+      } else {
+        const assignedTo = Number(rawAssignedTo);
+        if (!Number.isInteger(assignedTo)) {
+          res.status(400).json({ message: "Invalid assigned user." });
+          return;
+        }
+
+        const assignee = await users.findOne(
+          { id: assignedTo, companyId: req.auth.companyId },
+          { projection: { _id: 0, id: 1 } },
+        );
+        if (!assignee) {
+          res.status(400).json({ message: "Selected team member was not found." });
+          return;
+        }
+
+        updates.assignedTo = assignedTo;
+        if (updates.status === undefined) {
+          updates.status = "assigned";
+        }
+      }
+    }
+
     if (Object.keys(updates).length === 0) {
-      res.status(400).json({ message: "Provide status and/or priority to update." });
+      res.status(400).json({ message: "Provide status, priority, and/or assignedTo to update." });
       return;
     }
 
     updates.updatedAt = new Date();
-
-    const { users } = await getCollections();
-    const db = users.db;
     const result = await db.collection("tickets").findOneAndUpdate(
       { _id: ticketObjectId, companyId: req.auth.companyId },
       { $set: updates },
