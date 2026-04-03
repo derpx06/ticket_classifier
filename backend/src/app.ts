@@ -8,7 +8,6 @@ import authRoutes from "./routes/authRoutes";
 import teamRoutes from "./routes/teamRoutes";
 import ragRoutes from "./routes/ragRoutes";
 import ticketRoutes from "./routes/ticketRoutes";
-import messageRoutes from "./routes/messageRoutes";
 import widgetRoutes from "./routes/widgetRoutes";
 
 export function createApp(): express.Application {
@@ -24,7 +23,6 @@ export function createApp(): express.Application {
   app.use("/api/teams", teamRoutes);
   app.use("/api/rag", ragRoutes);
   app.use("/api/tickets", ticketRoutes);
-  app.use("/api/messages", messageRoutes);
   app.use("/api/widget", widgetRoutes);
 
 
