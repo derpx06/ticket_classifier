@@ -95,6 +95,11 @@ const ragService = {
     async deleteApiKey(id) {
         const response = await apiClient.delete(`/rag/api-keys/${id}`);
         return response.data;
+    },
+    async getWidgetConfig() {
+        const response = await apiClient.get('/widget/config');
+        const payload = response.data;
+        return payload?.data ?? payload;
     }
 };
 

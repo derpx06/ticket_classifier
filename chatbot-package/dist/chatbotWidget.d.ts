@@ -7,9 +7,15 @@ export interface ChatbotWidgetOptions {
     primaryColor?: string;
     position?: 'bottom-right' | 'bottom-left';
     zIndex?: number;
+    aiSupport?: {
+        apiBaseUrl: string;
+        apiKey: string;
+        chatPath?: string;
+        sessionId?: string;
+    };
     humanSupport?: {
         apiBaseUrl: string;
-        widgetKey: string;
+        widgetKey?: string;
     };
     onUserMessage?: (message: string) => string | Promise<string> | void;
     onTalkToHumanClick?: () => string | Promise<string> | void;

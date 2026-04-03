@@ -18,9 +18,14 @@ createChatbotWidget({
   subtitle: 'We are online',
   welcomeMessage: 'Hi! Tell us how we can help.',
   primaryColor: '#0f766e',
-  onUserMessage: async (message) => {
-    // Call your backend/API here
-    return `You said: ${message}`
+  aiSupport: {
+    apiBaseUrl: 'https://your-api.example.com/api',
+    apiKey: 'YOUR_WIDGET_API_KEY',
+    // optional: chatPath: '/rag/chat'
+  },
+  humanSupport: {
+    apiBaseUrl: 'https://your-api.example.com/api',
+    // optional: widgetKey (defaults to aiSupport.apiKey)
   },
 })
 ```
@@ -39,7 +44,9 @@ This creates:
 - `primaryColor?: string`
 - `position?: 'bottom-right' | 'bottom-left'`
 - `zIndex?: number`
+- `aiSupport?: { apiBaseUrl: string; apiKey: string; chatPath?: string; sessionId?: string }`
 - `onUserMessage?: (message: string) => string | Promise<string> | void`
+- `humanSupport?: { apiBaseUrl: string; widgetKey?: string }`
 - `onTalkToHumanClick?: () => string | Promise<string> | void`
 
 ## CLI

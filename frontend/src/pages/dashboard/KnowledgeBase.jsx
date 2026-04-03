@@ -67,6 +67,7 @@ const KnowledgeBase = () => {
 
     /* api keys state */
     const [apiKeys, setApiKeys] = useState([]);
+    const [widgetConfig, setWidgetConfig] = useState(null);
     const [newKeyLabel, setNewKeyLabel] = useState('');
     const [isCreatingKey, setIsCreatingKey] = useState(false);
     const [activeTab, setActiveTab] = useState('crawl');
@@ -86,6 +87,7 @@ const KnowledgeBase = () => {
     /* effects */
     React.useEffect(() => {
         fetchApiKeys();
+        fetchWidgetConfig();
     }, []);
 
     const fetchApiKeys = async () => {
@@ -93,6 +95,13 @@ const KnowledgeBase = () => {
             const data = await ragService.getApiKeys();
             setApiKeys(data);
         } catch (err) { console.error('Failed to fetch keys', err); }
+    };
+
+    const fetchWidgetConfig = async () => {
+        try {
+            const data = await ragService.getWidgetConfig();
+            setWidgetConfig(data);
+        } catch (err) { console.error('Failed to fetch widget config', err); }
     };
 
     /* ── helpers ── */
@@ -213,13 +222,18 @@ const KnowledgeBase = () => {
         }
     };
 
-    const widgetSnippet = `<script>
-  window.SUPPORT_BOT_CONFIG = {
-    apiKey: "${apiKeys[0]?.key || 'YOUR_API_KEY'}",
-    companyId: 1
-  };
-</script>
-<script src="${window.location.origin}/widget.js" async></script>`;
+    const widgetSnippet = `import { createChatbotWidget } from "chatbot-package";
+
+createChatbotWidget({
+  title: "Support AI",
+  aiSupport: {
+    apiBaseUrl: "${window.location.origin}/api",
+    apiKey: "${widgetConfig?.widgetKey || apiKeys[0]?.key || 'YOUR_WIDGET_API_KEY'}"
+  },
+  humanSupport: {
+    apiBaseUrl: "${window.location.origin}/api"
+  }
+});`;
 
     const handleSendMessage = async (e) => {
         e?.preventDefault?.();

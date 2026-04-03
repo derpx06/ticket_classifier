@@ -19,9 +19,15 @@ export interface ChatbotWidgetOptions {
   primaryColor?: string
   position?: 'bottom-right' | 'bottom-left'
   zIndex?: number
+  aiSupport?: {
+    apiBaseUrl: string
+    apiKey: string
+    chatPath?: string
+    sessionId?: string
+  }
   humanSupport?: {
     apiBaseUrl: string
-    widgetKey: string
+    widgetKey?: string
   }
   onUserMessage?: (message: string) => string | Promise<string> | void
   onTalkToHumanClick?: () => string | Promise<string> | void
@@ -38,7 +44,7 @@ export interface ChatbotWidgetInstance {
 const STYLE_ID = 'chatbot-package-styles'
 
 const DEFAULT_OPTIONS: Required<
-  Omit<ChatbotWidgetOptions, 'onUserMessage' | 'onTalkToHumanClick' | 'humanSupport'>
+  Omit<ChatbotWidgetOptions, 'onUserMessage' | 'onTalkToHumanClick' | 'aiSupport' | 'humanSupport'>
 > = {
   botName: 'Support Assistant',
   title: 'Support Assistant',
@@ -662,6 +668,7 @@ const hydrateIcons = (): void => {
 }
 
 const resolveApiBase = (input: string): string => input.replace(/\/+$/, '')
+const resolveApiPath = (input: string): string => (input.startsWith('/') ? input : `/${input}`)
 
 const resolveSocketBase = (apiBase: string): string => apiBase.replace(/\/api\/?$/i, '')
 
@@ -894,6 +901,11 @@ export const createChatbotWidget = (
   let widgetSocket: Socket | null = null
   let widgetSessionId: string | null = null
   let widgetTicketId: string | null = null
+  const aiSessionId =
+    options.aiSupport?.sessionId ||
+    (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `widget-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`)
 
   const appendBotBubble = (text: string): void => {
     if (!text.trim()) return
@@ -930,6 +942,43 @@ export const createChatbotWidget = (
       return
     }
 
+    if (options.aiSupport) {
+      try {
+        const apiBaseUrl = resolveApiBase(options.aiSupport.apiBaseUrl)
+        const chatPath = resolveApiPath(options.aiSupport.chatPath || '/rag/chat')
+        const response = await fetch(`${apiBaseUrl}${chatPath}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': options.aiSupport.apiKey,
+          },
+          body: JSON.stringify({
+            query: message,
+            sessionId: aiSessionId,
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error('Unable to fetch chatbot response right now.')
+        }
+
+        const data = unwrapResponseData<Record<string, unknown>>(await response.json())
+        const answer =
+          (typeof data?.answer === 'string' && data.answer) ||
+          (typeof data?.response === 'string' && data.response) ||
+          (typeof data?.message === 'string' && data.message) ||
+          'I processed your question, but no answer text was returned.'
+        appendBotBubble(answer)
+      } catch (error) {
+        appendBotBubble(
+          error instanceof Error
+            ? error.message
+            : 'Sorry, I am having trouble connecting right now.',
+        )
+      }
+      return
+    }
+
     appendBotBubble(`Thanks! ${config.botName} received: "${message}"`)
   }
 
@@ -943,6 +992,11 @@ export const createChatbotWidget = (
       return
     }
 
+    const widgetKey = config.humanSupport.widgetKey || options.aiSupport?.apiKey
+    if (!widgetKey) {
+      throw new Error('Human support requires a widget key or aiSupport.apiKey.')
+    }
+
     const apiBaseUrl = resolveApiBase(config.humanSupport.apiBaseUrl)
     const response = await fetch(`${apiBaseUrl}/widget/session`, {
       method: 'POST',
@@ -950,7 +1004,7 @@ export const createChatbotWidget = (
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        widgetKey: config.humanSupport.widgetKey,
+        widgetKey,
         visitorName: payload.name,
         visitorEmail: payload.email,
         issue: payload.issue,
