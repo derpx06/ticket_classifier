@@ -458,6 +458,13 @@ export const WIDGET_CSS = `
   height: 16px;
 }
 
+.chatbot-powered {
+  margin: 0;
+  font-size: 10px;
+  color: #94a3b8;
+  text-align: center;
+}
+
 .chatbot-widget-root.show-human-form .chatbot-body,
 .chatbot-widget-root.show-human-form .chatbot-footer {
   display: none;

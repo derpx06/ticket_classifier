@@ -136,11 +136,13 @@ export const buildFooter = (config: ResolvedOptions) => {
   inputRow.className = 'chatbot-input-row'
 
   const input = document.createElement('textarea')
+  input.className = 'chatbot-input'
   input.rows = 1
   input.placeholder = config.placeholder
 
   const sendButton = document.createElement('button')
   sendButton.type = 'submit'
+  sendButton.className = 'chatbot-send'
   sendButton.setAttribute('aria-label', 'Send message')
   sendButton.innerHTML = '<i data-lucide="send-horizontal" aria-hidden="true"></i>'
 

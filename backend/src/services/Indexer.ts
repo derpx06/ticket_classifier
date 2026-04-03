@@ -125,7 +125,9 @@ export class IndexerService {
                     must: [
                         { key: 'companyId', match: { value: filter.companyId } },
                         ...(filter.websiteId !== undefined
-                            ? [{ key: 'websiteId', match: { value: filter.websiteId } }]
+                            ? filter.websiteId === null
+                                ? [{ is_null: { key: 'websiteId' } }]
+                                : [{ key: 'websiteId', match: { value: filter.websiteId } }]
                             : []),
                     ],
                 }
