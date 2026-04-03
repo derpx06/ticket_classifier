@@ -40,6 +40,7 @@ This creates:
 - `position?: 'bottom-right' | 'bottom-left'`
 - `zIndex?: number`
 - `onUserMessage?: (message: string) => string | Promise<string> | void`
+- `onTalkToHumanClick?: () => string | Promise<string> | void`
 
 ## CLI
 

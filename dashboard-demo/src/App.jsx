@@ -15,6 +15,9 @@ const tickets = [
 
 export default function App() {
   useEffect(() => {
+    const testCompanyKey = '74a7902e-f67c-429b-8e35-ee212a6a0d8d'
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001'
+
     const widget = createChatbotWidget({
       title: 'Support Assistant',
       subtitle: 'Online',
@@ -23,7 +26,7 @@ export default function App() {
       primaryColor: '#2563eb',
       onUserMessage: async (message) => {
         try {
-          const response = await fetch('http://localhost:5000/api/rag/chat', {
+          const response = await fetch(`${apiBaseUrl}/api/rag/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ query: message, sessionId: 'demo-session' })
@@ -33,6 +36,45 @@ export default function App() {
         } catch (error) {
           console.error('Chat error:', error);
           return "Sorry, I'm having trouble connecting to the support server.";
+        }
+      },
+      onTalkToHumanClick: async () => {
+        try {
+          const response = await fetch(`${apiBaseUrl}/api/createTicket`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              apiKey: testCompanyKey,
+              companyId: testCompanyKey,
+              customerName: 'Dashboard Demo User',
+              message: 'Customer clicked Talk to a real human from dashboard demo (static test ticket).',
+              category: 'other',
+              priority: 'medium',
+              urgency: 'medium',
+              chatHistory: [
+                { role: 'user', text: 'I need to speak with a human agent.' },
+                { role: 'bot', text: 'Sure, creating a ticket for handoff.' },
+              ],
+            }),
+          })
+
+          const data = await response.json().catch(() => null)
+
+          if (!response.ok) {
+            const apiMessage = data?.message || data?.error || 'Unable to create ticket.'
+            throw new Error(
+              `createTicket failed (${response.status} ${response.statusText}): ${apiMessage}`,
+            )
+          }
+
+          const ticketId = data?.ticketId || data?.data?.ticketId || data?.data?._id || 'created'
+          return `Ticket ${ticketId} created. A human agent will follow up shortly.`
+        } catch (error) {
+          console.error('Create ticket error:', {
+            error,
+            message: error?.message,
+          })
+          return `Could not create ticket: ${error?.message || 'Unknown error'}`
         }
       },
 
