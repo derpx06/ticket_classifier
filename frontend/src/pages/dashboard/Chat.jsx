@@ -22,6 +22,12 @@ const formatLabel = (value = '') => {
   return value.charAt(0).toUpperCase() + value.slice(1);
 };
 
+const panelClass =
+  'relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white/95 shadow-[0_24px_48px_-30px_rgba(15,23,42,0.52)] ring-1 ring-white/70 backdrop-blur';
+
+const inputClass =
+  'flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-100/80';
+
 const Chat = () => {
   const { role } = useAuth();
   const isAdmin = String(role || '').toLowerCase() === 'admin';
@@ -256,14 +262,25 @@ const Chat = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 gap-5 lg:grid-cols-10">
-      <aside className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-3">
-        <div className="border-b border-slate-200 bg-gradient-to-r from-slate-900 to-slate-700 p-4 text-white">
+    <div className="rounded-[32px] bg-[linear-gradient(145deg,rgba(186,230,253,0.62),rgba(191,219,254,0.38),rgba(226,232,240,0.72))] p-[1px]">
+      <div className="grid grid-cols-1 gap-5 rounded-[31px] bg-slate-50/85 p-3 sm:p-4 lg:grid-cols-10 lg:p-5">
+      <aside className={`${panelClass} lg:col-span-3`}>
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -left-16 top-24 h-40 w-40 rounded-full bg-sky-200/45 blur-3xl"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500"
+        />
+        <div className="relative border-b border-slate-200/80 bg-gradient-to-r from-slate-950 via-slate-800 to-blue-900 p-4 text-white">
           <div className="flex items-center justify-between gap-2">
             <h1 className="text-lg font-semibold">Support Chat</h1>
             <span
-              className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                isSocketConnected ? 'bg-emerald-200 text-emerald-800' : 'bg-amber-200 text-amber-800'
+              className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold ${
+                isSocketConnected
+                  ? 'border-emerald-300 bg-emerald-200 text-emerald-800'
+                  : 'border-amber-300 bg-amber-200 text-amber-800'
               }`}
             >
               {isSocketConnected ? 'Live' : 'Offline'}
@@ -274,7 +291,7 @@ const Chat = () => {
           </p>
         </div>
 
-        <div className="max-h-[640px] space-y-2 overflow-y-auto p-3">
+        <div className="relative max-h-[640px] space-y-2.5 overflow-y-auto bg-slate-50/65 p-3 lg:max-h-[calc(100vh-250px)]">
           {conversations.map((conversation) => {
             const conversationId = conversation._id || conversation.id;
             const lastMessage = (messagesByTicket[conversationId] || []).at(-1);
@@ -283,13 +300,13 @@ const Chat = () => {
                 key={conversationId}
                 type="button"
                 onClick={() => setActiveId(conversationId)}
-                className={`w-full rounded-xl border p-3 text-left transition ${
+                className={`w-full rounded-2xl border p-3 text-left transition duration-200 ${
                   conversationId === activeId
-                    ? 'border-blue-300 bg-blue-50 shadow-sm'
-                    : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+                    ? 'border-blue-300 bg-blue-50/90 shadow-[0_16px_28px_-20px_rgba(37,99,235,0.82)] ring-2 ring-blue-100'
+                    : 'border-slate-200/90 bg-white/95 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white'
                 }`}
               >
-                <div className="mb-1 flex items-center justify-between gap-2">
+                <div className="mb-1.5 flex items-center justify-between gap-2">
                   <p className="truncate text-sm font-semibold text-slate-900">
                     {conversation.message}
                   </p>
@@ -302,115 +319,126 @@ const Chat = () => {
                   </span>
                 </div>
                 <p className="text-xs text-slate-500">{conversation.customerName || '-'}</p>
-                <p className="mt-2 truncate text-xs text-slate-600">
+                <p className="mt-2 truncate rounded-lg border border-slate-200/80 bg-slate-100/80 px-2 py-1 text-xs text-slate-600">
                   {lastMessage?.text || 'No messages yet'}
                 </p>
-                <p className="mt-2 text-[11px] text-slate-400">
+                <p className="mt-2 text-[11px] font-medium text-slate-400">
                   {conversation.ticketCode || conversationId}
                 </p>
               </button>
             );
           })}
           {!isLoadingConversations && conversations.length === 0 && (
-            <p className="rounded-xl border border-dashed border-slate-300 p-3 text-xs text-slate-500">
+            <p className="rounded-2xl border border-dashed border-slate-300 bg-white/80 p-3 text-xs text-slate-500">
               No assigned conversations.
             </p>
           )}
         </div>
       </aside>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-7">
+      <section className={`${panelClass} p-4 sm:p-5 lg:col-span-7 lg:min-h-[640px]`}>
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-20 top-10 h-56 w-56 rounded-full bg-indigo-100/45 blur-3xl"
+        />
         {activeConversation ? (
           <>
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900">{activeConversation.message}</h2>
-                <p className="text-sm text-slate-500">{activeConversation.customerName || '-'}</p>
-              </div>
-              <span
-                className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                  statusStyles[activeConversation.status] || 'bg-slate-100 text-slate-700'
-                }`}
-              >
-                {formatLabel(activeConversation.status)}
-              </span>
-            </div>
-
-            <div className="mb-4 h-[440px] space-y-3 overflow-y-auto rounded-xl border border-slate-200 bg-gradient-to-b from-slate-50 to-white p-4">
-              {activeMessages.map((entry, index) => (
-                <div
-                  key={`${activeId}-${entry._id || index}`}
-                  className={`max-w-[86%] rounded-2xl px-4 py-2 text-sm shadow-sm ${
-                    entry.sender === 'agent'
-                      ? 'ml-auto bg-blue-600 text-white'
-                      : entry.sender === 'system'
-                        ? 'mx-auto bg-slate-100 text-center text-slate-600'
-                        : 'mr-auto bg-white text-slate-700'
+            <div className="relative flex min-h-[520px] flex-col">
+              <div className="relative mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-3">
+                <div className="min-w-0">
+                  <h2 className="truncate text-lg font-semibold text-slate-900">{activeConversation.message}</h2>
+                  <p className="text-sm text-slate-500">{activeConversation.customerName || '-'}</p>
+                </div>
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                    statusStyles[activeConversation.status] || 'bg-slate-100 text-slate-700'
                   }`}
                 >
-                  {entry.text}
-                </div>
-              ))}
-              {isLoadingMessages && (
-                <div className="mr-auto max-w-[86%] rounded-2xl bg-white px-4 py-2 text-sm text-slate-500 shadow-sm">
-                  Loading messages...
-                </div>
-              )}
-              {isSending && (
-                <div className="mr-auto max-w-[86%] rounded-2xl bg-white px-4 py-2 text-sm text-slate-500 shadow-sm">
-                  Sending...
-                </div>
-              )}
-              <div ref={bottomRef} />
-            </div>
+                  {formatLabel(activeConversation.status)}
+                </span>
+              </div>
 
-            <form onSubmit={handleSend} className="mb-3 flex gap-2">
-              <input
-                type="text"
-                value={draft}
-                onChange={(event) => setDraft(event.target.value)}
-                placeholder="Type your reply..."
-                className="flex-1 rounded-xl border border-slate-300 px-4 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-              />
-              <button
-                type="submit"
-                disabled={!draft.trim() || isSending}
-                className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400"
-              >
-                Send
-              </button>
-            </form>
+              <div className="relative mb-4 h-[440px] min-h-0 space-y-3 overflow-y-auto overflow-x-hidden rounded-2xl border border-slate-200/90 bg-[linear-gradient(180deg,rgba(248,250,252,0.96),rgba(255,255,255,0.98))] p-4">
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(147,197,253,0.14),transparent_55%)]"
+                />
+                {activeMessages.map((entry, index) => (
+                  <div
+                    key={`${activeId}-${entry._id || index}`}
+                    className={`relative w-fit max-w-[86%] break-words whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm shadow-[0_12px_22px_-16px_rgba(15,23,42,0.55)] ${
+                      entry.sender === 'agent'
+                        ? 'ml-auto border border-blue-500 bg-gradient-to-br from-blue-600 to-indigo-600 text-white'
+                      : entry.sender === 'system'
+                          ? 'mx-auto border border-slate-200 bg-slate-100 text-center text-slate-600'
+                          : 'mr-auto border border-slate-200 bg-white text-slate-700'
+                    }`}
+                  >
+                    {entry.text}
+                  </div>
+                ))}
+                {isLoadingMessages && (
+                  <div className="relative mr-auto w-fit max-w-[86%] rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-500 shadow-sm">
+                    Loading messages...
+                  </div>
+                )}
+                {isSending && (
+                  <div className="relative mr-auto w-fit max-w-[86%] rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-500 shadow-sm">
+                    Sending...
+                  </div>
+                )}
+                <div ref={bottomRef} />
+              </div>
 
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => updateStatus('pending')}
-                className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-              >
-                Mark Pending
-              </button>
-              <button
-                type="button"
-                onClick={() => updateStatus('resolved')}
-                className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700"
-              >
-                Mark as Resolved
-              </button>
-              <button
-                type="button"
-                onClick={() => updateStatus('escalated')}
-                className="rounded-lg bg-rose-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-rose-700"
-              >
-                Escalate
-              </button>
+              <form onSubmit={handleSend} className="mb-3 flex gap-2 rounded-2xl border border-slate-200/80 bg-white/90 p-2">
+                <input
+                  type="text"
+                  value={draft}
+                  onChange={(event) => setDraft(event.target.value)}
+                  placeholder="Type your reply..."
+                  className={inputClass}
+                />
+                <button
+                  type="submit"
+                  disabled={!draft.trim() || isSending}
+                  className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_12px_24px_-16px_rgba(37,99,235,0.85)] transition hover:from-blue-700 hover:to-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:from-slate-400 disabled:to-slate-400"
+                >
+                  Send
+                </button>
+              </form>
+
+              <div className="flex flex-wrap gap-2 rounded-2xl border border-slate-200/80 bg-white/90 p-2.5">
+                <button
+                  type="button"
+                  onClick={() => updateStatus('pending')}
+                  className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                >
+                  Mark Pending
+                </button>
+                <button
+                  type="button"
+                  onClick={() => updateStatus('resolved')}
+                  className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700"
+                >
+                  Mark as Resolved
+                </button>
+                <button
+                  type="button"
+                  onClick={() => updateStatus('escalated')}
+                  className="rounded-xl bg-rose-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-rose-700"
+                >
+                  Escalate
+                </button>
+              </div>
             </div>
           </>
         ) : (
-          <div className="grid h-[240px] place-items-center rounded-xl border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">
+          <div className="grid h-[240px] place-items-center rounded-2xl border border-dashed border-slate-300 bg-white text-sm text-slate-500">
             Select a conversation to start chatting.
           </div>
         )}
       </section>
+      </div>
     </div>
   );
 };

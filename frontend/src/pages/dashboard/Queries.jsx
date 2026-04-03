@@ -33,6 +33,14 @@ const formatLabel = (value = '') => {
   return value.charAt(0).toUpperCase() + value.slice(1);
 };
 
+const surfaceCardClass =
+  'relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white/95 p-4 shadow-[0_16px_40px_-26px_rgba(15,23,42,0.45)] backdrop-blur sm:p-5';
+
+const fieldClass =
+  'w-full rounded-xl border border-slate-200 bg-white/90 px-3.5 py-2.5 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-100/70';
+
+const labelClass = 'mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500';
+
 const Queries = () => {
   const { user } = useAuth();
   const companyUuid = user?.company?.uuid || user?.companyUuid || '';
@@ -197,7 +205,8 @@ const Queries = () => {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="rounded-[30px] bg-[linear-gradient(140deg,rgba(125,211,252,0.45),rgba(191,219,254,0.32),rgba(226,232,240,0.6))] p-[1px]">
+      <div className="space-y-5 rounded-[29px] bg-slate-50/80 p-3 sm:p-4 lg:p-5">
       {/* <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-blue-900 px-6 py-6 text-white">
           <h1 className="text-2xl font-semibold tracking-tight">Queries Workspace</h1>
@@ -230,12 +239,20 @@ const Queries = () => {
         <div className="space-y-4 xl:col-span-8">
           <form
             onSubmit={handleCreateTicket}
-            className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+            className={surfaceCardClass}
           >
-            <p className="text-sm font-semibold text-slate-800">Raise Test Ticket</p>
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-16 -top-20 h-44 w-44 rounded-full bg-blue-100/70 blur-3xl"
+            />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500"
+            />
+            <p className="relative text-sm font-semibold tracking-wide text-slate-800">Raise Test Ticket</p>
             <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-4">
               <label className="md:col-span-2">
-                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <span className={labelClass}>
                   Company API Key (UUID)
                 </span>
                 <input
@@ -244,11 +261,11 @@ const Queries = () => {
                     setNewTicketForm((previous) => ({ ...previous, apiKey: event.target.value }))
                   }
                   placeholder="Company UUID"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  className={fieldClass}
                 />
               </label>
               <label className="md:col-span-2">
-                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <span className={labelClass}>
                   Message
                 </span>
                 <input
@@ -257,11 +274,11 @@ const Queries = () => {
                     setNewTicketForm((previous) => ({ ...previous, message: event.target.value }))
                   }
                   placeholder="Enter a test issue..."
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  className={fieldClass}
                 />
               </label>
               <label>
-                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <span className={labelClass}>
                   Category
                 </span>
                 <select
@@ -269,7 +286,7 @@ const Queries = () => {
                   onChange={(event) =>
                     setNewTicketForm((previous) => ({ ...previous, category: event.target.value }))
                   }
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  className={`${fieldClass} pr-9`}
                 >
                   <option value="billing">Billing</option>
                   <option value="technical">Technical</option>
@@ -278,7 +295,7 @@ const Queries = () => {
                 </select>
               </label>
               <label>
-                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <span className={labelClass}>
                   Priority
                 </span>
                 <select
@@ -286,7 +303,7 @@ const Queries = () => {
                   onChange={(event) =>
                     setNewTicketForm((previous) => ({ ...previous, priority: event.target.value }))
                   }
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  className={`${fieldClass} pr-9`}
                 >
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
@@ -297,34 +314,38 @@ const Queries = () => {
             <button
               type="submit"
               disabled={isCreating}
-              className="mt-3 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
+              className="mt-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_24px_-16px_rgba(37,99,235,0.8)] transition hover:from-blue-700 hover:to-indigo-700 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isCreating ? 'Raising...' : 'Raise Test Ticket'}
             </button>
           </form>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className={surfaceCardClass}>
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200"
+            />
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
               <label className="xl:col-span-2">
-                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <span className={labelClass}>
                   Search
                 </span>
                 <input
                   value={searchText}
                   onChange={(event) => setSearchText(event.target.value)}
                   placeholder="Ticket ID, customer, message..."
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  className={fieldClass}
                 />
               </label>
 
               <label>
-                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <span className={labelClass}>
                   Status
                 </span>
                 <select
                   value={statusFilter}
                   onChange={(event) => setStatusFilter(event.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  className={`${fieldClass} pr-9`}
                 >
                   <option>All</option>
                   <option>Pending</option>
@@ -335,13 +356,13 @@ const Queries = () => {
               </label>
 
               <label>
-                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <span className={labelClass}>
                   Priority
                 </span>
                 <select
                   value={priorityFilter}
                   onChange={(event) => setPriorityFilter(event.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  className={`${fieldClass} pr-9`}
                 >
                   <option>All</option>
                   <option>High</option>
@@ -351,13 +372,13 @@ const Queries = () => {
               </label>
 
               <label>
-                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <span className={labelClass}>
                   Category
                 </span>
                 <select
                   value={categoryFilter}
                   onChange={(event) => setCategoryFilter(event.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  className={`${fieldClass} pr-9`}
                 >
                   <option>All</option>
                   <option>Billing</option>
@@ -367,7 +388,7 @@ const Queries = () => {
               </label>
             </div>
 
-            <div className="mt-3 flex items-center justify-between">
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-slate-100/70 px-3 py-2.5">
               <p className="text-xs text-slate-500">
                 Showing <span className="font-semibold text-slate-700">{filteredTickets.length}</span>{' '}
                 result{filteredTickets.length === 1 ? '' : 's'}
@@ -377,7 +398,7 @@ const Queries = () => {
                 <select
                   value={sortBy}
                   onChange={(event) => setSortBy(event.target.value)}
-                  className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs text-slate-700 outline-none focus:border-blue-500"
+                  className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                 >
                   <option>Newest</option>
                   <option>Priority</option>
@@ -386,24 +407,24 @@ const Queries = () => {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white/95 shadow-[0_16px_40px_-26px_rgba(15,23,42,0.45)]">
             <div className="hidden overflow-x-auto md:block">
               <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50">
+                <thead className="bg-slate-100/75 backdrop-blur">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                       Ticket
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                       Category
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                       Priority
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                       Status
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                       Date
                     </th>
                   </tr>
@@ -413,22 +434,22 @@ const Queries = () => {
                     <tr
                       key={ticket._id || ticket.id}
                       onClick={() => setSelectedId(ticket._id || ticket.id)}
-                      className={`cursor-pointer transition-colors ${
+                      className={`cursor-pointer transition duration-200 ${
                         (selectedTicket?._id || selectedTicket?.id) === (ticket._id || ticket.id)
-                          ? 'bg-blue-50'
-                          : 'hover:bg-slate-50'
+                          ? 'bg-blue-50/80 shadow-[inset_3px_0_0_0_rgb(37_99_235)]'
+                          : 'hover:bg-slate-50/90'
                       }`}
                     >
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-4 align-top">
                         <p className="text-sm font-semibold text-blue-700">
                           {ticket.ticketCode || ticket._id || ticket.id}
                         </p>
-                        <p className="mt-1 max-w-[280px] truncate text-xs text-slate-600">
+                        <p className="mt-1.5 max-w-[280px] truncate text-xs text-slate-600">
                           {ticket.message}
                         </p>
-                        <p className="mt-1 text-xs text-slate-400">{ticket.customerName || '-'}</p>
+                        <p className="mt-1.5 text-xs text-slate-400">{ticket.customerName || '-'}</p>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-4 align-top">
                         <span
                           className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
                             categoryStyles[ticket.category] || 'bg-slate-100 text-slate-700'
@@ -437,7 +458,7 @@ const Queries = () => {
                           {formatLabel(ticket.category)}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-4 align-top">
                         <span
                           className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
                             priorityStyles[ticket.priority] || 'bg-slate-100 text-slate-700'
@@ -446,7 +467,7 @@ const Queries = () => {
                           {formatLabel(ticket.priority)}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-4 align-top">
                         <span
                           className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
                             statusStyles[ticket.status] || 'bg-slate-100 text-slate-700'
@@ -455,7 +476,7 @@ const Queries = () => {
                           {formatLabel(ticket.status)}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-600">
+                      <td className="px-5 py-4 text-sm text-slate-600">
                         {ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString() : '-'}
                       </td>
                     </tr>
@@ -464,15 +485,15 @@ const Queries = () => {
               </table>
             </div>
 
-            <div className="space-y-3 p-3 md:hidden">
+            <div className="space-y-3 bg-slate-50/45 p-3 md:hidden">
               {filteredTickets.map((ticket) => (
                 <button
                   key={ticket._id || ticket.id}
                   type="button"
                   onClick={() => setSelectedId(ticket._id || ticket.id)}
-                  className={`w-full rounded-xl border p-3 text-left ${
+                  className={`w-full rounded-2xl border p-3 text-left shadow-sm transition ${
                     (selectedTicket?._id || selectedTicket?.id) === (ticket._id || ticket.id)
-                      ? 'border-blue-300 bg-blue-50'
+                      ? 'border-blue-300 bg-blue-50 ring-2 ring-blue-100'
                       : 'border-slate-200 bg-white'
                   }`}
                 >
@@ -511,7 +532,7 @@ const Queries = () => {
             </div>
 
             {filteredTickets.length === 0 && (
-              <div className="grid h-36 place-items-center text-sm text-slate-500">
+              <div className="grid h-36 place-items-center bg-white text-sm text-slate-500">
                 No tickets match your filters.
               </div>
             )}
@@ -519,13 +540,17 @@ const Queries = () => {
         </div>
 
         <aside className="xl:col-span-4">
-          <div className="sticky top-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className={`${surfaceCardClass} xl:sticky xl:top-5`}>
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-500/80 via-indigo-500/80 to-cyan-500/80"
+            />
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
               Ticket Details
             </h2>
 
             {selectedTicket ? (
-              <div className="mt-3 space-y-4">
+              <div className="mt-4 space-y-4">
                 <div>
                   <p className="text-lg font-semibold text-slate-900">
                     {selectedTicket.ticketCode || selectedTicket._id || selectedTicket.id}
@@ -533,18 +558,18 @@ const Queries = () => {
                   <p className="text-sm text-slate-500">{selectedTicket.customerName || '-'}</p>
                 </div>
 
-                <p className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+                <p className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm leading-relaxed text-slate-700">
                   {selectedTicket.message}
                 </p>
 
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="rounded-lg border border-slate-200 p-2">
+                  <div className="rounded-xl border border-slate-200 bg-white p-2.5">
                     <p className="text-slate-400">Category</p>
                     <p className="mt-1 font-semibold text-slate-700">
                       {formatLabel(selectedTicket.category)}
                     </p>
                   </div>
-                  <div className="rounded-lg border border-slate-200 p-2">
+                  <div className="rounded-xl border border-slate-200 bg-white p-2.5">
                     <p className="text-slate-400">Created</p>
                     <p className="mt-1 font-semibold text-slate-700">
                       {selectedTicket.createdAt
@@ -563,7 +588,7 @@ const Queries = () => {
                       type="button"
                       disabled={pendingAcceptId === (selectedTicket._id || selectedTicket.id)}
                       onClick={() => handleAccept(selectedTicket._id || selectedTicket.id)}
-                      className="rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-left text-xs font-semibold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-70"
+                      className="rounded-xl border border-blue-300 bg-blue-50 px-3 py-2.5 text-left text-xs font-semibold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-70"
                     >
                       {pendingAcceptId === (selectedTicket._id || selectedTicket.id)
                         ? 'Accepting...'
@@ -572,7 +597,7 @@ const Queries = () => {
                     <button
                       type="button"
                       onClick={() => handleReject(selectedTicket._id || selectedTicket.id)}
-                      className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-left text-xs font-semibold text-rose-700 transition hover:bg-rose-100"
+                      className="rounded-xl border border-rose-300 bg-rose-50 px-3 py-2.5 text-left text-xs font-semibold text-rose-700 transition hover:bg-rose-100"
                     >
                       Reject Ticket
                     </button>
@@ -587,6 +612,7 @@ const Queries = () => {
           </div>
         </aside>
       </section>
+      </div>
     </div>
   );
 };
