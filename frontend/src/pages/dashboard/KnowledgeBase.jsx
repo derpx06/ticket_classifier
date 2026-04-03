@@ -7,7 +7,7 @@ import {
     Loader2, FileText, Settings2, ChevronDown, ChevronUp, KeyRound, Lock, Shield,
     Code, Copy, Plus, Trash2, MessageSquare, Send, RotateCcw
 } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 
 /* ─── tiny helpers ─── */
 const StatusBadge = ({ type }) => {
