@@ -39,6 +39,16 @@ export type CompanyRoleDoc = {
   createdAt: Date;
 };
 
+export type QuestionDoc = {
+  id: number;
+  companyId: number;
+  question: string;
+  answer: string;
+  isActive: boolean;
+  createdAt: Date;
+};
+
+
 type CounterDoc = {
   _id: string;
   seq: number;
@@ -53,15 +63,18 @@ function collections(database: Db): {
   companies: Collection<CompanyDoc>;
   users: Collection<UserDoc>;
   companyRoles: Collection<CompanyRoleDoc>;
+  questions: Collection<QuestionDoc>;
   counters: Collection<CounterDoc>;
 } {
   return {
     companies: database.collection<CompanyDoc>("companies"),
     users: database.collection<UserDoc>("users"),
     companyRoles: database.collection<CompanyRoleDoc>("company_roles"),
+    questions: database.collection<QuestionDoc>("questions"),
     counters: database.collection<CounterDoc>("counters"),
   };
 }
+
 
 async function ensureIndexes(database: Db): Promise<void> {
   if (indexesReady) {
@@ -116,8 +129,10 @@ export async function getCollections(): Promise<{
   companies: Collection<CompanyDoc>;
   users: Collection<UserDoc>;
   companyRoles: Collection<CompanyRoleDoc>;
+  questions: Collection<QuestionDoc>;
   counters: Collection<CounterDoc>;
 }> {
+
   await connectDb();
   if (!db) {
     throw new Error("Database is not connected.");

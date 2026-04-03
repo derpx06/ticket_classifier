@@ -6,7 +6,7 @@ import { Document as LangChainDocument } from '@langchain/core/documents';
 
 
 import { indexerService } from './Indexer';
-import { pool } from '../config/db';
+import { getCollections } from '../config/db';
 import dotenv from 'dotenv';
 
 
@@ -20,27 +20,34 @@ export class RAGEngine {
     constructor() {
         this.model = new ChatGoogleGenerativeAI({
             apiKey: process.env.GEMINI_API_KEY,
-            modelName: "gemini-1.5-flash",
+            model: process.env.GEMINI_MODEL || "gemini-1.5-flash",
             temperature: 0.2,
         });
+
     }
 
 
     async answerTicket(query: string, sessionId: string = "default", companyId?: number) {
         // 1. Q&A Mapping (Fast track)
         if (companyId) {
-            const qaResult = await pool.query(
-                'SELECT answer FROM questions WHERE company_id = $1 AND question ILIKE $2 AND is_active = true LIMIT 1',
-                [companyId, query]
-            );
-            if (qaResult.rows.length > 0) {
-                return {
-                    answer: qaResult.rows[0].answer,
-                    sources: [{ url: "Internal", title: "Pre-defined Q&A" }],
-                    type: "qa-match"
-                };
+            const { questions } = await getCollections() as any;
+            if (questions) {
+                const qaResult = await questions.findOne({
+                    companyId: companyId,
+                    question: { $regex: new RegExp(query, 'i') },
+                    isActive: true
+                });
+
+                if (qaResult) {
+                    return {
+                        answer: qaResult.answer,
+                        sources: [{ url: "Internal", title: "Pre-defined Q&A" }],
+                        type: "qa-match"
+                    };
+                }
             }
         }
+
 
         // 2. Retrieve relevant context
         const contextDocs: LangChainDocument[] = await indexerService.similaritySearch(query, 5);

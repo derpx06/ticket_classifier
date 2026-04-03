@@ -6,9 +6,22 @@ import AppRoutes from './routes/AppRoutes';
 import AppErrorBoundary from './components/feedback/AppErrorBoundary';
 import GlobalLoadingOverlay from './components/feedback/GlobalLoadingOverlay';
 import ToastProvider from './components/feedback/ToastProvider';
+import { createChatbotWidget } from 'chatbot-package';
+import ragService from './services/ragService';
 import './index.css';
 
 function App() {
+  React.useEffect(() => {
+    const widget = createChatbotWidget({
+      title: 'Support AI',
+      onUserMessage: async (msg) => {
+        const res = await ragService.chat(msg);
+        return res.answer;
+      }
+    });
+    return () => widget.destroy();
+  }, []);
+
   return (
     <AppErrorBoundary>
       <AuthProvider>

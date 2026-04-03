@@ -17,8 +17,9 @@ export class IndexerService {
     constructor() {
         this.embeddings = new GoogleGenerativeAIEmbeddings({
             apiKey: process.env.GEMINI_API_KEY,
-            modelName: "embedding-001",
+            model: "embedding-001",
         });
+
     }
 
     async indexPages(pages: { url: string; title: string; content: string }[]) {

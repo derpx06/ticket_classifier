@@ -21,7 +21,21 @@ export default function App() {
       welcomeMessage: 'Hi! Welcome to the React dashboard demo. How can I help?',
       placeholder: 'Ask a support question...',
       primaryColor: '#2563eb',
-      onUserMessage: async (message) => `Demo bot reply: I received "${message}".`,
+      onUserMessage: async (message) => {
+        try {
+          const response = await fetch('http://localhost:5000/api/rag/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: message, sessionId: 'demo-session' })
+          });
+          const data = await response.json();
+          return data.answer;
+        } catch (error) {
+          console.error('Chat error:', error);
+          return "Sorry, I'm having trouble connecting to the support server.";
+        }
+      },
+
     })
 
     return () => widget.destroy()

@@ -1,6 +1,6 @@
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
+import { TextLoader } from "@langchain/classic/document_loaders/fs/text";
 import { DocxLoader } from "@langchain/community/document_loaders/fs/docx";
-import { TextLoader } from "langchain/document_loaders/fs/text";
 import { Document as LangChainDocument } from "@langchain/core/documents";
 
 import * as fs from 'fs/promises';
@@ -16,7 +16,15 @@ export class DocumentProcessor {
         } else if (ext === '.docx' || ext === '.doc') {
             loader = new DocxLoader(filePath);
         } else if (ext === '.txt' || ext === '.md') {
-            loader = new TextLoader(filePath);
+            const raw = await fs.readFile(filePath, 'utf8');
+            return [
+                new LangChainDocument({
+                    pageContent: raw,
+                    metadata: {
+                        source: path.basename(filePath),
+                    },
+                }),
+            ];
         } else {
             throw new Error(`Unsupported file type: ${ext}`);
         }

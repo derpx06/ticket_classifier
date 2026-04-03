@@ -12,9 +12,10 @@ export class AICleaner {
     constructor() {
         this.model = new ChatGoogleGenerativeAI({
             apiKey: process.env.GEMINI_API_KEY,
-            modelName: "gemini-1.5-flash",
+            model: process.env.GEMINI_MODEL || "gemini-1.5-flash",
             temperature: 0, // Deterministic cleaning
         });
+
     }
 
     async extractKnowledge(rawText: string, url: string): Promise<string> {
