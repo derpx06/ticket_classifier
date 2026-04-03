@@ -47,7 +47,6 @@ API base URL: `http://127.0.0.1:5000/api` (or your `PORT`).
 
 ```text
 backend/
-├── db/                    # legacy SQL files (not used by Mongo runtime)
 ├── src/
 │   ├── config/            # env + Mongo connection/index setup
 │   ├── controllers/       # auth and team endpoints
