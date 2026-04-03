@@ -59,6 +59,18 @@ export async function ensureCollection(): Promise<void> {
     const existingSize = extractVectorSize((info as any)?.config?.params?.vectors);
 
     if (existingSize === VECTOR_SIZE) {
+        try {
+            await qdrant.createPayloadIndex(COLLECTION_NAME, {
+                field_name: 'companyId',
+                field_schema: 'integer',
+            });
+            await qdrant.createPayloadIndex(COLLECTION_NAME, {
+                field_name: 'websiteId',
+                field_schema: 'integer',
+            });
+        } catch {
+            // ignore index errors (already exists or cloud restrictions)
+        }
         console.log(`[Qdrant] Collection "${COLLECTION_NAME}" already exists (dim=${existingSize})`);
         return;
     }
@@ -71,6 +83,18 @@ export async function ensureCollection(): Promise<void> {
     console.warn(`${msg}. Recreating collection...`);
     await qdrant.deleteCollection(COLLECTION_NAME);
     await createCollectionWithExpectedDim(COLLECTION_NAME);
+    try {
+        await qdrant.createPayloadIndex(COLLECTION_NAME, {
+            field_name: 'companyId',
+            field_schema: 'integer',
+        });
+        await qdrant.createPayloadIndex(COLLECTION_NAME, {
+            field_name: 'websiteId',
+            field_schema: 'integer',
+        });
+    } catch {
+        // ignore index errors
+    }
 }
 
 export async function ensureTicketsCollection(): Promise<void> {

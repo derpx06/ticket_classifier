@@ -463,8 +463,10 @@ export const createChatbotWidget = (
     }
     isHumanConnecting = true
     setHumanMode(true)
-    appendBotBubble('Please describe the issue you are facing.')
-    awaitingHumanIssue = true
+    if (!awaitingHumanIssue) {
+      appendBotBubble('Please describe the issue you are facing.')
+      awaitingHumanIssue = true
+    }
     try {
       humanButton.innerHTML = aiButtonMarkup
       hydrateIcons()
