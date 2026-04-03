@@ -48,6 +48,7 @@
     "figlet": "^1.9.4",
     "gradient-string": "^3.0.0",
     "lucide": "^1.7.0",
-    "ora": "^9.0.0"
+    "ora": "^9.0.0",
+    "socket.io-client": "^4.8.3"
   }
 }

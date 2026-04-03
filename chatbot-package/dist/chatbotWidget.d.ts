@@ -7,6 +7,10 @@ export interface ChatbotWidgetOptions {
     primaryColor?: string;
     position?: 'bottom-right' | 'bottom-left';
     zIndex?: number;
+    humanSupport?: {
+        apiBaseUrl: string;
+        widgetKey: string;
+    };
     onUserMessage?: (message: string) => string | Promise<string> | void;
 }
 export interface ChatbotWidgetInstance {

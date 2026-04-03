@@ -105,6 +105,9 @@ async function ensureIndexes(database: Db): Promise<void> {
   }
 
   const { companies, users, companyRoles, apiKeys, sitemaps } = collections(database);
+  const tickets = database.collection("tickets");
+  const messages = database.collection("messages");
+  const chatSessions = database.collection("chat_sessions");
 
   await Promise.all([
     companies.createIndex({ id: 1 }, { unique: true }),
@@ -123,6 +126,12 @@ async function ensureIndexes(database: Db): Promise<void> {
     apiKeys.createIndex({ key: 1 }, { unique: true }),
     apiKeys.createIndex({ companyId: 1 }),
     sitemaps.createIndex({ companyId: 1 }, { unique: true }),
+    tickets.createIndex({ companyId: 1, createdAt: -1 }),
+    tickets.createIndex({ companyId: 1, status: 1, updatedAt: -1 }),
+    messages.createIndex({ companyId: 1, ticketId: 1, createdAt: 1 }),
+    messages.createIndex({ companyId: 1, sessionId: 1, createdAt: 1 }),
+    chatSessions.createIndex({ sessionId: 1 }, { unique: true }),
+    chatSessions.createIndex({ companyId: 1, ticketId: 1 }),
   ]);
 
 

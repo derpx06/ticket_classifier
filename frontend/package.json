@@ -13,12 +13,13 @@
     "@tailwindcss/vite": "^4.2.2",
     "@xyflow/react": "^12.10.2",
     "axios": "^1.14.0",
+    "chatbot-package": "file:../chatbot-package",
     "lucide-react": "^1.7.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-hot-toast": "^2.6.0",
     "react-router-dom": "^7.13.2",
-    "chatbot-package": "file:../chatbot-package"
+    "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",

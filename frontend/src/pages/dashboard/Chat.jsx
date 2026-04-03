@@ -1,11 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import {
+  getTickets,
   getMessagesByTicket,
   getMyTickets,
   sendMessage,
   updateTicket,
 } from '../../services/api';
+import { createAgentSocket } from '../../services/socketClient';
+import { useAuth } from '../../hooks/useAuth';
 
 const statusStyles = {
   pending: 'bg-amber-100 text-amber-700',
@@ -20,14 +23,18 @@ const formatLabel = (value = '') => {
 };
 
 const Chat = () => {
+  const { role } = useAuth();
+  const isAdmin = String(role || '').toLowerCase() === 'admin';
   const [conversations, setConversations] = useState([]);
   const [activeId, setActiveId] = useState('');
   const [messagesByTicket, setMessagesByTicket] = useState({});
   const [draft, setDraft] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [isSocketConnected, setIsSocketConnected] = useState(false);
   const [isLoadingConversations, setIsLoadingConversations] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const bottomRef = useRef(null);
+  const socketRef = useRef(null);
 
   const activeConversation = useMemo(
     () => conversations.find((conversation) => (conversation._id || conversation.id) === activeId),
@@ -39,12 +46,18 @@ const Chat = () => {
     const loadConversations = async () => {
       try {
         setIsLoadingConversations(true);
-        const result = await getMyTickets();
+        const result = isAdmin ? await getTickets() : await getMyTickets();
         const list = Array.isArray(result) ? result : [];
         setConversations(list);
-        if (list.length > 0) {
-          setActiveId(list[0]._id || list[0].id || '');
-        }
+        setActiveId((previousActiveId) => {
+          if (
+            previousActiveId
+            && list.some((conversation) => (conversation._id || conversation.id) === previousActiveId)
+          ) {
+            return previousActiveId;
+          }
+          return list[0]?._id || list[0]?.id || '';
+        });
       } catch (error) {
         toast.error(error?.response?.data?.message || 'Failed to load conversations.');
       } finally {
@@ -53,7 +66,64 @@ const Chat = () => {
     };
 
     loadConversations();
-  }, []);
+  }, [isAdmin]);
+
+  useEffect(() => {
+    const socket = createAgentSocket();
+    socketRef.current = socket;
+
+    const onConnect = () => setIsSocketConnected(true);
+    const onDisconnect = () => setIsSocketConnected(false);
+    const onSocketError = (payload) => {
+      const message = payload?.message || 'Real-time chat connection error.';
+      toast.error(message);
+    };
+    const onIncomingMessage = (message) => {
+      const ticketId = String(message?.ticketId || '');
+      if (!ticketId || !message?._id) return;
+
+      setMessagesByTicket((previous) => {
+        const current = previous[ticketId] || [];
+        if (current.some((entry) => entry._id === message._id)) {
+          return previous;
+        }
+        return {
+          ...previous,
+          [ticketId]: [...current, message],
+        };
+      });
+    };
+    const onHandoff = () => {
+      if (isAdmin) {
+        void (async () => {
+          try {
+            const refreshed = await getTickets();
+            setConversations(Array.isArray(refreshed) ? refreshed : []);
+          } catch {
+            // handled by user action refresh later
+          }
+        })();
+      }
+    };
+
+    socket.on('connect', onConnect);
+    socket.on('disconnect', onDisconnect);
+    socket.on('connect_error', onSocketError);
+    socket.on('chat:error', onSocketError);
+    socket.on('chat:message', onIncomingMessage);
+    socket.on('chat:handoff_requested', onHandoff);
+
+    return () => {
+      socket.off('connect', onConnect);
+      socket.off('disconnect', onDisconnect);
+      socket.off('connect_error', onSocketError);
+      socket.off('chat:error', onSocketError);
+      socket.off('chat:message', onIncomingMessage);
+      socket.off('chat:handoff_requested', onHandoff);
+      socket.close();
+      socketRef.current = null;
+    };
+  }, [isAdmin]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -78,6 +148,16 @@ const Chat = () => {
     loadMessages();
   }, [activeId]);
 
+  useEffect(() => {
+    const socket = socketRef.current;
+    if (!socket || !activeId) return;
+
+    socket.emit('agent:join_ticket', { ticketId: activeId });
+    return () => {
+      socket.emit('agent:leave_ticket', { ticketId: activeId });
+    };
+  }, [activeId]);
+
   const handleSend = async (event) => {
     event.preventDefault();
     if (!activeConversation || !activeId || !draft.trim() || isSending) return;
@@ -86,24 +166,32 @@ const Chat = () => {
     setIsSending(true);
 
     try {
-      const created = await sendMessage({
-        ticketId: activeId,
-        text,
-        sender: 'agent',
-      });
+      const socket = socketRef.current;
+      if (socket && isSocketConnected) {
+        socket.emit('agent:send_message', {
+          ticketId: activeId,
+          text,
+        });
+      } else {
+        const created = await sendMessage({
+          ticketId: activeId,
+          text,
+          sender: 'agent',
+        });
 
-      const fallback = {
-        _id: `${Date.now()}`,
-        ticketId: activeId,
-        text,
-        sender: 'agent',
-        createdAt: new Date().toISOString(),
-      };
+        const fallback = {
+          _id: `${Date.now()}`,
+          ticketId: activeId,
+          text,
+          sender: 'agent',
+          createdAt: new Date().toISOString(),
+        };
 
-      setMessagesByTicket((previous) => ({
-        ...previous,
-        [activeId]: [...(previous[activeId] || []), created || fallback],
-      }));
+        setMessagesByTicket((previous) => ({
+          ...previous,
+          [activeId]: [...(previous[activeId] || []), created || fallback],
+        }));
+      }
       setDraft('');
     } catch (error) {
       toast.error(error?.response?.data?.message || 'Failed to send message.');
@@ -116,22 +204,14 @@ const Chat = () => {
     if (!activeConversation || !activeId) return;
 
     try {
-      await updateTicket(activeId, { status: nextStatus });
+      const updated = await updateTicket(activeId, { status: nextStatus });
       setConversations((previous) =>
-        previous.filter((conversation) => (conversation._id || conversation.id) !== activeId)
+        previous.map((conversation) =>
+          (conversation._id || conversation.id) === activeId
+            ? { ...conversation, status: updated?.status || nextStatus }
+            : conversation
+        )
       );
-      setMessagesByTicket((previous) => {
-        const next = { ...previous };
-        delete next[activeId];
-        return next;
-      });
-      setActiveId((previousActiveId) => {
-        if (previousActiveId !== activeId) return previousActiveId;
-        const remaining = conversations.filter(
-          (conversation) => (conversation._id || conversation.id) !== activeId
-        );
-        return remaining[0]?._id || remaining[0]?.id || '';
-      });
       toast.success(
         nextStatus === 'resolved' ? 'Ticket marked as resolved.' : 'Ticket escalated.'
       );
@@ -144,8 +224,19 @@ const Chat = () => {
     <div className="grid grid-cols-1 gap-5 lg:grid-cols-10">
       <aside className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-3">
         <div className="border-b border-slate-200 bg-gradient-to-r from-slate-900 to-slate-700 p-4 text-white">
-          <h1 className="text-lg font-semibold">Support Chat</h1>
-          <p className="mt-1 text-xs text-slate-200">Active customer conversations</p>
+          <div className="flex items-center justify-between gap-2">
+            <h1 className="text-lg font-semibold">Support Chat</h1>
+            <span
+              className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                isSocketConnected ? 'bg-emerald-200 text-emerald-800' : 'bg-amber-200 text-amber-800'
+              }`}
+            >
+              {isSocketConnected ? 'Live' : 'Offline'}
+            </span>
+          </div>
+          <p className="mt-1 text-xs text-slate-200">
+            {isAdmin ? 'Company-wide customer conversations' : 'Assigned customer conversations'}
+          </p>
         </div>
 
         <div className="max-h-[640px] space-y-2 overflow-y-auto p-3">

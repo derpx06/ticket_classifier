@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { ObjectId } from "mongodb";
 import { getCollections } from "../config/db";
+import { emitRealtimeMessageFromHttp } from "../services/chatSocketServer";
 
 function parseObjectId(id: string): ObjectId | null {
   if (!ObjectId.isValid(id)) return null;
@@ -96,10 +97,26 @@ export async function createMessage(req: Request, res: Response): Promise<void> 
     };
 
     const inserted = await db.collection("messages").insertOne(payload);
+    const chatSession = await db.collection("chat_sessions").findOne(
+      { ticketId: ticketObjectId, companyId: req.auth.companyId },
+      { projection: { sessionId: 1 } },
+    );
     await db.collection("tickets").updateOne(
       { _id: ticketObjectId, companyId: req.auth.companyId },
       { $set: { updatedAt: now } }
     );
+
+    emitRealtimeMessageFromHttp({
+      companyId: req.auth.companyId,
+      ticketId: ticketObjectId.toString(),
+      sessionId:
+        typeof chatSession?.sessionId === "string" ? (chatSession.sessionId as string) : null,
+      sender: sender as "user" | "bot" | "agent",
+      text,
+      messageId: inserted.insertedId.toString(),
+      createdAt: now,
+      senderUserId: sender === "agent" ? req.auth.userId : null,
+    });
 
     res.status(201).json({
       data: {

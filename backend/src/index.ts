@@ -1,9 +1,13 @@
+import { createServer } from "http";
 import { env } from "./config/env";
 import { testDbConnection } from "./config/db";
 import { ensureCompanyTeamsSchema } from "./db/ensureCompanyTeamsSchema";
 import { createApp } from "./app";
+import { createChatSocketServer } from "./services/chatSocketServer";
 
 const app = createApp();
+const httpServer = createServer(app);
+createChatSocketServer(httpServer);
 
 const startServer = async (): Promise<void> => {
   try {
@@ -19,7 +23,7 @@ const startServer = async (): Promise<void> => {
     console.warn(error);
   }
 
-  app.listen(env.port, () => {
+  httpServer.listen(env.port, () => {
     console.log(`API listening at http://127.0.0.1:${env.port}/api (PORT from .env; Vite dev proxy must match)`);
   });
 };

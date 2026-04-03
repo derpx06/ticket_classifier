@@ -8,6 +8,7 @@ import {
   ArrowLeft,
   createIcons,
 } from 'lucide'
+import { io, type Socket } from 'socket.io-client'
 
 export interface ChatbotWidgetOptions {
   botName?: string
@@ -18,6 +19,10 @@ export interface ChatbotWidgetOptions {
   primaryColor?: string
   position?: 'bottom-right' | 'bottom-left'
   zIndex?: number
+  humanSupport?: {
+    apiBaseUrl: string
+    widgetKey: string
+  }
   onUserMessage?: (message: string) => string | Promise<string> | void
 }
 
@@ -31,7 +36,9 @@ export interface ChatbotWidgetInstance {
 
 const STYLE_ID = 'chatbot-package-styles'
 
-const DEFAULT_OPTIONS: Required<Omit<ChatbotWidgetOptions, 'onUserMessage'>> = {
+const DEFAULT_OPTIONS: Required<
+  Omit<ChatbotWidgetOptions, 'onUserMessage' | 'humanSupport'>
+> = {
   botName: 'Support Assistant',
   title: 'Support Assistant',
   subtitle: 'Online',
@@ -653,6 +660,17 @@ const hydrateIcons = (): void => {
   })
 }
 
+const resolveApiBase = (input: string): string => input.replace(/\/+$/, '')
+
+const resolveSocketBase = (apiBase: string): string => apiBase.replace(/\/api\/?$/i, '')
+
+const unwrapResponseData = <T>(payload: unknown): T => {
+  if (payload && typeof payload === 'object' && 'data' in payload) {
+    return (payload as { data: T }).data
+  }
+  return payload as T
+}
+
 export const createChatbotWidget = (
   options: ChatbotWidgetOptions = {},
 ): ChatbotWidgetInstance => {
@@ -870,6 +888,17 @@ export const createChatbotWidget = (
 
   let isOpen = false
   let isDestroyed = false
+  let isHumanChatActive = false
+  let widgetSocket: Socket | null = null
+  let widgetSessionId: string | null = null
+  let widgetTicketId: string | null = null
+
+  const appendBotBubble = (text: string): void => {
+    if (!text.trim()) return
+    body.classList.add('has-messages')
+    messages.appendChild(createBubble(text.trim(), 'bot'))
+    body.scrollTop = body.scrollHeight
+  }
 
   const setOpen = (nextOpen: boolean): void => {
     if (isDestroyed) {
@@ -886,19 +915,98 @@ export const createChatbotWidget = (
   }
 
   const appendBotReply = async (message: string): Promise<void> => {
+    if (isHumanChatActive && widgetSocket) {
+      widgetSocket.emit('widget:message', { text: message })
+      return
+    }
+
     if (options.onUserMessage) {
       const result = await options.onUserMessage(message)
       if (typeof result === 'string' && result.trim()) {
-        messages.appendChild(createBubble(result.trim(), 'bot'))
+        appendBotBubble(result)
       }
-    } else {
-      messages.appendChild(
-        createBubble(`Thanks! ${config.botName} received: "${message}"`, 'bot'),
-      )
+      return
     }
 
-    body.classList.add('has-messages')
-    body.scrollTop = body.scrollHeight
+    appendBotBubble(`Thanks! ${config.botName} received: "${message}"`)
+  }
+
+  const connectHumanSupport = async (payload: {
+    name: string
+    email: string
+    issue: string
+  }): Promise<void> => {
+    if (!config.humanSupport) {
+      appendBotBubble('Human support is not configured for this widget yet.')
+      return
+    }
+
+    const apiBaseUrl = resolveApiBase(config.humanSupport.apiBaseUrl)
+    const response = await fetch(`${apiBaseUrl}/widget/session`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        widgetKey: config.humanSupport.widgetKey,
+        visitorName: payload.name,
+        visitorEmail: payload.email,
+        issue: payload.issue,
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error('Unable to connect to human support right now.')
+    }
+
+    const sessionData = unwrapResponseData<{
+      sessionId: string
+      ticketId: string
+      chatToken: string
+    }>(await response.json())
+
+    widgetSessionId = sessionData.sessionId
+    widgetTicketId = sessionData.ticketId
+    isHumanChatActive = true
+
+    const socket = io(resolveSocketBase(apiBaseUrl), {
+      path: '/socket.io',
+      transports: ['websocket'],
+      auth: {
+        token: sessionData.chatToken,
+      },
+    })
+    widgetSocket = socket
+
+    socket.on('connect', () => {
+      statusText.textContent = 'Connected with human support'
+    })
+
+    socket.on('disconnect', () => {
+      if (isHumanChatActive) {
+        statusText.textContent = 'Reconnecting to human support...'
+      }
+    })
+
+    socket.on(
+      'chat:message',
+      (event: { sessionId?: string | null; sender?: string; text?: string }) => {
+        if (event.sessionId !== widgetSessionId) return
+        if (event.sender === 'agent' && typeof event.text === 'string') {
+          appendBotBubble(event.text)
+        }
+      },
+    )
+
+    socket.on('chat:error', (event: { message?: string }) => {
+      appendBotBubble(event.message || 'Support connection error. Please try again.')
+    })
+
+    socket.emit('widget:request_human', {
+      name: payload.name,
+      email: payload.email,
+      issue: payload.issue,
+    })
   }
 
   const sendMessage = async (message: string): Promise<void> => {
@@ -932,9 +1040,28 @@ export const createChatbotWidget = (
     root.classList.remove('show-human-form')
   })
 
-  humanForm.addEventListener('submit', (event) => {
+  humanForm.addEventListener('submit', async (event) => {
     event.preventDefault()
-    root.classList.add('show-human-success')
+    submitBtn.disabled = true
+    submitBtn.textContent = 'Connecting...'
+    try {
+      await connectHumanSupport({
+        name: nameInput.value.trim(),
+        email: emailInput.value.trim(),
+        issue: issueTextarea.value.trim(),
+      })
+      root.classList.add('show-human-success')
+      successTitle.textContent = 'Connected to Support'
+      successMsg.textContent = 'You can now continue chatting with a human support agent.'
+      submitBtn.textContent = 'Send Message'
+    } catch (error) {
+      appendBotBubble(
+        error instanceof Error ? error.message : 'Unable to connect to support right now.',
+      )
+      submitBtn.textContent = 'Send Message'
+    } finally {
+      submitBtn.disabled = false
+    }
   })
 
   successBackBtn.addEventListener('click', () => {
@@ -944,7 +1071,12 @@ export const createChatbotWidget = (
     
     body.classList.add('has-messages')
     messages.appendChild(
-      createBubble('Your issue has been submitted. A human agent will contact you soon.', 'bot')
+      createBubble(
+        isHumanChatActive && widgetTicketId
+          ? `You are now connected with our support team (ticket ${widgetTicketId.slice(-6)}).`
+          : 'Your issue has been submitted. A human agent will contact you soon.',
+        'bot',
+      ),
     )
     body.scrollTop = body.scrollHeight
   })
@@ -960,6 +1092,10 @@ export const createChatbotWidget = (
       }
 
       isDestroyed = true
+      if (widgetSocket) {
+        widgetSocket.close()
+        widgetSocket = null
+      }
       root.remove()
     },
   }

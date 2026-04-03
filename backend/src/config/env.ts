@@ -20,4 +20,5 @@ export const env = {
   dbRequiredOnStartup: process.env.DB_REQUIRED_ON_STARTUP === "true",
   jwtSecret: process.env.JWT_SECRET || "change-me",
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "7d",
+  widgetJwtExpiresIn: process.env.WIDGET_JWT_EXPIRES_IN || "40h",
 };
