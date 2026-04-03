@@ -112,7 +112,7 @@ export const buildBody = (config: ResolvedOptions) => {
 
   const humanDivider = document.createElement('div')
   humanDivider.className = 'chatbot-divider'
-  humanDivider.textContent = 'Previous AI Interaction'
+  humanDivider.textContent = 'Previous Messages'
 
   const messages = document.createElement('div')
   messages.className = 'chatbot-messages'

@@ -70,6 +70,15 @@ export const createChatbotWidget = (
 
   const historyStorageKey = resolveHistoryKey(options)
   const messageHistory = loadHistory(historyStorageKey)
+  const humanMessages: Array<{
+    role: 'user' | 'bot' | 'system'
+    text: string
+    markdown?: boolean
+  }> = []
+  const humanSessionHistory: Array<
+    Array<{ role: 'user' | 'bot' | 'system'; text: string; markdown?: boolean }>
+  > = []
+  let showHumanRecent = true
   let historyOffset = Math.max(messageHistory.length - HISTORY_PAGE_SIZE, 0)
   let isHistoryPaging = false
 
@@ -89,6 +98,44 @@ export const createChatbotWidget = (
     body.classList.add('has-messages')
     windowItems.forEach((entry) => {
       messages.appendChild(createBubble(entry.text, entry.role, entry.role === 'bot'))
+    })
+    body.scrollTop = body.scrollHeight
+  }
+
+  const renderHumanMessages = (): void => {
+    messages.innerHTML = ''
+    if (humanMessages.length === 0) {
+      const recentSession =
+        humanSessionHistory.length > 0
+          ? humanSessionHistory[humanSessionHistory.length - 1]
+          : []
+      if (recentSession.length === 0 || !showHumanRecent) {
+        body.classList.remove('has-messages')
+        return
+      }
+      body.classList.add('has-messages')
+      const recentWrapper = document.createElement('div')
+      recentWrapper.className = 'chatbot-recent-history'
+      const recentLabel = document.createElement('div')
+      recentLabel.className = 'chatbot-recent-label'
+      recentLabel.textContent = 'Previous Messages'
+      recentWrapper.appendChild(recentLabel)
+      const recentItems = recentSession.slice(-6)
+      recentItems.forEach((entry) => {
+        const entryMarkdown =
+          entry.role === 'bot' ||
+          (typeof (entry as { markdown?: boolean }).markdown === 'boolean'
+            ? (entry as { markdown?: boolean }).markdown
+            : false)
+        recentWrapper.appendChild(createBubble(entry.text, entry.role, entryMarkdown))
+      })
+      messages.appendChild(recentWrapper)
+      body.scrollTop = body.scrollHeight
+      return
+    }
+    body.classList.add('has-messages')
+    humanMessages.forEach((entry) => {
+      messages.appendChild(createBubble(entry.text, entry.role, entry.markdown ?? false))
     })
     body.scrollTop = body.scrollHeight
   }
@@ -151,9 +198,21 @@ export const createChatbotWidget = (
     body.classList.add('has-messages')
     messages.appendChild(createBubble(text.trim(), 'bot', options?.markdown ?? false))
     body.scrollTop = body.scrollHeight
-    if (options?.store && !isHumanChatActive) {
+    if (options?.store && !isHumanChatActive && !awaitingHumanIssue) {
       pushHistory(historyStorageKey, messageHistory, { role: 'bot', text: text.trim() })
     }
+  }
+
+  const appendHumanBubble = (
+    text: string,
+    role: 'user' | 'bot' | 'system',
+    options?: { markdown?: boolean },
+  ): void => {
+    if (!text.trim()) return
+    body.classList.add('has-messages')
+    humanMessages.push({ role, text: text.trim(), markdown: options?.markdown ?? false })
+    messages.appendChild(createBubble(text.trim(), role, options?.markdown ?? false))
+    body.scrollTop = body.scrollHeight
   }
 
   let setHumanMode = (enabled: boolean): void => {
@@ -204,6 +263,9 @@ export const createChatbotWidget = (
     }
 
     const startNewHumanSession = () => {
+      if (humanMessages.length > 0) {
+        humanSessionHistory.push([...humanMessages])
+      }
       if (widgetSocket) {
         widgetSocket.close()
         widgetSocket = null
@@ -214,17 +276,11 @@ export const createChatbotWidget = (
       isHumanAgentConnected = false
       agentJoinedNoticeSent = false
       awaitingHumanIssue = true
-
-      messages.innerHTML = ''
-      if (messageHistory.length > 0) {
-        historyOffset = Math.max(messageHistory.length - HISTORY_PAGE_SIZE, 0)
-        renderHistoryWindow()
-      } else {
-        messages.appendChild(createBubble(config.welcomeMessage, 'bot', true))
-        body.classList.add('has-messages')
-      }
+      humanMessages.splice(0, humanMessages.length)
+      showHumanRecent = false
       setHumanMode(true)
-      appendBotBubble('Please describe the issue you are facing.')
+      renderHumanMessages()
+      appendHumanBubble('Please describe the issue you are facing.', 'bot')
       humanButton.innerHTML = aiButtonMarkup
       hydrateIcons()
     }
@@ -236,6 +292,17 @@ export const createChatbotWidget = (
     setHumanMode = (enabled: boolean): void => {
       originalSetHumanMode(enabled)
       updateControlVisibility(enabled)
+      if (enabled) {
+        showHumanRecent = true
+        renderHumanMessages()
+      } else if (messageHistory.length > 0) {
+        historyOffset = Math.max(messageHistory.length - HISTORY_PAGE_SIZE, 0)
+        renderHistoryWindow()
+      } else {
+        messages.innerHTML = ''
+        body.classList.remove('has-messages')
+        messages.appendChild(createBubble(config.welcomeMessage, 'bot', true))
+      }
     }
   }
 
@@ -333,7 +400,7 @@ export const createChatbotWidget = (
     issue: string
   }): Promise<void> => {
     if (!config.humanSupport) {
-      appendBotBubble('Human support is not configured for this widget yet.')
+      appendHumanBubble('Human support is not configured for this widget yet.', 'bot')
       return
     }
 
@@ -404,11 +471,11 @@ export const createChatbotWidget = (
         if (event._id) seenMessageIds.add(event._id)
         if (event.sender === 'agent' && typeof event.text === 'string') {
           if (!isHumanAgentConnected) {
-            appendBotBubble('You are now connected to a human agent.')
-            messages.appendChild(createBubble('AGENT JOINED THE SESSION', 'system'))
+            appendHumanBubble('You are now connected to a human agent.', 'bot')
+            appendHumanBubble('AGENT JOINED THE SESSION', 'system')
             agentJoinedNoticeSent = true
           }
-          appendBotBubble(event.text)
+          appendHumanBubble(event.text, 'bot')
           isHumanAgentConnected = true
         }
       },
@@ -424,11 +491,11 @@ export const createChatbotWidget = (
 
         if (event.status === 'assigned') {
           if (!isHumanAgentConnected) {
-            appendBotBubble('A human agent has accepted your chat. You are now connected.')
+            appendHumanBubble('A human agent has accepted your chat. You are now connected.', 'bot')
           }
           isHumanAgentConnected = true
           if (!agentJoinedNoticeSent) {
-            messages.appendChild(createBubble('AGENT JOINED THE SESSION', 'system'))
+            appendHumanBubble('AGENT JOINED THE SESSION', 'system')
             agentJoinedNoticeSent = true
           }
           statusText.textContent = 'Connected with human support'
@@ -442,7 +509,7 @@ export const createChatbotWidget = (
     )
 
     socket.on('chat:error', (event: { message?: string }) => {
-      appendBotBubble(event.message || 'Support connection error. Please try again.')
+      appendHumanBubble(event.message || 'Support connection error. Please try again.', 'bot')
     })
 
     socket.emit('widget:request_human', {
@@ -462,8 +529,8 @@ export const createChatbotWidget = (
     if (awaitingHumanIssue) {
       body.classList.add('has-messages')
       setHumanMode(true)
-      messages.appendChild(createBubble(cleaned, 'user'))
-      if (!isHumanChatActive) {
+      appendHumanBubble(cleaned, 'user')
+      if (!isHumanChatActive && !awaitingHumanIssue) {
         pushHistory(historyStorageKey, messageHistory, { role: 'user', text: cleaned })
       }
       input.value = ''
@@ -475,13 +542,13 @@ export const createChatbotWidget = (
           email: '',
           issue: cleaned,
         })
-        appendBotBubble("You're now connected to a support agent. Please wait...")
+        appendHumanBubble("You're now connected to a support agent. Please wait...", 'bot')
         humanButton.innerHTML = aiButtonMarkup
         hydrateIcons()
       } catch (error) {
         const msg =
           error instanceof Error ? error.message : 'Unable to connect to support right now.'
-        appendBotBubble(msg)
+        appendHumanBubble(msg, 'bot')
         awaitingHumanIssue = true
       }
       return
@@ -489,8 +556,12 @@ export const createChatbotWidget = (
 
     body.classList.add('has-messages')
     setHumanMode(isHumanChatActive)
-    messages.appendChild(createBubble(cleaned, 'user'))
-    if (!isHumanChatActive) {
+    if (isHumanChatActive) {
+      appendHumanBubble(cleaned, 'user')
+    } else {
+      messages.appendChild(createBubble(cleaned, 'user'))
+    }
+    if (!isHumanChatActive && !awaitingHumanIssue) {
       pushHistory(historyStorageKey, messageHistory, { role: 'user', text: cleaned })
     }
     input.value = ''
@@ -515,8 +586,19 @@ export const createChatbotWidget = (
   })
 
   humanButton.addEventListener('click', async () => {
+    if (!isHumanChatActive && awaitingHumanIssue) {
+      awaitingHumanIssue = false
+      setHumanMode(false)
+      humanButton.innerHTML = humanButtonMarkup
+      hydrateIcons()
+      return
+    }
     if (isHumanChatActive) {
       // Switch back to AI mode.
+      if (humanMessages.length > 0) {
+        humanSessionHistory.push([...humanMessages])
+        humanMessages.splice(0, humanMessages.length)
+      }
       isHumanChatActive = false
       isHumanAgentConnected = false
       awaitingHumanIssue = false
@@ -533,7 +615,7 @@ export const createChatbotWidget = (
     isHumanConnecting = true
     setHumanMode(true)
     if (!awaitingHumanIssue) {
-      appendBotBubble('Please describe the issue you are facing.')
+      appendHumanBubble('Please describe the issue you are facing.', 'bot')
       awaitingHumanIssue = true
     }
     try {

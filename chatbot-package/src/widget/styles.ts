@@ -303,6 +303,21 @@ export const WIDGET_CSS = `
   display: flex;
 }
 
+.chatbot-recent-history {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chatbot-recent-label {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
 .chatbot-bubble {
   max-width: 86%;
   border-radius: 12px;
@@ -372,6 +387,31 @@ export const WIDGET_CSS = `
   border-radius: 10px;
   padding: 8px;
   overflow-x: auto;
+}
+
+.chatbot-ref-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.chatbot-ref-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #1e40af;
+  text-decoration: none;
+  border: 1px solid #e0e7ff;
+}
+
+.chatbot-ref-chip:hover {
+  background: #e0e7ff;
 }
 
 .chatbot-footer {

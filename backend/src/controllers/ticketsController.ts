@@ -182,9 +182,16 @@ export async function getMessagesByTicket(req: Request, res: Response): Promise<
       return;
     }
 
+    const includeBot = String(req.query?.includeBot ?? "")
+      .trim()
+      .toLowerCase() === "true";
+    const messageFilter = includeBot
+      ? { ticketId: ticketObjectId, companyId: req.auth.companyId }
+      : { ticketId: ticketObjectId, companyId: req.auth.companyId, sender: { $in: ["user", "agent"] } };
+
     const messages = await db
       .collection("messages")
-      .find({ ticketId: ticketObjectId, companyId: req.auth.companyId })
+      .find(messageFilter)
       .sort({ createdAt: 1 })
       .toArray();
 
