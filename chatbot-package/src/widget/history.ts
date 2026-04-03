@@ -47,3 +47,13 @@ export const pushHistory = (
   history.push(entry)
   saveHistory(storageKey, history)
 }
+
+export const clearHistory = (storageKey: string, history: StoredMessage[]) => {
+  history.splice(0, history.length)
+  if (typeof localStorage === 'undefined') return
+  try {
+    localStorage.removeItem(storageKey)
+  } catch {
+    // ignore storage errors
+  }
+}

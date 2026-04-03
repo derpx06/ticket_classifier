@@ -140,6 +140,7 @@ export const WIDGET_CSS = `
   display: flex;
   align-items: center;
   margin-left: auto;
+  gap: 6px;
 }
 
 .chatbot-controls button {
@@ -153,6 +154,7 @@ export const WIDGET_CSS = `
   line-height: 0;
   display: grid;
   place-items: center;
+  font-size: 14px;
   transition: background 0.2s ease, transform 0.2s ease;
 }
 

@@ -8,7 +8,7 @@ import {
   resolveSocketBase,
   unwrapResponseData,
 } from './widget/utils'
-import { resolveHistoryKey, loadHistory, pushHistory } from './widget/history'
+import { resolveHistoryKey, loadHistory, pushHistory, clearHistory } from './widget/history'
 import {
   buildBody,
   buildFooter,
@@ -156,7 +156,7 @@ export const createChatbotWidget = (
     }
   }
 
-  const setHumanMode = (enabled: boolean): void => {
+  let setHumanMode = (enabled: boolean): void => {
     body.classList.toggle('human-mode', enabled)
     if (enabled) {
       if (!messages.contains(humanDivider)) {
@@ -170,6 +170,73 @@ export const createChatbotWidget = (
       humanButton.innerHTML = humanButtonMarkup
     }
     hydrateIcons()
+  }
+
+  const headerControls = header.querySelector('.chatbot-controls')
+  if (headerControls) {
+    const clearBtn = document.createElement('button')
+    clearBtn.type = 'button'
+    clearBtn.setAttribute('aria-label', 'Clear AI chat')
+    clearBtn.innerHTML = '<i data-lucide="x" aria-hidden="true"></i>'
+    headerControls.appendChild(clearBtn)
+
+    const newHumanBtn = document.createElement('button')
+    newHumanBtn.type = 'button'
+    newHumanBtn.setAttribute('aria-label', 'Start new human session')
+    newHumanBtn.innerHTML = '<i data-lucide="plus" aria-hidden="true"></i>'
+    headerControls.appendChild(newHumanBtn)
+
+    const updateControlVisibility = (humanMode: boolean) => {
+      clearBtn.style.display = humanMode ? 'none' : 'grid'
+      newHumanBtn.style.display = humanMode ? 'grid' : 'none'
+    }
+
+    updateControlVisibility(false)
+
+    const resetAiHistory = () => {
+      if (isHumanChatActive) return
+      clearHistory(historyStorageKey, messageHistory)
+      historyOffset = Math.max(messageHistory.length - HISTORY_PAGE_SIZE, 0)
+      messages.innerHTML = ''
+      body.classList.remove('has-messages')
+      messages.appendChild(createBubble(config.welcomeMessage, 'bot', true))
+      body.scrollTop = body.scrollHeight
+    }
+
+    const startNewHumanSession = () => {
+      if (widgetSocket) {
+        widgetSocket.close()
+        widgetSocket = null
+      }
+      widgetSessionId = null
+      widgetTicketId = null
+      isHumanChatActive = false
+      isHumanAgentConnected = false
+      agentJoinedNoticeSent = false
+      awaitingHumanIssue = true
+
+      messages.innerHTML = ''
+      if (messageHistory.length > 0) {
+        historyOffset = Math.max(messageHistory.length - HISTORY_PAGE_SIZE, 0)
+        renderHistoryWindow()
+      } else {
+        messages.appendChild(createBubble(config.welcomeMessage, 'bot', true))
+        body.classList.add('has-messages')
+      }
+      setHumanMode(true)
+      appendBotBubble('Please describe the issue you are facing.')
+      humanButton.innerHTML = aiButtonMarkup
+      hydrateIcons()
+    }
+
+    clearBtn.addEventListener('click', resetAiHistory)
+    newHumanBtn.addEventListener('click', startNewHumanSession)
+
+    const originalSetHumanMode = setHumanMode
+    setHumanMode = (enabled: boolean): void => {
+      originalSetHumanMode(enabled)
+      updateControlVisibility(enabled)
+    }
   }
 
   const setOpen = (nextOpen: boolean): void => {
@@ -455,6 +522,8 @@ export const createChatbotWidget = (
       awaitingHumanIssue = false
       setHumanMode(false)
       appendBotBubble('You are now chatting with AI again.')
+      humanButton.innerHTML = humanButtonMarkup
+      hydrateIcons()
       return
     }
 

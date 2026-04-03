@@ -97,41 +97,41 @@ function x() {
 		});
 	} });
 }
-var S;
-function C(e) {
+var ne;
+function S(e) {
 	return e.reduce((e, t) => e + t.length, 0);
 }
-function w(e, t) {
+function C(e, t) {
 	if (e[0].length === t) return e.shift();
 	let n = new Uint8Array(t), r = 0;
 	for (let i = 0; i < t; i++) n[i] = e[0][r++], r === e[0].length && (e.shift(), r = 0);
 	return e.length && r < e[0].length && (e[0] = e[0].slice(r)), n;
 }
-function ne(e, t) {
-	S ||= new TextDecoder();
+function w(e, t) {
+	ne ||= new TextDecoder();
 	let n = [], r = 0, a = -1, o = !1;
 	return new TransformStream({ transform(s, c) {
 		for (n.push(s);;) {
 			if (r === 0) {
-				if (C(n) < 1) break;
-				let e = w(n, 1);
+				if (S(n) < 1) break;
+				let e = C(n, 1);
 				o = (e[0] & 128) == 128, a = e[0] & 127, r = a < 126 ? 3 : a === 126 ? 1 : 2;
 			} else if (r === 1) {
-				if (C(n) < 2) break;
-				let e = w(n, 2);
+				if (S(n) < 2) break;
+				let e = C(n, 2);
 				a = new DataView(e.buffer, e.byteOffset, e.length).getUint16(0), r = 3;
 			} else if (r === 2) {
-				if (C(n) < 8) break;
-				let e = w(n, 8), t = new DataView(e.buffer, e.byteOffset, e.length), o = t.getUint32(0);
+				if (S(n) < 8) break;
+				let e = C(n, 8), t = new DataView(e.buffer, e.byteOffset, e.length), o = t.getUint32(0);
 				if (o > 2 ** 21 - 1) {
 					c.enqueue(i);
 					break;
 				}
 				a = o * 2 ** 32 + t.getUint32(4), r = 3;
 			} else {
-				if (C(n) < a) break;
-				let e = w(n, a);
-				c.enqueue(_(o ? e : S.decode(e), t)), r = 0;
+				if (S(n) < a) break;
+				let e = C(n, a);
+				c.enqueue(_(o ? e : ne.decode(e), t)), r = 0;
 			}
 			if (a === 0 || a > e) {
 				c.enqueue(i);
@@ -210,7 +210,7 @@ function R(e) {
 	for (let n in e) e.hasOwnProperty(n) && (t.length && (t += "&"), t += encodeURIComponent(n) + "=" + encodeURIComponent(e[n]));
 	return t;
 }
-function re(e) {
+function z(e) {
 	let t = {}, n = e.split("&");
 	for (let e = 0, r = n.length; e < r; e++) {
 		let r = n[e].split("=");
@@ -220,16 +220,16 @@ function re(e) {
 }
 //#endregion
 //#region node_modules/engine.io-client/build/esm/transport.js
-var ie = class extends Error {
+var re = class extends Error {
 	constructor(e, t, n) {
 		super(e), this.description = t, this.context = n, this.type = "TransportError";
 	}
-}, z = class extends T {
+}, B = class extends T {
 	constructor(e) {
 		super(), this.writable = !1, N(this, e), this.opts = e, this.query = e.query, this.socket = e.socket, this.supportsBinary = !e.forceBase64;
 	}
 	onError(e, t, n) {
-		return super.emitReserved("error", new ie(e, t, n)), this;
+		return super.emitReserved("error", new re(e, t, n)), this;
 	}
 	open() {
 		return this.readyState = "opening", this.doOpen(), this;
@@ -268,7 +268,7 @@ var ie = class extends Error {
 		let t = R(e);
 		return t.length ? "?" + t : "";
 	}
-}, ae = class extends z {
+}, V = class extends B {
 	constructor() {
 		super(...arguments), this._polling = !1;
 	}
@@ -318,15 +318,15 @@ var ie = class extends Error {
 		let e = this.opts.secure ? "https" : "http", t = this.query || {};
 		return !1 !== this.opts.timestampRequests && (t[this.opts.timestampParam] = L()), !this.supportsBinary && !t.sid && (t.b64 = 1), this.createUri(e, t);
 	}
-}, oe = !1;
+}, ie = !1;
 try {
-	oe = typeof XMLHttpRequest < "u" && "withCredentials" in new XMLHttpRequest();
+	ie = typeof XMLHttpRequest < "u" && "withCredentials" in new XMLHttpRequest();
 } catch {}
-var se = oe;
+var ae = ie;
 //#endregion
 //#region node_modules/engine.io-client/build/esm/transports/polling-xhr.js
-function ce() {}
-var le = class extends ae {
+function oe() {}
+var se = class extends V {
 	constructor(e) {
 		if (super(e), typeof location < "u") {
 			let t = location.protocol === "https:", n = location.port;
@@ -348,7 +348,7 @@ var le = class extends ae {
 			this.onError("xhr poll error", e, t);
 		}), this.pollXhr = e;
 	}
-}, B = class e extends T {
+}, H = class e extends T {
 	constructor(e, t, n) {
 		super(), this.createRequest = e, N(this, n), this._opts = n, this._method = n.method || "GET", this._uri = t, this._data = n.data === void 0 ? null : n.data, this._create();
 	}
@@ -390,7 +390,7 @@ var le = class extends ae {
 	}
 	_cleanup(t) {
 		if (!(this._xhr === void 0 || this._xhr === null)) {
-			if (this._xhr.onreadystatechange = ce, t) try {
+			if (this._xhr.onreadystatechange = oe, t) try {
 				this._xhr.abort();
 			} catch {}
 			typeof document < "u" && delete e.requests[this._index], this._xhr = null;
@@ -404,33 +404,33 @@ var le = class extends ae {
 		this._cleanup();
 	}
 };
-if (B.requestsCount = 0, B.requests = {}, typeof document < "u") {
-	if (typeof attachEvent == "function") attachEvent("onunload", ue);
+if (H.requestsCount = 0, H.requests = {}, typeof document < "u") {
+	if (typeof attachEvent == "function") attachEvent("onunload", ce);
 	else if (typeof addEventListener == "function") {
 		let e = "onpagehide" in O ? "pagehide" : "unload";
-		addEventListener(e, ue, !1);
+		addEventListener(e, ce, !1);
 	}
 }
-function ue() {
-	for (let e in B.requests) B.requests.hasOwnProperty(e) && B.requests[e].abort();
+function ce() {
+	for (let e in H.requests) H.requests.hasOwnProperty(e) && H.requests[e].abort();
 }
-var de = (function() {
-	let e = pe({ xdomain: !1 });
+var le = (function() {
+	let e = de({ xdomain: !1 });
 	return e && e.responseType !== null;
-})(), fe = class extends le {
+})(), ue = class extends se {
 	constructor(e) {
 		super(e);
 		let t = e && e.forceBase64;
-		this.supportsBinary = de && !t;
+		this.supportsBinary = le && !t;
 	}
 	request(e = {}) {
-		return Object.assign(e, { xd: this.xd }, this.opts), new B(pe, this.uri(), e);
+		return Object.assign(e, { xd: this.xd }, this.opts), new H(de, this.uri(), e);
 	}
 };
-function pe(e) {
+function de(e) {
 	let t = e.xdomain;
 	try {
-		if (typeof XMLHttpRequest < "u" && (!t || se)) return new XMLHttpRequest();
+		if (typeof XMLHttpRequest < "u" && (!t || ae)) return new XMLHttpRequest();
 	} catch {}
 	if (!t) try {
 		return new O[["Active", "Object"].join("X")]("Microsoft.XMLHTTP");
@@ -438,12 +438,12 @@ function pe(e) {
 }
 //#endregion
 //#region node_modules/engine.io-client/build/esm/transports/websocket.js
-var me = typeof navigator < "u" && typeof navigator.product == "string" && navigator.product.toLowerCase() === "reactnative", he = class extends z {
+var fe = typeof navigator < "u" && typeof navigator.product == "string" && navigator.product.toLowerCase() === "reactnative", pe = class extends B {
 	get name() {
 		return "websocket";
 	}
 	doOpen() {
-		let e = this.uri(), t = this.opts.protocols, n = me ? {} : A(this.opts, "agent", "perMessageDeflate", "pfx", "key", "passphrase", "cert", "ca", "ciphers", "rejectUnauthorized", "localAddress", "protocolVersion", "origin", "maxPayload", "family", "checkServerIdentity");
+		let e = this.uri(), t = this.opts.protocols, n = fe ? {} : A(this.opts, "agent", "perMessageDeflate", "pfx", "key", "passphrase", "cert", "ca", "ciphers", "rejectUnauthorized", "localAddress", "protocolVersion", "origin", "maxPayload", "family", "checkServerIdentity");
 		this.opts.extraHeaders && (n.headers = this.opts.extraHeaders);
 		try {
 			this.ws = this.createSocket(e, t, n);
@@ -481,16 +481,16 @@ var me = typeof navigator < "u" && typeof navigator.product == "string" && navig
 		let e = this.opts.secure ? "wss" : "ws", t = this.query || {};
 		return this.opts.timestampRequests && (t[this.opts.timestampParam] = L()), this.supportsBinary || (t.b64 = 1), this.createUri(e, t);
 	}
-}, V = O.WebSocket || O.MozWebSocket, ge = {
-	websocket: class extends he {
+}, me = O.WebSocket || O.MozWebSocket, he = {
+	websocket: class extends pe {
 		createSocket(e, t, n) {
-			return me ? new V(e, t, n) : t ? new V(e, t) : new V(e);
+			return fe ? new me(e, t, n) : t ? new me(e, t) : new me(e);
 		}
 		doWrite(e, t) {
 			this.ws.send(t);
 		}
 	},
-	webtransport: class extends z {
+	webtransport: class extends B {
 		get name() {
 			return "webtransport";
 		}
@@ -506,7 +506,7 @@ var me = typeof navigator < "u" && typeof navigator.product == "string" && navig
 				this.onError("webtransport error", e);
 			}), this._transport.ready.then(() => {
 				this._transport.createBidirectionalStream().then((e) => {
-					let t = ne(2 ** 53 - 1, this.socket.binaryType), n = e.readable.pipeThrough(t).getReader(), r = x();
+					let t = w(2 ** 53 - 1, this.socket.binaryType), n = e.readable.pipeThrough(t).getReader(), r = x();
 					r.readable.pipeTo(e.writable), this._writer = r.writable.getWriter();
 					let i = () => {
 						n.read().then(({ done: e, value: t }) => {
@@ -535,8 +535,8 @@ var me = typeof navigator < "u" && typeof navigator.product == "string" && navig
 			(e = this._transport) == null || e.close();
 		}
 	},
-	polling: fe
-}, _e = /^(?:(?![^:@\/?#]+:[^:@\/]*@)(http|https|ws|wss):\/\/)?((?:(([^:@\/?#]*)(?::([^:@\/?#]*))?)?@)?((?:[a-f0-9]{0,4}:){2,7}[a-f0-9]{0,4}|[^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/, ve = [
+	polling: ue
+}, ge = /^(?:(?![^:@\/?#]+:[^:@\/]*@)(http|https|ws|wss):\/\/)?((?:(([^:@\/?#]*)(?::([^:@\/?#]*))?)?@)?((?:[a-f0-9]{0,4}:){2,7}[a-f0-9]{0,4}|[^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/, _e = [
 	"source",
 	"protocol",
 	"authority",
@@ -552,12 +552,12 @@ var me = typeof navigator < "u" && typeof navigator.product == "string" && navig
 	"query",
 	"anchor"
 ];
-function H(e) {
+function ve(e) {
 	if (e.length > 8e3) throw "URI too long";
 	let t = e, n = e.indexOf("["), r = e.indexOf("]");
 	n != -1 && r != -1 && (e = e.substring(0, n) + e.substring(n, r).replace(/:/g, ";") + e.substring(r, e.length));
-	let i = _e.exec(e || ""), a = {}, o = 14;
-	for (; o--;) a[ve[o]] = i[o] || "";
+	let i = ge.exec(e || ""), a = {}, o = 14;
+	for (; o--;) a[_e[o]] = i[o] || "";
 	return n != -1 && r != -1 && (a.source = t, a.host = a.host.substring(1, a.host.length - 1).replace(/;/g, ":"), a.authority = a.authority.replace("[", "").replace("]", "").replace(/;/g, ":"), a.ipv6uri = !0), a.pathNames = ye(a, a.path), a.queryKey = be(a, a.query), a;
 }
 function ye(e, t) {
@@ -579,9 +579,9 @@ xe && addEventListener("offline", () => {
 var W = class e extends T {
 	constructor(e, t) {
 		if (super(), this.binaryType = k, this.writeBuffer = [], this._prevBufferLen = 0, this._pingInterval = -1, this._pingTimeout = -1, this._maxPayload = -1, this._pingTimeoutTime = Infinity, e && typeof e == "object" && (t = e, e = null), e) {
-			let n = H(e);
+			let n = ve(e);
 			t.hostname = n.host, t.secure = n.protocol === "https" || n.protocol === "wss", t.port = n.port, n.query && (t.query = n.query);
-		} else t.host && (t.hostname = H(t.host).host);
+		} else t.host && (t.hostname = ve(t.host).host);
 		N(this, t), this.secure = t.secure == null ? typeof location < "u" && location.protocol === "https:" : t.secure, t.hostname && !t.port && (t.port = this.secure ? "443" : "80"), this.hostname = t.hostname || (typeof location < "u" ? location.hostname : "localhost"), this.port = t.port || (typeof location < "u" && location.port ? location.port : this.secure ? "443" : "80"), this.transports = [], this._transportsByName = {}, t.transports.forEach((e) => {
 			let t = e.prototype.name;
 			this.transports.push(t), this._transportsByName[t] = e;
@@ -597,7 +597,7 @@ var W = class e extends T {
 			perMessageDeflate: { threshold: 1024 },
 			transportOptions: {},
 			closeOnBeforeunload: !1
-		}, t), this.opts.path = this.opts.path.replace(/\/$/, "") + (this.opts.addTrailingSlash ? "/" : ""), typeof this.opts.query == "string" && (this.opts.query = re(this.opts.query)), xe && (this.opts.closeOnBeforeunload && (this._beforeunloadEventListener = () => {
+		}, t), this.opts.path = this.opts.path.replace(/\/$/, "") + (this.opts.addTrailingSlash ? "/" : ""), typeof this.opts.query == "string" && (this.opts.query = z(this.opts.query)), xe && (this.opts.closeOnBeforeunload && (this._beforeunloadEventListener = () => {
 			this.transport && (this.transport.removeAllListeners(), this.transport.close());
 		}, addEventListener("beforeunload", this._beforeunloadEventListener, !1)), this.hostname !== "localhost" && (this._offlineEventListener = () => {
 			this._onClose("transport close", { description: "network connection lost" });
@@ -793,7 +793,7 @@ var Se = class extends W {
 			"polling",
 			"websocket",
 			"webtransport"
-		]).map((e) => ge[e]).filter((e) => !!e)), super(e, n);
+		]).map((e) => he[e]).filter((e) => !!e)), super(e, n);
 	}
 };
 Ce.protocol;
@@ -801,7 +801,7 @@ Ce.protocol;
 //#region node_modules/socket.io-client/build/esm/url.js
 function we(e, t = "", n) {
 	let r = e;
-	n ||= typeof location < "u" && location, e ??= n.protocol + "//" + n.host, typeof e == "string" && (e.charAt(0) === "/" && (e = e.charAt(1) === "/" ? n.protocol + e : n.host + e), /^(https?|wss?):\/\//.test(e) || (e = n === void 0 ? "https://" + e : n.protocol + "//" + e), r = H(e)), r.port || (/^(http|ws)$/.test(r.protocol) ? r.port = "80" : /^(http|ws)s$/.test(r.protocol) && (r.port = "443")), r.path = r.path || "/";
+	n ||= typeof location < "u" && location, e ??= n.protocol + "//" + n.host, typeof e == "string" && (e.charAt(0) === "/" && (e = e.charAt(1) === "/" ? n.protocol + e : n.host + e), /^(https?|wss?):\/\//.test(e) || (e = n === void 0 ? "https://" + e : n.protocol + "//" + e), r = ve(e)), r.port || (/^(http|ws)$/.test(r.protocol) ? r.port = "80" : /^(http|ws)s$/.test(r.protocol) && (r.port = "443")), r.path = r.path || "/";
 	let i = r.host.indexOf(":") === -1 ? r.host : "[" + r.host + "]";
 	return r.id = r.protocol + "://" + i + ":" + r.port + t, r.href = r.protocol + "://" + i + (n && n.port === r.port ? "" : ":" + r.port), r;
 }
@@ -1500,18 +1500,18 @@ var Je = "chatbot-package-styles", Ye = {
 	["path", { d: "M20 14h2" }],
 	["path", { d: "M15 13v2" }],
 	["path", { d: "M9 13v2" }]
-], ut = [["path", { d: "M21.801 10A10 10 0 1 1 17 3.335" }], ["path", { d: "m9 11 3 3L22 4" }]], dt = [["path", { d: "M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719" }]], ft = [["path", { d: "M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z" }], ["path", { d: "M6 12h16" }]], pt = [["circle", {
+], ut = [["path", { d: "M21.801 10A10 10 0 1 1 17 3.335" }], ["path", { d: "m9 11 3 3L22 4" }]], dt = [["path", { d: "M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719" }]], ft = [["path", { d: "M5 12h14" }], ["path", { d: "M12 5v14" }]], pt = [["path", { d: "M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z" }], ["path", { d: "M6 12h16" }]], mt = [["circle", {
 	cx: "12",
 	cy: "8",
 	r: "5"
-}], ["path", { d: "M20 21a8 8 0 0 0-16 0" }]], mt = [["path", { d: "M18 6 6 18" }], ["path", { d: "m6 6 12 12" }]], ht = ({ icons: e = {}, nameAttr: t = "data-lucide", attrs: n = {}, root: r = document, inTemplates: i } = {}) => {
+}], ["path", { d: "M20 21a8 8 0 0 0-16 0" }]], ht = [["path", { d: "M18 6 6 18" }], ["path", { d: "m6 6 12 12" }]], gt = ({ icons: e = {}, nameAttr: t = "data-lucide", attrs: n = {}, root: r = document, inTemplates: i } = {}) => {
 	if (!Object.values(e).length) throw Error("Please provide an icons object.\nIf you want to use all the icons you can import it like:\n `import { createIcons, icons } from 'lucide';\nlucide.createIcons({icons});`");
 	if (r === void 0) throw Error("`createIcons()` only works in a browser environment.");
 	if (Array.from(r.querySelectorAll(`[${t}]`)).forEach((r) => st(r, {
 		nameAttr: t,
 		icons: e,
 		attrs: n
-	})), i && Array.from(r.querySelectorAll("template")).forEach((r) => ht({
+	})), i && Array.from(r.querySelectorAll("template")).forEach((r) => gt({
 		icons: e,
 		nameAttr: t,
 		attrs: n,
@@ -1526,22 +1526,23 @@ var Je = "chatbot-package-styles", Ye = {
 		})));
 	}
 }, Q = () => {
-	ht({ icons: {
+	gt({ icons: {
 		Bot: lt,
 		MessageCircle: dt,
-		SendHorizontal: ft,
-		UserRound: pt,
-		X: mt,
+		SendHorizontal: pt,
+		UserRound: mt,
+		X: ht,
+		Plus: ft,
 		CheckCircle: ut,
 		ArrowLeft: ct
 	} });
-}, gt = (e) => {
+}, _t = (e) => {
 	let t = String(e || "").trim().replace(/\/+$/, "");
 	return !t || /^https?:\/\//i.test(t) ? t : t.startsWith("/") ? `${window.location.origin}${t}` : t;
-}, _t = (e) => e.startsWith("/") ? e : `/${e}`, vt = (e) => e.replace(/\/api\/?$/i, ""), yt = (e) => e && typeof e == "object" && "data" in e ? e.data : e, bt = (e) => {
+}, vt = (e) => e.startsWith("/") ? e : `/${e}`, yt = (e) => e.replace(/\/api\/?$/i, ""), bt = (e) => e && typeof e == "object" && "data" in e ? e.data : e, xt = (e) => {
 	let t = "chatbot_ai_history", n = e?.aiSupport?.apiKey || e?.humanSupport?.widgetKey || "";
 	return n ? `${t}:${n}` : typeof window < "u" ? `${t}:${window.location.origin}` : t;
-}, xt = (e) => {
+}, St = (e) => {
 	if (typeof localStorage > "u") return [];
 	try {
 		let t = localStorage.getItem(e);
@@ -1554,19 +1555,23 @@ var Je = "chatbot-package-styles", Ye = {
 	} catch {
 		return [];
 	}
-}, St = (e, t) => {
+}, Ct = (e, t) => {
 	if (!(typeof localStorage > "u")) try {
 		localStorage.setItem(e, JSON.stringify(t));
 	} catch {}
-}, Ct = (e, t, n) => {
-	t.push(n), St(e, t);
-}, wt = (e) => e.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"), Tt = (e) => e.replace(/^###\s+(.+)$/gm, "<div class=\"chatbot-md-h3\">$1</div>").replace(/^##\s+(.+)$/gm, "<div class=\"chatbot-md-h2\">$1</div>").replace(/^#\s+(.+)$/gm, "<div class=\"chatbot-md-h1\">$1</div>").replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, (e, t, n) => `<a href="${n}" target="_blank" rel="noopener noreferrer">${t}</a>`).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>").replace(/\*([^*]+)\*/g, "<em>$1</em>").replace(/`([^`]+)`/g, "<code>$1</code>").replace(/^\s*-\s+/gm, "• ").replace(/\n/g, "<br>"), Et = (e) => String(e || "").split(/```/).map((e, t) => t % 2 == 1 ? `<pre><code>${wt(e.trim())}</code></pre>` : Tt(wt(e))).join(""), $ = (e, t, n = !1) => {
+}, wt = (e, t, n) => {
+	t.push(n), Ct(e, t);
+}, Tt = (e, t) => {
+	if (t.splice(0, t.length), !(typeof localStorage > "u")) try {
+		localStorage.removeItem(e);
+	} catch {}
+}, Et = (e) => e.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"), Dt = (e) => e.replace(/^###\s+(.+)$/gm, "<div class=\"chatbot-md-h3\">$1</div>").replace(/^##\s+(.+)$/gm, "<div class=\"chatbot-md-h2\">$1</div>").replace(/^#\s+(.+)$/gm, "<div class=\"chatbot-md-h1\">$1</div>").replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, (e, t, n) => `<a href="${n}" target="_blank" rel="noopener noreferrer">${t}</a>`).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>").replace(/\*([^*]+)\*/g, "<em>$1</em>").replace(/`([^`]+)`/g, "<code>$1</code>").replace(/^\s*-\s+/gm, "• ").replace(/\n/g, "<br>"), Ot = (e) => String(e || "").split(/```/).map((e, t) => t % 2 == 1 ? `<pre><code>${Et(e.trim())}</code></pre>` : Dt(Et(e))).join(""), $ = (e, t, n = !1) => {
 	let r = document.createElement("div");
-	return r.className = `chatbot-bubble ${t}`, n ? r.innerHTML = Et(e) : r.textContent = e, r;
-}, Dt = (e, t, n) => {
+	return r.className = `chatbot-bubble ${t}`, n ? r.innerHTML = Ot(e) : r.textContent = e, r;
+}, kt = (e, t, n) => {
 	let r = document.createElement("button");
 	return r.type = "button", r.innerHTML = `<i data-lucide="${e}" aria-hidden="true"></i>`, r.setAttribute("aria-label", t), n && r.addEventListener("click", n), r;
-}, Ot = (e, t) => {
+}, At = (e, t) => {
 	let n = document.createElement("header");
 	n.className = "chatbot-header";
 	let r = document.createElement("div");
@@ -1585,12 +1590,12 @@ var Je = "chatbot-package-styles", Ye = {
 	l.textContent = e.subtitle, s.append(c, l), a.append(o, s), r.append(i, a);
 	let u = document.createElement("div");
 	u.className = "chatbot-controls";
-	let d = Dt("x", "Close chat", t);
+	let d = kt("x", "Close chat", t);
 	return u.append(d), n.append(r, u), {
 		header: n,
 		statusText: l
 	};
-}, kt = (e) => {
+}, jt = (e) => {
 	let t = document.createElement("div");
 	t.className = "chatbot-body";
 	let n = document.createElement("section");
@@ -1619,7 +1624,7 @@ var Je = "chatbot-package-styles", Ye = {
 		humanDivider: d,
 		messages: f
 	};
-}, At = (e) => {
+}, Mt = (e) => {
 	let t = document.createElement("div");
 	t.className = "chatbot-footer";
 	let n = document.createElement("form");
@@ -1637,7 +1642,7 @@ var Je = "chatbot-package-styles", Ye = {
 		input: r,
 		humanButton: a
 	};
-}, jt = () => {
+}, Nt = () => {
 	let e = document.createElement("div");
 	e.className = "chatbot-human-container";
 	let t = document.createElement("div");
@@ -1680,7 +1685,7 @@ var Je = "chatbot-package-styles", Ye = {
 		cancelBtn: u,
 		successBackBtn: g
 	};
-}, Mt = (e = {}) => {
+}, Pt = (e = {}) => {
 	if (typeof window > "u" || typeof document > "u") throw Error("chatbot-package can only run in a browser environment.");
 	Ze();
 	let t = {
@@ -1692,17 +1697,17 @@ var Je = "chatbot-package-styles", Ye = {
 	r.type = "button", r.className = "chatbot-launcher", r.setAttribute("aria-label", "Open chatbot"), r.setAttribute("aria-expanded", "false"), r.innerHTML = "<i data-lucide=\"message-circle\" aria-hidden=\"true\"></i>";
 	let i = document.createElement("section");
 	i.className = "chatbot-panel", i.setAttribute("role", "dialog"), i.setAttribute("aria-label", t.title);
-	let { header: a, statusText: o } = Ot(t, () => {
+	let { header: a, statusText: o } = At(t, () => {
 		n.classList.remove("open"), r.setAttribute("aria-expanded", "false");
-	}), { body: s, humanDivider: c, messages: l } = kt(t), { footer: u, inputRow: d, input: f, humanButton: p } = At(t), m = "<i data-lucide=\"user-round\" aria-hidden=\"true\"></i><span>Talk to a real human</span>", h = "<i data-lucide=\"bot\" aria-hidden=\"true\"></i><span>Talk to AI</span>";
+	}), { body: s, humanDivider: c, messages: l } = jt(t), { footer: u, inputRow: d, input: f, humanButton: p } = Mt(t), m = "<i data-lucide=\"user-round\" aria-hidden=\"true\"></i><span>Talk to a real human</span>", h = "<i data-lucide=\"bot\" aria-hidden=\"true\"></i><span>Talk to AI</span>";
 	p.innerHTML = m;
-	let { humanContainer: g, humanForm: _, cancelBtn: ee, successBackBtn: te } = jt(), v = bt(e), y = xt(v), b = Math.max(y.length - 30, 0), x = !1, S = () => l.contains(c) ? c.nextSibling : l.firstChild, C = () => {
+	let { humanContainer: g, humanForm: _, cancelBtn: ee, successBackBtn: te } = Nt(), v = xt(e), y = St(v), b = Math.max(y.length - 30, 0), x = !1, ne = () => l.contains(c) ? c.nextSibling : l.firstChild, S = () => {
 		l.innerHTML = "";
 		let e = y.slice(b);
 		e.length !== 0 && (s.classList.add("has-messages"), e.forEach((e) => {
 			l.appendChild($(e.text, e.role, e.role === "bot"));
 		}), s.scrollTop = s.scrollHeight);
-	}, w = () => {
+	}, C = () => {
 		if (x || b === 0) return;
 		x = !0;
 		let e = Math.max(b - 30, 0), t = y.slice(e, b);
@@ -1710,22 +1715,41 @@ var Je = "chatbot-package-styles", Ye = {
 			x = !1;
 			return;
 		}
-		let n = s.scrollHeight, r = s.scrollTop, i = S();
+		let n = s.scrollHeight, r = s.scrollTop, i = ne();
 		t.forEach((e) => {
 			l.insertBefore($(e.text, e.role, e.role === "bot"), i);
 		}), b = e, s.scrollTop = r + (s.scrollHeight - n), x = !1;
-	}, ne = () => {
-		b !== 0 && s.scrollTop <= 12 && w();
+	}, w = () => {
+		b !== 0 && s.scrollTop <= 12 && C();
 	};
-	y.length > 0 && C(), s.addEventListener("scroll", ne), i.append(a, s, u, g), n.append(i, r), document.body.appendChild(n), Q();
+	y.length > 0 && S(), s.addEventListener("scroll", w), i.append(a, s, u, g), n.append(i, r), document.body.appendChild(n), Q();
 	let T = !1, E = !1, D = !1, O = !1, k = !1, A = !1, j = !1, M = null, N = null, P = null, F = /* @__PURE__ */ new Set(), I = (e, t) => {
-		e.trim() && (s.classList.add("has-messages"), l.appendChild($(e.trim(), "bot", t?.markdown ?? !1)), s.scrollTop = s.scrollHeight, t?.store && !D && Ct(v, y, {
+		e.trim() && (s.classList.add("has-messages"), l.appendChild($(e.trim(), "bot", t?.markdown ?? !1)), s.scrollTop = s.scrollHeight, t?.store && !D && wt(v, y, {
 			role: "bot",
 			text: e.trim()
 		}));
 	}, L = (e) => {
 		s.classList.toggle("human-mode", e), e ? (l.contains(c) || l.insertBefore(c, l.firstChild), p.innerHTML = h) : (l.contains(c) && c.remove(), p.innerHTML = m), Q();
-	}, R = (e) => {
+	}, R = a.querySelector(".chatbot-controls");
+	if (R) {
+		let e = document.createElement("button");
+		e.type = "button", e.setAttribute("aria-label", "Clear AI chat"), e.innerHTML = "<i data-lucide=\"x\" aria-hidden=\"true\"></i>", R.appendChild(e);
+		let n = document.createElement("button");
+		n.type = "button", n.setAttribute("aria-label", "Start new human session"), n.innerHTML = "<i data-lucide=\"plus\" aria-hidden=\"true\"></i>", R.appendChild(n);
+		let r = (t) => {
+			e.style.display = t ? "none" : "grid", n.style.display = t ? "grid" : "none";
+		};
+		r(!1), e.addEventListener("click", () => {
+			D || (Tt(v, y), b = Math.max(y.length - 30, 0), l.innerHTML = "", s.classList.remove("has-messages"), l.appendChild($(t.welcomeMessage, "bot", !0)), s.scrollTop = s.scrollHeight);
+		}), n.addEventListener("click", () => {
+			M &&= (M.close(), null), N = null, P = null, D = !1, O = !1, A = !1, j = !0, l.innerHTML = "", y.length > 0 ? (b = Math.max(y.length - 30, 0), S()) : (l.appendChild($(t.welcomeMessage, "bot", !0)), s.classList.add("has-messages")), L(!0), I("Please describe the issue you are facing."), p.innerHTML = h, Q();
+		});
+		let i = L;
+		L = (e) => {
+			i(e), r(e);
+		};
+	}
+	let z = (e) => {
 		E || (T = e, n.classList.toggle("open", T), r.setAttribute("aria-expanded", String(T)), T && window.setTimeout(() => f.focus(), 0));
 	}, re = async (n) => {
 		if (D && M) {
@@ -1739,7 +1763,7 @@ var Je = "chatbot-package-styles", Ye = {
 		}
 		if (e.aiSupport) {
 			try {
-				let t = gt(e.aiSupport.apiBaseUrl), r = _t(e.aiSupport.chatPath || "/rag/chat"), i = await fetch(`${t}${r}`, {
+				let t = _t(e.aiSupport.apiBaseUrl), r = vt(e.aiSupport.chatPath || "/rag/chat"), i = await fetch(`${t}${r}`, {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
@@ -1748,7 +1772,7 @@ var Je = "chatbot-package-styles", Ye = {
 					body: JSON.stringify({ query: n })
 				});
 				if (!i.ok) throw Error("Unable to fetch chatbot response right now.");
-				let a = yt(await i.json());
+				let a = bt(await i.json());
 				if (I(typeof a?.answer == "string" && a.answer || typeof a?.response == "string" && a.response || typeof a?.message == "string" && a.message || "I processed your question, but no answer text was returned.", {
 					markdown: !0,
 					store: !0
@@ -1773,14 +1797,14 @@ var Je = "chatbot-package-styles", Ye = {
 			return;
 		}
 		I(`Thanks! ${t.botName} received: "${n}"`, { store: !0 });
-	}, ie = async (n) => {
+	}, B = async (n) => {
 		if (!t.humanSupport) {
 			I("Human support is not configured for this widget yet.");
 			return;
 		}
 		let r = t.humanSupport.widgetKey || e.aiSupport?.apiKey;
 		if (!r) throw Error("Human support requires a widget key or aiSupport.apiKey.");
-		let i = gt(t.humanSupport.apiBaseUrl), a = await fetch(`${i}/widget/session`, {
+		let i = _t(t.humanSupport.apiBaseUrl), a = await fetch(`${i}/widget/session`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
@@ -1795,9 +1819,9 @@ var Je = "chatbot-package-styles", Ye = {
 			let e = await a.json().catch(() => null), t = e?.message || e?.error || "Unable to connect to human support right now.";
 			throw Error(t);
 		}
-		let s = yt(await a.json());
+		let s = bt(await a.json());
 		N = s.sessionId, P = s.ticketId, D = !0, L(!0);
-		let c = Z(vt(i), {
+		let c = Z(yt(i), {
 			path: "/socket.io",
 			transports: ["websocket"],
 			auth: { token: s.chatToken }
@@ -1823,16 +1847,16 @@ var Je = "chatbot-package-styles", Ye = {
 			email: n.email,
 			issue: n.issue
 		}), o.textContent = "Connecting to a human agent...";
-	}, z = async (e) => {
+	}, V = async (e) => {
 		let t = e.trim();
 		if (!(!t || E)) {
 			if (j) {
-				s.classList.add("has-messages"), L(!0), l.appendChild($(t, "user")), D || Ct(v, y, {
+				s.classList.add("has-messages"), L(!0), l.appendChild($(t, "user")), D || wt(v, y, {
 					role: "user",
 					text: t
 				}), f.value = "", s.scrollTop = s.scrollHeight, j = !1;
 				try {
-					await ie({
+					await B({
 						name: "Website Visitor",
 						email: "",
 						issue: t
@@ -1842,18 +1866,18 @@ var Je = "chatbot-package-styles", Ye = {
 				}
 				return;
 			}
-			s.classList.add("has-messages"), L(D), l.appendChild($(t, "user")), D || Ct(v, y, {
+			s.classList.add("has-messages"), L(D), l.appendChild($(t, "user")), D || wt(v, y, {
 				role: "user",
 				text: t
 			}), f.value = "", s.scrollTop = s.scrollHeight, await re(t);
 		}
 	};
 	return r.addEventListener("click", () => {
-		R(!T);
+		z(!T);
 	}), d.addEventListener("submit", async (e) => {
-		e.preventDefault(), await z(f.value);
+		e.preventDefault(), await V(f.value);
 	}), f.addEventListener("keydown", async (e) => {
-		e.key === "Enter" && !e.shiftKey && (e.preventDefault(), await z(f.value));
+		e.key === "Enter" && !e.shiftKey && (e.preventDefault(), await V(f.value));
 	}), p.addEventListener("click", async () => {
 		if (D) {
 			D = !1, O = !1, j = !1, L(!1), I("You are now chatting with AI again.");
@@ -1875,14 +1899,14 @@ var Je = "chatbot-package-styles", Ye = {
 	}), te.addEventListener("click", () => {
 		n.classList.remove("show-human-form"), n.classList.remove("show-human-success"), _.reset(), s.classList.add("has-messages"), l.appendChild($(D && P ? O ? `You are now connected with our support team (ticket ${P.slice(-6)}).` : `Your ticket ${P.slice(-6)} is waiting for an available human agent.` : "Your issue has been submitted. A human agent will contact you soon.", "bot")), s.scrollTop = s.scrollHeight;
 	}), {
-		open: () => R(!0),
-		close: () => R(!1),
-		toggle: () => R(!T),
-		sendMessage: z,
+		open: () => z(!0),
+		close: () => z(!1),
+		toggle: () => z(!T),
+		sendMessage: V,
 		destroy: () => {
-			E || (E = !0, s.removeEventListener("scroll", ne), M &&= (M.close(), null), n.remove());
+			E || (E = !0, s.removeEventListener("scroll", w), M &&= (M.close(), null), n.remove());
 		}
 	};
 };
 //#endregion
-export { Mt as createChatbotWidget };
+export { Pt as createChatbotWidget };
