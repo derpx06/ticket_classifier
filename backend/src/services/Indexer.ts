@@ -26,19 +26,25 @@ export class IndexerService {
         }
     }
 
-    async indexPages(pages: { url: string; title: string; content: string }[]): Promise<number> {
+    async indexPages(
+        pages: { url: string; title: string; content: string }[],
+        options?: { companyId?: number; websiteId?: number | null; baseUrl?: string | null },
+    ): Promise<number> {
         if (pages.length === 0) return 0;
         await this.init();
 
         // 1. Store Sitemap in MongoDB for navigation awareness
         try {
             const { sitemaps } = await getCollections();
-            const companyId = 1; // Default for now
+            const companyId = options?.companyId ?? 1;
+            const websiteId = options?.websiteId ?? null;
+            const baseUrl = options?.baseUrl ?? null;
             await sitemaps.updateOne(
-                { companyId },
+                { companyId, websiteId },
                 {
                     $set: {
                         pages: pages.map(p => ({ url: p.url, title: p.title })),
+                        baseUrl,
                         updatedAt: new Date()
                     }
                 },
@@ -84,7 +90,8 @@ export class IndexerService {
                         source: doc.metadata.source,
                         title: doc.metadata.title,
                         chunkIndex: doc.metadata.chunkIndex,
-                        companyId: 1
+                        companyId: options?.companyId ?? 1,
+                        websiteId: options?.websiteId ?? null,
                     },
                 }));
 
@@ -102,13 +109,27 @@ export class IndexerService {
         return docs.length;
     }
 
-    async similaritySearch(query: string, k: number = 5): Promise<LangChainDocument[]> {
+    async similaritySearch(
+        query: string,
+        k: number = 5,
+        filter?: { companyId?: number; websiteId?: number | null },
+    ): Promise<LangChainDocument[]> {
         await this.init();
         const queryVector = await this.embeddings.embedQuery(query);
         const results = await qdrant.search(COLLECTION_NAME, {
             vector: queryVector,
             limit: k,
             with_payload: true,
+            filter: filter?.companyId
+                ? {
+                    must: [
+                        { key: 'companyId', match: { value: filter.companyId } },
+                        ...(filter.websiteId !== undefined
+                            ? [{ key: 'websiteId', match: { value: filter.websiteId } }]
+                            : []),
+                    ],
+                }
+                : undefined,
         });
 
         return results.map(r => new LangChainDocument({

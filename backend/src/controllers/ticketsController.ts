@@ -3,6 +3,7 @@ import { ObjectId } from "mongodb";
 import { getCollections } from "../config/db";
 import { createTicketSchema } from "../schemas/ticketSchemas";
 import { emitRealtimeMessageFromHttp, emitRealtimeTicketStatusFromHttp } from "../services/chatSocketServer";
+import { ragEngine } from "../services/RAGEngine";
 import { resolveAssignedRole } from "../utils/roleAssignment";
 import { ticketVectorService } from "../services/TicketVectorService";
 
@@ -68,10 +69,12 @@ async function insertTicketFromInput(
 
   const targetCompanyId = company.id;
   const assignedRole = await resolveAssignedRole(targetCompanyId, input.category, input.message);
+  const triage = ragEngine.triageIssue(input.message);
+  const summaryText = triage.summary || input.message;
 
   const ticketDoc = {
     companyId: targetCompanyId,
-    message: input.message,
+    message: summaryText,
     category: normalizeCategory(input.category) ?? "other",
     priority: normalizePriority(input.priority) ?? "medium",
     urgency: normalizePriority(input.urgency) ?? "medium",

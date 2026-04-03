@@ -22,6 +22,14 @@ export class TicketVectorService {
   private async init(): Promise<void> {
     if (!this.ready) {
       await ensureTicketsCollection();
+      try {
+        await qdrant.createPayloadIndex(TICKETS_COLLECTION_NAME, {
+          field_name: "companyId",
+          field_schema: "integer",
+        });
+      } catch (error) {
+        // ignore if index already exists
+      }
       this.ready = true;
     }
   }

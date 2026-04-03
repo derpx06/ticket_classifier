@@ -17,6 +17,45 @@ import jwt from 'jsonwebtoken';
 
 const router = Router();
 
+const normalizeBaseUrl = (input?: string): string => {
+    try {
+        if (!input) return '';
+        const url = new URL(input);
+        return url.origin;
+    } catch {
+        return '';
+    }
+};
+
+const getOrCreateKnowledgeSite = async (
+    companyId: number,
+    baseUrl: string,
+    label?: string,
+) => {
+    const normalized = normalizeBaseUrl(baseUrl);
+    if (!normalized) return null;
+    const { knowledgeSites } = await getCollections();
+    const existing = await knowledgeSites.findOne({ companyId, baseUrl: normalized });
+    if (existing) {
+        if (label && label.trim() && existing.label !== label.trim()) {
+            const nextLabel = label.trim();
+            await knowledgeSites.updateOne(
+                { companyId, id: existing.id },
+                { $set: { label: nextLabel, updatedAt: new Date() } },
+            );
+            return { ...existing, label: nextLabel };
+        }
+        return existing;
+    }
+    const id = await nextSequence('knowledge_sites');
+    const now = new Date();
+    const derivedLabel = new URL(normalized).hostname;
+    const finalLabel = label?.trim() || derivedLabel;
+    const doc = { id, companyId, baseUrl: normalized, label: finalLabel, createdAt: now, updatedAt: now };
+    await knowledgeSites.insertOne(doc);
+    return doc;
+};
+
 /**
  * Resolve chat company from API key (external widget) or JWT (dashboard)
  */
@@ -31,6 +70,7 @@ const resolveChatCompany = async (req: Request, res: Response, next: NextFunctio
                 return res.status(401).json({ error: 'Invalid or inactive API Key' });
             }
             (req as any).chatCompanyId = keyDoc.companyId;
+            (req as any).chatWebsiteId = keyDoc.websiteId ?? null;
             return next();
         } catch {
             return res.status(500).json({ error: 'Auth error' });
@@ -61,12 +101,13 @@ const resolveChatCompany = async (req: Request, res: Response, next: NextFunctio
 router.post('/chat', resolveChatCompany, async (req: Request, res: Response) => {
     const { query, sessionId } = req.body;
     const companyId = Number((req as any).chatCompanyId);
+    const websiteId = (req as any).chatWebsiteId ?? null;
     if (!Number.isFinite(companyId) || companyId <= 0) {
         return res.status(401).json({ error: 'Unable to resolve company context.' });
     }
 
     try {
-        const result = await ragEngine.answerTicket(query, sessionId, companyId);
+        const result = await ragEngine.answerTicket(query, sessionId, companyId, websiteId);
         if (result?.raise_ticket && result?.ticket_payload) {
             try {
                 const { users } = await getCollections();
@@ -125,7 +166,7 @@ router.post('/chat', resolveChatCompany, async (req: Request, res: Response) => 
                     await ticketVectorService.upsertTicket({
                         ticketId: ticketId.toString(),
                         companyId,
-                        message: ticketDoc.message,
+                        message: result.ticket_payload.customer_message || query,
                         category: ticketDoc.category,
                         priority: ticketDoc.priority,
                         customerName: ticketDoc.customerName,
@@ -159,9 +200,9 @@ router.get('/knowledge-base', requireAuth, async (req: Request, res: Response) =
             return res.status(401).json({ error: 'Authentication required.' });
         }
 
-        const { sitemaps } = await getCollections();
-        const sitemapDoc = await sitemaps.findOne({ companyId });
-        const pages = Array.isArray(sitemapDoc?.pages) ? sitemapDoc.pages : [];
+        const { sitemaps, knowledgeSites } = await getCollections();
+        const sites = await knowledgeSites.find({ companyId }).toArray();
+        const sitemapDocs = await sitemaps.find({ companyId }).toArray();
 
         let vectorCount = 0;
         try {
@@ -171,10 +212,35 @@ router.get('/knowledge-base', requireAuth, async (req: Request, res: Response) =
             console.error('[KnowledgeBase] Qdrant info fetch failed:', err);
         }
 
+        const sitePayloads = sites.map((site) => {
+            const siteSitemap = sitemapDocs.find((doc) => doc.websiteId === site.id);
+            const pages = Array.isArray(siteSitemap?.pages) ? siteSitemap.pages : [];
+            return {
+                id: site.id,
+                label: site.label,
+                baseUrl: site.baseUrl,
+                totalPages: pages.length,
+                pages,
+            };
+        });
+
+        if (sitePayloads.length === 0) {
+            const fallbackSitemap = sitemapDocs.find((doc) => doc.websiteId == null);
+            const pages = Array.isArray(fallbackSitemap?.pages) ? fallbackSitemap.pages : [];
+            if (pages.length > 0) {
+                sitePayloads.push({
+                    id: null,
+                    label: fallbackSitemap?.baseUrl || 'Default',
+                    baseUrl: fallbackSitemap?.baseUrl || '',
+                    totalPages: pages.length,
+                    pages,
+                });
+            }
+        }
+
         return res.status(200).json({
-            pages,
-            totalPages: pages.length,
             vectorCount,
+            sites: sitePayloads,
         });
     } catch (error) {
         console.error('Knowledge base fetch error:', error);
@@ -187,7 +253,19 @@ router.get('/knowledge-base', requireAuth, async (req: Request, res: Response) =
  * POST /api/rag/crawl
  */
 router.post('/crawl', requireAuth, async (req: Request, res: Response) => {
-    const { url, maxPages, depthLimit, useAdvanced, useAI, auth, excludePatterns, privacyPatterns, seedUrls } = req.body;
+    const {
+        url,
+        maxPages,
+        depthLimit,
+        useAdvanced,
+        useAI,
+        auth,
+        excludePatterns,
+        privacyPatterns,
+        seedUrls,
+        websiteId,
+        websiteLabel,
+    } = req.body;
 
     if (!url) {
         return res.status(400).json({ error: 'URL is required' });
@@ -213,8 +291,33 @@ router.post('/crawl', requireAuth, async (req: Request, res: Response) => {
             });
         }
 
+        const { knowledgeSites } = await getCollections();
+        let site = null as any;
+        if (websiteId) {
+            const siteId = Number(websiteId);
+            if (Number.isFinite(siteId)) {
+                site = await knowledgeSites.findOne({ companyId: req.auth.companyId, id: siteId });
+                if (site && site.baseUrl) {
+                    const normalized = normalizeBaseUrl(url);
+                    if (normalized && site.baseUrl !== normalized) {
+                        await knowledgeSites.updateOne(
+                            { companyId: req.auth.companyId, id: siteId },
+                            { $set: { baseUrl: normalized, updatedAt: new Date() } },
+                        );
+                        site = { ...site, baseUrl: normalized };
+                    }
+                }
+            }
+        }
+        if (!site) {
+            site = await getOrCreateKnowledgeSite(req.auth.companyId, url, websiteLabel);
+        }
         console.log(`Indexing ${pages.length} pages...`);
-        const chunksCreated = await indexerService.indexPages(pages);
+        const chunksCreated = await indexerService.indexPages(pages, {
+            companyId: req.auth.companyId,
+            websiteId: site?.id ?? null,
+            baseUrl: site?.baseUrl ?? null,
+        });
 
         return res.status(200).json({
             message: 'Crawl and indexing complete',
@@ -295,6 +398,42 @@ router.delete('/knowledge-base', requireAuth, async (req: Request, res: Response
 });
 
 /**
+ * Create a knowledge site entry (label + base URL)
+ */
+router.post('/knowledge-sites', requireAuth, requireAdmin, async (req: Request, res: Response) => {
+    const companyId = req.auth?.companyId;
+    if (!companyId) return res.status(401).json({ error: 'Authentication required.' });
+    const label = String(req.body?.label ?? '').trim();
+    const baseUrl = String(req.body?.baseUrl ?? '').trim();
+    if (!label) return res.status(400).json({ error: 'Website name is required.' });
+    if (!baseUrl) return res.status(400).json({ error: 'Website URL is required.' });
+
+    try {
+        const normalized = normalizeBaseUrl(baseUrl);
+        if (!normalized) return res.status(400).json({ error: 'Invalid website URL.' });
+        const { knowledgeSites } = await getCollections();
+        const existing = await knowledgeSites.findOne({ companyId, baseUrl: normalized });
+        if (existing) {
+            if (existing.label !== label) {
+                await knowledgeSites.updateOne(
+                    { companyId, id: existing.id },
+                    { $set: { label, updatedAt: new Date() } },
+                );
+            }
+            return res.status(200).json({ data: { ...existing, label } });
+        }
+        const id = await nextSequence('knowledge_sites');
+        const now = new Date();
+        const doc = { id, companyId, baseUrl: normalized, label, createdAt: now, updatedAt: now };
+        await knowledgeSites.insertOne(doc);
+        return res.status(201).json({ data: doc });
+    } catch (err) {
+        console.error('Create knowledge site error:', err);
+        return res.status(500).json({ error: 'Failed to create website.' });
+    }
+});
+
+/**
  * --- API Key Management ---
  */
 
@@ -311,11 +450,18 @@ router.get('/api-keys', requireAuth, async (req: Request, res: Response) => {
 });
 
 router.post('/api-keys', requireAuth, requireAdmin, async (req: Request, res: Response) => {
-    const { label } = req.body;
+    const { label, websiteId } = req.body;
     const companyId = req.auth?.companyId;
     if (!companyId) return res.status(401).json({ error: 'Authentication required.' });
     try {
-        const { apiKeys } = await getCollections();
+        const { apiKeys, knowledgeSites } = await getCollections();
+        let siteId: number | null = websiteId ? Number(websiteId) : null;
+        if (siteId) {
+            const site = await knowledgeSites.findOne({ id: siteId, companyId });
+            if (!site) {
+                return res.status(400).json({ error: 'Invalid website selection.' });
+            }
+        }
         const keyId = await nextSequence("api_keys");
         const key = crypto.randomBytes(32).toString('hex');
 
@@ -324,6 +470,7 @@ router.post('/api-keys', requireAuth, requireAdmin, async (req: Request, res: Re
             companyId,
             key,
             label: label || 'New API Key',
+            websiteId: siteId ?? null,
             isActive: true,
             createdAt: new Date()
         };
