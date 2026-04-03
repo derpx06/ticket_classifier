@@ -64,7 +64,26 @@ npm run cli -- hello
 ```
 
 Each command asks for required parameters after command trigger.
-Example: `npm run cli -- crawl` will ask URL and crawl depth interactively.
+Example: `npm run cli -- crawl` will ask codebase path, scan mode, test-file inclusion, and output folder.
+
+`crawl` now performs non-AI static extraction and writes a full report folder containing:
+
+- `repo-map.json`
+- `summary.json`
+- `apis.json`
+- `pages.json`
+- `components.json`
+- `content.json`
+- `config.json`
+- `calls.json`
+- `linkages.json`
+- `knowledge-chunks.json`
+- `tooling.json`
+- `server-actions.json` (Next.js/`use server` action discovery)
+- `i18n-map.json` (translation key usage + locale coverage)
+- `dropped-files.json` (low-signal files filtered with reasons)
+- `extraction-health.json` (coverage checks + warnings)
+- `crawl-report.mdx`
 
 ## Build
 

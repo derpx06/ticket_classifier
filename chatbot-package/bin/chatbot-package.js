@@ -6,6 +6,7 @@ import figlet from "figlet";
 import gradient from "gradient-string";
 import ora from "ora";
 import { input, password, select, confirm } from "@inquirer/prompts";
+import { runCodebaseCrawl } from "./modules/crawl-codebase.js";
 
 const command = process.argv[2];
 
@@ -76,7 +77,6 @@ const printHelp = () => {
         "  classify   Classify one support message",
         "  ask        Draft support answer + guidance",
         "  navigate   Generate step-by-step navigation",
-        "  act        Pick and simulate API action",
         "  status     Show current CLI readiness",
         "  hello      Quick hello test",
         "  help       Show this help",
@@ -114,6 +114,10 @@ const runCrawl = async () => {
     message: "Include test files in exploration?",
     default: false,
   });
+  const outputBaseDir = await input({
+    message: "Output base folder:",
+    default: "./supporthub-output",
+  });
 
   await runCinematicLoader([
     { label: "Resolving codebase root", ms: 420 },
@@ -122,11 +126,25 @@ const runCrawl = async () => {
     { label: "Building support knowledge map", ms: 430 },
   ]);
 
+  const crawlSpinner = ora(chalk.cyan("Running static codebase extraction...")).start();
+  const result = await runCodebaseCrawl({
+    rootDir: codebasePath,
+    scanMode,
+    includeTests,
+    outputDir: outputBaseDir,
+  });
+  crawlSpinner.succeed(chalk.green("Extraction completed successfully."));
+
   doneBox("Crawl Summary", [
     `Path: ${chalk.yellow(codebasePath)}`,
     `Mode: ${chalk.yellow(scanMode)}`,
     `Include tests: ${chalk.yellow(String(includeTests))}`,
-    "Output: codebase map + route/feature/API hints (mock)",
+    `Scanned files: ${chalk.yellow(String(result.summary.totalFiles))}`,
+    `APIs: ${chalk.yellow(String(result.summary.apiCount))}`,
+    `Pages: ${chalk.yellow(String(result.summary.pageCount))}`,
+    `Components: ${chalk.yellow(String(result.summary.componentCount))}`,
+    `Output folder: ${chalk.yellow(result.outputDir)}`,
+    "Generated: repo-map.json, summary.json, apis.json, pages.json, components.json, content.json, config.json, calls.json, linkages.json, knowledge-chunks.json, tooling.json, server-actions.json, i18n-map.json, dropped-files.json, extraction-health.json, crawl-report.mdx",
   ]);
 };
 
@@ -277,33 +295,6 @@ const runNavigate = async () => {
   ]);
 };
 
-const runAct = async () => {
-  const action = await select({
-    message: "Choose action to simulate:",
-    choices: [
-      { name: "Check order status", value: "check_order_status" },
-      { name: "Update profile", value: "update_profile" },
-      { name: "Create support ticket", value: "create_ticket" },
-    ],
-  });
-  const userId = await input({
-    message: "User ID:",
-    default: "user_123",
-  });
-
-  await runCinematicLoader([
-    { label: "Resolving action handler", ms: 400 },
-    { label: "Preparing API request", ms: 430 },
-    { label: "Executing safe simulation", ms: 500 },
-  ]);
-
-  doneBox("Action Output", [
-    `Action: ${chalk.yellow(action)}`,
-    `User ID: ${chalk.yellow(userId)}`,
-    "Result: simulated API response",
-  ]);
-};
-
 const runStatus = async () => {
   await runCinematicLoader([
     { label: "Pinging local modules", ms: 300 },
@@ -338,7 +329,6 @@ const main = async () => {
   if (command === "classify") return runClassify();
   if (command === "ask") return runAsk();
   if (command === "navigate") return runNavigate();
-  if (command === "act") return runAct();
   if (command === "status") return runStatus();
 
   console.error(chalk.red(`Unknown command: ${command}`));

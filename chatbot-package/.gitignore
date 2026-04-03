@@ -6,9 +6,10 @@ dist/
 dist-ssr/
 coverage/
 *.tsbuildinfo
-
+ 
 # Package artifacts
 *.tgz
+supporthub-output/
 
 # Env and local config
 .env
