@@ -1,4 +1,5 @@
 import { MongoClient, type Collection, type Db } from "mongodb";
+import { randomUUID } from "crypto";
 import { env } from "./env";
 import { defaultEmployeePermissions, type RolePermissions } from "../utils/permissions";
 
@@ -7,6 +8,7 @@ type BaseTeamRole = "employee" | "manager";
 
 export type CompanyDoc = {
   id: number;
+  uuid: string;
   name: string;
   countryCode: string | null;
   about: string | null;
@@ -106,6 +108,10 @@ async function ensureIndexes(database: Db): Promise<void> {
 
   await Promise.all([
     companies.createIndex({ id: 1 }, { unique: true }),
+    companies.createIndex(
+      { uuid: 1 },
+      { unique: true, sparse: true, partialFilterExpression: { uuid: { $type: "string" } } },
+    ),
     users.createIndex({ id: 1 }, { unique: true }),
     users.createIndex({ email: 1 }, { unique: true }),
     users.createIndex({ companyId: 1 }),
@@ -123,6 +129,30 @@ async function ensureIndexes(database: Db): Promise<void> {
   indexesReady = true;
 }
 
+async function ensureCompanyUuids(database: Db): Promise<void> {
+  const { companies } = collections(database);
+  const missing = await companies
+    .find(
+      {
+        $or: [{ uuid: { $exists: false } }, { uuid: { $type: "null" } }, { uuid: "" }],
+      },
+      { projection: { id: 1 } },
+    )
+    .toArray();
+
+  for (const company of missing) {
+    await companies.updateOne(
+      {
+        id: company.id,
+        $or: [{ uuid: { $exists: false } }, { uuid: { $type: "null" } }, { uuid: "" }],
+      },
+      {
+        $set: { uuid: randomUUID() },
+      },
+    );
+  }
+}
+
 export async function connectDb(): Promise<void> {
   if (db) {
     return;
@@ -136,6 +166,7 @@ export async function connectDb(): Promise<void> {
     await client.connect();
     db = client.db(env.mongodbDbName);
     await ensureIndexes(db);
+    await ensureCompanyUuids(db);
 
     const { companyRoles } = collections(db);
     await companyRoles.updateMany(

@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import teamService from '../../services/teamService';
-import { UsersRound, Plus, Pencil, Trash2, ShieldCheck, Settings2 } from 'lucide-react';
+import { UsersRound, Plus, Pencil, Trash2, ShieldCheck, Settings2, Copy } from 'lucide-react';
 import { SkeletonBlock } from '../../components/feedback/Skeleton';
+import { useAuth } from '../../hooks/useAuth';
 
 const TeamsSkeleton = () => (
   <div className="space-y-8">
@@ -64,6 +65,8 @@ const TeamsSkeleton = () => (
 );
 
 const Teams = () => {
+  const { user } = useAuth();
+  const companyUuid = user?.company?.uuid || user?.companyUuid || user?.companyId || 'N/A';
   const [roles, setRoles] = useState([]);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -85,6 +88,15 @@ const Teams = () => {
   });
 
   const [editForm, setEditForm] = useState({ companyRoleId: '' });
+
+  const copyCompanyId = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(String(companyUuid));
+      toast.success('Company UUID copied.');
+    } catch (error) {
+      toast.error('Unable to copy Company UUID.');
+    }
+  }, [companyUuid]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -316,6 +328,22 @@ const Teams = () => {
         <p className="text-slate-600 mt-1 text-sm max-w-2xl">
           Configure roles and rosters. New members use email + passcode at login.
         </p>
+        <div className="mt-3 inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+          <span className="text-xs font-medium text-slate-500">Company UUID</span>
+          <code className="rounded bg-white px-2 py-0.5 text-xs font-semibold text-slate-800">
+            {companyUuid}
+          </code>
+          <button
+            type="button"
+            onClick={copyCompanyId}
+            className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100"
+            aria-label="Copy Company UUID"
+            title="Copy Company UUID"
+          >
+            <Copy size={14} />
+            Copy
+          </button>
+        </div>
       </div>
 
       <>
