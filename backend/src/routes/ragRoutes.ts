@@ -1,41 +1,64 @@
-import { Router, Request, Response } from 'express';
-import { crawlerService, CrawlerService } from '../services/Crawler';
+import { Router, Request, Response, NextFunction } from 'express';
+import { crawlerService } from '../services/Crawler';
 import { advancedCrawler } from '../services/AdvancedCrawler';
 import { indexerService } from '../services/Indexer';
-import { aiCleaner } from '../services/AICleaner';
 import { getCollections, nextSequence, ApiKeyDoc } from '../config/db';
 import { ragEngine } from '../services/RAGEngine';
+import { createRouteMap, routeMapToSitemapPages, summarizeRouteMap } from '../utils/mapNextRoutes';
+import { requireAdmin, requireAuth } from '../middleware/authMiddleware';
+import { env } from '../config/env';
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 
 const router = Router();
 
 /**
- * Middleware to validate API Key for external requests
+ * Resolve chat company from API key (external widget) or JWT (dashboard)
  */
-const authenticateApiKey = async (req: Request, res: Response, next: any) => {
-    const apiKey = req.headers['x-api-key'];
-    if (!apiKey) return next();
-
-    try {
-        const { apiKeys } = await getCollections();
-        const keyDoc = await apiKeys.findOne({ key: apiKey as string, isActive: true });
-        if (!keyDoc) {
-            return res.status(401).json({ error: 'Invalid or inactive API Key' });
+const resolveChatCompany = async (req: Request, res: Response, next: NextFunction) => {
+    const apiKeyHeader = req.headers['x-api-key'];
+    const apiKey = Array.isArray(apiKeyHeader) ? apiKeyHeader[0] : apiKeyHeader;
+    if (typeof apiKey === 'string' && apiKey.trim() !== '') {
+        try {
+            const { apiKeys } = await getCollections();
+            const keyDoc = await apiKeys.findOne({ key: apiKey.trim(), isActive: true });
+            if (!keyDoc) {
+                return res.status(401).json({ error: 'Invalid or inactive API Key' });
+            }
+            (req as any).chatCompanyId = keyDoc.companyId;
+            return next();
+        } catch {
+            return res.status(500).json({ error: 'Auth error' });
         }
-        (req as any).user = { companyId: keyDoc.companyId };
-        next();
-    } catch (err) {
-        res.status(500).json({ error: 'Auth error' });
     }
+
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith('Bearer ')) {
+        const token = authHeader.slice(7);
+        try {
+            const decoded = jwt.verify(token, env.jwtSecret) as { companyId?: number };
+            if (typeof decoded.companyId === 'number') {
+                (req as any).chatCompanyId = decoded.companyId;
+                return next();
+            }
+        } catch {
+            return res.status(401).json({ error: 'Invalid or expired session.' });
+        }
+    }
+
+    return res.status(401).json({ error: 'Authentication required.' });
 };
 
 /**
  * Send a query to the Support Chatbot
  * POST /api/rag/chat
  */
-router.post('/chat', authenticateApiKey, async (req: Request, res: Response) => {
+router.post('/chat', resolveChatCompany, async (req: Request, res: Response) => {
     const { query, sessionId } = req.body;
-    const companyId = (req as any).user?.companyId || 1;
+    const companyId = Number((req as any).chatCompanyId);
+    if (!Number.isFinite(companyId) || companyId <= 0) {
+        return res.status(401).json({ error: 'Unable to resolve company context.' });
+    }
 
     try {
         const result = await ragEngine.answerTicket(query, sessionId, companyId);
@@ -50,8 +73,8 @@ router.post('/chat', authenticateApiKey, async (req: Request, res: Response) => 
  * Start a website crawl
  * POST /api/rag/crawl
  */
-router.post('/crawl', async (req: Request, res: Response) => {
-    const { url, maxPages, depthLimit, useAdvanced, useAI, auth, excludePatterns, privacyPatterns } = req.body;
+router.post('/crawl', requireAuth, async (req: Request, res: Response) => {
+    const { url, maxPages, depthLimit, useAdvanced, useAI, auth, excludePatterns, privacyPatterns, seedUrls } = req.body;
 
     if (!url) {
         return res.status(400).json({ error: 'URL is required' });
@@ -61,31 +84,29 @@ router.post('/crawl', async (req: Request, res: Response) => {
         console.log(`Starting crawl for ${url}...`);
         let pages;
 
-        // Wrapper for parallel indexing
-        const onPageCrawled = async (page: any) => {
-            console.log(`[Route] Stream-indexing page: ${page.url}`);
-            await indexerService.indexPages([page]);
-        };
-
         if (useAdvanced) {
-            pages = await advancedCrawler.crawl(url, maxPages || 10, 2, auth || {}, {
+            pages = await advancedCrawler.crawl(url, maxPages || 10, depthLimit ?? 2, auth || {}, {
                 excludePatterns: excludePatterns || [],
                 privacyPatterns: privacyPatterns || [],
                 useAI: useAI || false,
-                onPageCrawled
+                seedUrls: seedUrls || []
             });
         } else {
-            pages = await crawlerService.crawl(url, maxPages || 20, 2, auth || {}, {
+            pages = await crawlerService.crawl(url, maxPages || 20, depthLimit ?? 2, auth || {}, {
                 excludePatterns: excludePatterns || [],
                 privacyPatterns: privacyPatterns || [],
                 useAI: useAI || false,
-                onPageCrawled
+                seedUrls: seedUrls || []
             });
         }
 
+        console.log(`Indexing ${pages.length} pages...`);
+        const chunksCreated = await indexerService.indexPages(pages);
+
         return res.status(200).json({
             message: 'Crawl and indexing complete',
-            pagesCrawl: pages.length
+            pagesCrawl: pages.length,
+            chunksCreated
         });
     } catch (error) {
         console.error('Crawl/Index error:', error);
@@ -97,9 +118,60 @@ router.post('/crawl', async (req: Request, res: Response) => {
 });
 
 /**
+ * Build a sitemap from a Next.js codebase and optionally store it for chat navigation.
+ * POST /api/rag/sitemap/codebase
+ */
+router.post('/sitemap/codebase', requireAuth, async (req: Request, res: Response) => {
+    const { projectPath, baseUrl, saveToCompany = true } = req.body || {};
+    const companyId = req.auth?.companyId;
+    if (!companyId) return res.status(401).json({ error: 'Authentication required.' });
+
+    if (!projectPath) {
+        return res.status(400).json({ error: 'projectPath is required' });
+    }
+
+    try {
+        const routeMap = createRouteMap(projectPath);
+        const sitemapPages = routeMapToSitemapPages(routeMap, baseUrl);
+        const description = summarizeRouteMap(routeMap);
+
+        if (saveToCompany) {
+            const { sitemaps } = await getCollections();
+            await sitemaps.updateOne(
+                { companyId },
+                {
+                    $set: {
+                        pages: sitemapPages.map((p) => ({ url: p.url, title: p.title })),
+                        routeMap,
+                        description,
+                        source: 'codebase',
+                        updatedAt: new Date(),
+                    },
+                },
+                { upsert: true },
+            );
+        }
+
+        return res.status(200).json({
+            message: 'Codebase sitemap generated',
+            description,
+            counts: routeMap.counts,
+            totalPages: sitemapPages.length,
+            sitemapPages,
+            routeMap,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            error: 'Failed to generate codebase sitemap',
+            details: error instanceof Error ? error.message : String(error),
+        });
+    }
+});
+
+/**
  * Delete all indexed knowledge from the vector database
  */
-router.delete('/knowledge-base', async (req: Request, res: Response) => {
+router.delete('/knowledge-base', requireAuth, async (req: Request, res: Response) => {
     try {
         await indexerService.deleteAll();
         return res.status(200).json({ message: 'Knowledge base fully cleared.' });
@@ -113,8 +185,9 @@ router.delete('/knowledge-base', async (req: Request, res: Response) => {
  * --- API Key Management ---
  */
 
-router.get('/api-keys', async (req: Request, res: Response) => {
-    const companyId = (req as any).user?.companyId || 1;
+router.get('/api-keys', requireAuth, async (req: Request, res: Response) => {
+    const companyId = req.auth?.companyId;
+    if (!companyId) return res.status(401).json({ error: 'Authentication required.' });
     try {
         const { apiKeys } = await getCollections();
         const keys = await apiKeys.find({ companyId }).toArray();
@@ -124,9 +197,10 @@ router.get('/api-keys', async (req: Request, res: Response) => {
     }
 });
 
-router.post('/api-keys', async (req: Request, res: Response) => {
+router.post('/api-keys', requireAuth, requireAdmin, async (req: Request, res: Response) => {
     const { label } = req.body;
-    const companyId = (req as any).user?.companyId || 1;
+    const companyId = req.auth?.companyId;
+    if (!companyId) return res.status(401).json({ error: 'Authentication required.' });
     try {
         const { apiKeys } = await getCollections();
         const keyId = await nextSequence("api_keys");
@@ -148,9 +222,10 @@ router.post('/api-keys', async (req: Request, res: Response) => {
     }
 });
 
-router.delete('/api-keys/:id', async (req: Request, res: Response) => {
+router.delete('/api-keys/:id', requireAuth, requireAdmin, async (req: Request, res: Response) => {
     const id = parseInt(req.params.id as string);
-    const companyId = (req as any).user?.companyId || 1;
+    const companyId = req.auth?.companyId;
+    if (!companyId) return res.status(401).json({ error: 'Authentication required.' });
     try {
         const { apiKeys } = await getCollections();
         await apiKeys.deleteOne({ id, companyId });

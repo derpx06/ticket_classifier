@@ -176,13 +176,14 @@ const emitMessage = (message: ReturnType<typeof toPublicMessage>, input: {
   includeAgentsRoom?: boolean;
 }): void => {
   if (!ioRef) return;
-  ioRef.to(ticketRoom(input.ticketId)).emit("chat:message", message);
+  let target = ioRef.to(ticketRoom(input.ticketId));
   if (input.sessionId) {
-    ioRef.to(sessionRoom(input.sessionId)).emit("chat:message", message);
+    target = target.to(sessionRoom(input.sessionId));
   }
   if (input.includeAgentsRoom) {
-    ioRef.to(companyAgentsRoom(input.companyId)).emit("chat:message", message);
+    target = target.to(companyAgentsRoom(input.companyId));
   }
+  target.emit("chat:message", message);
 };
 
 export function createChatSocketServer(httpServer: HttpServer): Server {
@@ -315,6 +316,7 @@ export function createChatSocketServer(httpServer: HttpServer): Server {
         companyId: context.companyId,
         ticketId: ticketObjectId.toString(),
         sessionId: session?.sessionId ?? null,
+        includeAgentsRoom: true,
       });
     });
 
@@ -358,23 +360,6 @@ export function createChatSocketServer(httpServer: HttpServer): Server {
           },
         },
       );
-
-      if (issue) {
-        const stored = await persistMessage({
-          ticketId: session.ticketId,
-          companyId: context.companyId,
-          sessionId: context.sessionId,
-          sender: "user",
-          text: issue,
-        });
-        const issueMessage = toPublicMessage(stored);
-        emitMessage(issueMessage, {
-          companyId: context.companyId,
-          ticketId: session.ticketId.toString(),
-          sessionId: context.sessionId,
-          includeAgentsRoom: true,
-        });
-      }
 
       io.to(companyAgentsRoom(context.companyId)).emit("chat:handoff_requested", {
         ticketId: session.ticketId.toString(),
@@ -449,9 +434,33 @@ export function emitRealtimeMessageFromHttp(input: {
     senderUserId: input.senderUserId ?? null,
   };
 
-  ioRef.to(ticketRoom(input.ticketId)).emit("chat:message", message);
+  let target = ioRef.to(ticketRoom(input.ticketId));
   if (input.sessionId) {
-    ioRef.to(sessionRoom(input.sessionId)).emit("chat:message", message);
+    target = target.to(sessionRoom(input.sessionId));
   }
+  target.emit("chat:message", message);
 }
 
+export function emitRealtimeTicketStatusFromHttp(input: {
+  companyId: number;
+  ticketId: string;
+  sessionId?: string | null;
+  status: "pending" | "assigned" | "resolved" | "escalated";
+  assignedTo?: number | null;
+}): void {
+  if (!ioRef) return;
+  const payload = {
+    ticketId: input.ticketId,
+    companyId: input.companyId,
+    sessionId: input.sessionId ?? null,
+    status: input.status,
+    assignedTo: input.assignedTo ?? null,
+  };
+
+  let target = ioRef.to(ticketRoom(input.ticketId));
+  if (input.sessionId) {
+    target = target.to(sessionRoom(input.sessionId));
+  }
+  target = target.to(companyAgentsRoom(input.companyId));
+  target.emit("chat:ticket_status", payload);
+}

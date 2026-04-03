@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { ObjectId } from "mongodb";
 import { getCollections } from "../config/db";
 import { createTicketSchema } from "../schemas/ticketSchemas";
+import { emitRealtimeMessageFromHttp, emitRealtimeTicketStatusFromHttp } from "../services/chatSocketServer";
 
 type TicketStatus = "pending" | "assigned" | "resolved" | "escalated";
 type TicketPriority = "low" | "medium" | "high";
@@ -221,6 +222,21 @@ export async function createMessage(req: Request, res: Response): Promise<void> 
       { $set: { updatedAt: now } },
     );
 
+    const chatSession = await db.collection("chat_sessions").findOne(
+      { companyId: req.auth.companyId, ticketId: ticketObjectId },
+      { projection: { _id: 0, sessionId: 1 } },
+    );
+    emitRealtimeMessageFromHttp({
+      companyId: req.auth.companyId,
+      ticketId: ticketObjectId.toString(),
+      sessionId: chatSession?.sessionId ?? null,
+      sender: sender as "user" | "bot" | "agent",
+      text,
+      messageId: inserted.insertedId.toString(),
+      createdAt: now,
+      senderUserId: req.auth.userId ?? null,
+    });
+
     res.status(201).json({
       data: {
         _id: inserted.insertedId,
@@ -331,6 +347,19 @@ export async function updateTicket(req: Request, res: Response): Promise<void> {
       return;
     }
 
+    const chatSession = await db.collection("chat_sessions").findOne(
+      { companyId: req.auth.companyId, ticketId: ticketObjectId },
+      { projection: { _id: 0, sessionId: 1 } },
+    );
+    const status = normalizeStatus(result.status) || "pending";
+    emitRealtimeTicketStatusFromHttp({
+      companyId: req.auth.companyId,
+      ticketId: ticketObjectId.toString(),
+      sessionId: chatSession?.sessionId ?? null,
+      status,
+      assignedTo: typeof result.assignedTo === "number" ? result.assignedTo : null,
+    });
+
     res.json({ data: result });
   } catch (error) {
     console.error("updateTicket error", error);
@@ -375,6 +404,18 @@ export async function acceptTicket(req: Request, res: Response): Promise<void> {
       res.status(404).json({ message: "Pending ticket not found." });
       return;
     }
+
+    const chatSession = await db.collection("chat_sessions").findOne(
+      { companyId: req.auth.companyId, ticketId: ticketObjectId },
+      { projection: { _id: 0, sessionId: 1 } },
+    );
+    emitRealtimeTicketStatusFromHttp({
+      companyId: req.auth.companyId,
+      ticketId: ticketObjectId.toString(),
+      sessionId: chatSession?.sessionId ?? null,
+      status: "assigned",
+      assignedTo: req.auth.userId,
+    });
 
     res.json({ data: result });
   } catch (error) {

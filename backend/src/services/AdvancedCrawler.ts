@@ -38,19 +38,43 @@ export class AdvancedCrawler {
         }
     }
 
+    private isCrawlablePath(url: string): boolean {
+        try {
+            const p = new URL(url).pathname.toLowerCase();
+            if (p.startsWith('/api/')) return false;
+            if (/\.(png|jpe?g|gif|svg|webp|ico|css|js|map|json|xml|pdf|zip|woff2?|ttf)$/i.test(p)) return false;
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    private scoreUrlPriority(url: string, inlinkCount: number = 1): number {
+        try {
+            const parsed = new URL(url);
+            const path = parsed.pathname.toLowerCase();
+            const segments = path.split('/').filter(Boolean);
+            const depthPenalty = segments.length * 0.7;
+            const queryPenalty = parsed.search ? 1.5 : 0;
+            const detailPenalty = this.isLikelyDetailPage(url) ? 3 : 0;
+            const slugPenalty = segments.some((s) => s.length > 24 || (s.match(/-/g) || []).length >= 3) ? 1 : 0;
+            const rootBoost = path === '/' ? 1.5 : 0;
+            const inlinkBoost = Math.min(3, Math.log2(Math.max(1, inlinkCount)));
+
+            return depthPenalty + queryPenalty + detailPenalty + slugPenalty - rootBoost - inlinkBoost;
+        } catch {
+            return 50;
+        }
+    }
+
     async crawl(
         startUrl: string,
         maxPages: number = 10,
         maxDepth: number = 2,
         auth: AdvancedCrawlAuthOptions = {},
-        options: {
-            excludePatterns?: string[],
-            privacyPatterns?: string[],
-            useAI?: boolean,
-            onPageCrawled?: (page: { url: string, title: string, content: string, metadata: any }) => Promise<void>
-        } = {}
+        options: { excludePatterns?: string[], privacyPatterns?: string[], useAI?: boolean, seedUrls?: string[] } = {}
     ) {
-        const { excludePatterns = [], privacyPatterns = [], useAI = false, onPageCrawled } = options;
+        const { excludePatterns = [], privacyPatterns = [], useAI = false, seedUrls = [] } = options;
         this.visitedUrls.clear();
         this.pages = [];
 
@@ -121,11 +145,21 @@ export class AdvancedCrawler {
         const baseDomain = new URL(startUrl).origin;
         const levels = new Map<number, string[]>();
         levels.set(0, [startUrl]);
+        if (seedUrls.length > 0 && maxDepth >= 1) {
+            const normalizedSeeds = [...new Set(seedUrls)]
+                .map((u) => {
+                    try { return new URL(u, startUrl).href.split('#')[0]; } catch { return null; }
+                })
+                .filter((u): u is string => !!u)
+                .filter((u) => u.startsWith(baseDomain))
+                .filter((u) => this.isCrawlablePath(u));
+            levels.set(1, normalizedSeeds);
+        }
 
         for (let depth = 0; depth <= maxDepth && this.pages.length < maxPages; depth++) {
-            const currentLevel = levels.get(depth) || [];
-            const nextLevelSet = new Set<string>(levels.get(depth + 1) || []);
-            const nextNextLevelSet = new Set<string>(levels.get(depth + 2) || []);
+            const currentLevel = [...(levels.get(depth) || [])];
+            const nextLevelCounts = new Map<string, number>();
+            const nextNextLevelCounts = new Map<string, number>();
             console.log(`[Advanced] Processing depth ${depth} (${currentLevel.length} urls)`);
 
             for (const url of currentLevel) {
@@ -160,29 +194,22 @@ export class AdvancedCrawler {
                         }
                     }
 
-                    const pageData = {
+                    this.pages.push({
                         url,
                         title: data.title,
                         content: finalContent,
                         metadata: { ...data.metadata, isPrivateSnippet: isPrivate, depth }
-                    };
-                    this.pages.push(pageData);
-
-                    if (onPageCrawled) {
-                        await onPageCrawled(pageData).catch(err =>
-                            console.error(`[Advanced] Error in onPageCrawled for ${url}:`, err)
-                        );
-                    }
+                    });
 
                     if (depth < maxDepth) {
                         const links = await this.extractLinks(page, baseDomain);
                         for (const link of links) {
-                            if (!this.visitedUrls.has(link) && link.startsWith(baseDomain)) {
+                            if (!this.visitedUrls.has(link) && link.startsWith(baseDomain) && this.isCrawlablePath(link)) {
                                 const deferToDepth2 = depth === 0 && this.isLikelyDetailPage(link);
                                 if (deferToDepth2 && depth + 2 <= maxDepth) {
-                                    nextNextLevelSet.add(link);
+                                    nextNextLevelCounts.set(link, (nextNextLevelCounts.get(link) || 0) + 1);
                                 } else {
-                                    nextLevelSet.add(link);
+                                    nextLevelCounts.set(link, (nextLevelCounts.get(link) || 0) + 1);
                                 }
                             }
                         }
@@ -195,22 +222,14 @@ export class AdvancedCrawler {
             }
 
             if (depth < maxDepth) {
-                // Hard partition after depth 0: keep hub/navigation pages at depth 1,
-                // push detail/article pages to depth 2.
-                if (depth === 0 && depth + 2 <= maxDepth) {
-                    const depth1: string[] = [];
-                    const depth2: string[] = [...nextNextLevelSet];
-                    for (const candidate of nextLevelSet) {
-                        if (this.isLikelyDetailPage(candidate)) depth2.push(candidate);
-                        else depth1.push(candidate);
-                    }
-                    levels.set(depth + 1, depth1);
-                    levels.set(depth + 2, [...new Set(depth2)]);
-                } else {
-                    levels.set(depth + 1, [...nextLevelSet]);
-                    if (depth + 2 <= maxDepth) {
-                        levels.set(depth + 2, [...nextNextLevelSet]);
-                    }
+                const rankMap = (m: Map<string, number>) =>
+                    [...m.entries()]
+                        .sort((a, b) => this.scoreUrlPriority(a[0], a[1]) - this.scoreUrlPriority(b[0], b[1]))
+                        .map(([url]) => url);
+
+                levels.set(depth + 1, rankMap(nextLevelCounts));
+                if (depth + 2 <= maxDepth) {
+                    levels.set(depth + 2, rankMap(nextNextLevelCounts));
                 }
             }
         }
@@ -254,10 +273,23 @@ export class AdvancedCrawler {
 
     private async extractLinks(page: PlaywrightPage, baseDomain: string) {
         return await page.evaluate((domain) => {
-            return Array.from(document.querySelectorAll('a[href]'))
-                .map(a => (a as HTMLAnchorElement).href)
-                .filter(href => href.startsWith(domain))
-                .map(href => href.split('#')[0]);
+            const out = new Set<string>();
+            const add = (raw?: string | null) => {
+                if (!raw) return;
+                const v = raw.trim();
+                if (!v || v.startsWith('#') || v.startsWith('mailto:') || v.startsWith('tel:') || v.startsWith('javascript:')) return;
+                try {
+                    const href = new URL(v, location.href).href.split('#')[0];
+                    if (href.startsWith(domain)) out.add(href);
+                } catch {
+                    // ignore bad URL
+                }
+            };
+            document.querySelectorAll('a[href]').forEach((el) => add((el as HTMLAnchorElement).getAttribute('href')));
+            document.querySelectorAll('[data-href]').forEach((el) => add((el as HTMLElement).getAttribute('data-href')));
+            document.querySelectorAll('[data-url]').forEach((el) => add((el as HTMLElement).getAttribute('data-url')));
+            document.querySelectorAll('link[rel="next"], link[rel="prev"]').forEach((el) => add((el as HTMLLinkElement).getAttribute('href')));
+            return Array.from(out);
         }, baseDomain);
     }
 }

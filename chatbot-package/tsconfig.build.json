@@ -12,5 +12,5 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "include": ["src/index.ts", "src/chatbotWidget.ts"]
+  "include": ["src/index.ts", "src/chatbotWidget.ts", "src/**/*.d.ts"]
 }

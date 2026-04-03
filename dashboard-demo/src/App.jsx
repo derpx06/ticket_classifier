@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createChatbotWidget } from 'chatbot-package'
 
 const stats = [
@@ -14,74 +14,82 @@ const tickets = [
 ]
 
 export default function App() {
+  const defaultApiBase = useMemo(() => {
+    const envBase = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5000/api'
+    return String(envBase).replace(/\/+$/, '')
+  }, [])
+
+  const [apiBaseUrl, setApiBaseUrl] = useState(() =>
+    localStorage.getItem('demo_api_base_url') || defaultApiBase,
+  )
+  const [widgetKey, setWidgetKey] = useState(() => localStorage.getItem('demo_widget_key') || '')
+  const [isWidgetEnabled, setIsWidgetEnabled] = useState(() => {
+    return localStorage.getItem('demo_widget_enabled') === 'true'
+  })
+  const [statusMessage, setStatusMessage] = useState('Configure API base URL and widget key, then enable chatbot.')
+  const widgetRef = useRef(null)
+
   useEffect(() => {
-    const testCompanyKey = '74a7902e-f67c-429b-8e35-ee212a6a0d8d'
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001'
+    localStorage.setItem('demo_api_base_url', apiBaseUrl)
+  }, [apiBaseUrl])
+
+  useEffect(() => {
+    localStorage.setItem('demo_widget_key', widgetKey)
+  }, [widgetKey])
+
+  useEffect(() => {
+    localStorage.setItem('demo_widget_enabled', String(isWidgetEnabled))
+  }, [isWidgetEnabled])
+
+  useEffect(() => {
+    if (!isWidgetEnabled) {
+      if (widgetRef.current) {
+        widgetRef.current.destroy()
+        widgetRef.current = null
+      }
+      setStatusMessage('Chatbot disabled.')
+      return
+    }
+
+    if (!apiBaseUrl.trim() || !widgetKey.trim()) {
+      setStatusMessage('Cannot enable chatbot: API base URL and widget key are required.')
+      return
+    }
+
+    if (widgetRef.current) {
+      widgetRef.current.destroy()
+      widgetRef.current = null
+    }
 
     const widget = createChatbotWidget({
       title: 'Support Assistant',
-      subtitle: 'Online',
-      welcomeMessage: 'Hi! Welcome to the React dashboard demo. How can I help?',
-      placeholder: 'Ask a support question...',
+      subtitle: 'AI + Human Support',
+      welcomeMessage: 'Hi! Ask anything about your knowledge base. You can switch to a human agent any time.',
+      placeholder: 'Type your support question...',
       primaryColor: '#2563eb',
-      onUserMessage: async (message) => {
-        try {
-          const response = await fetch(`${apiBaseUrl}/api/rag/chat`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query: message, sessionId: 'demo-session' })
-          });
-          const data = await response.json();
-          return data.answer;
-        } catch (error) {
-          console.error('Chat error:', error);
-          return "Sorry, I'm having trouble connecting to the support server.";
-        }
+      aiSupport: {
+        apiBaseUrl: apiBaseUrl.trim(),
+        apiKey: widgetKey.trim(),
       },
-      onTalkToHumanClick: async () => {
-        try {
-          const response = await fetch(`${apiBaseUrl}/api/createTicket`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              apiKey: testCompanyKey,
-              companyId: testCompanyKey,
-              customerName: 'Dashboard Demo User',
-              message: 'Customer clicked Talk to a real human from dashboard demo (static test ticket).',
-              category: 'other',
-              priority: 'medium',
-              urgency: 'medium',
-              chatHistory: [
-                { role: 'user', text: 'I need to speak with a human agent.' },
-                { role: 'bot', text: 'Sure, creating a ticket for handoff.' },
-              ],
-            }),
-          })
-
-          const data = await response.json().catch(() => null)
-
-          if (!response.ok) {
-            const apiMessage = data?.message || data?.error || 'Unable to create ticket.'
-            throw new Error(
-              `createTicket failed (${response.status} ${response.statusText}): ${apiMessage}`,
-            )
-          }
-
-          const ticketId = data?.ticketId || data?.data?.ticketId || data?.data?._id || 'created'
-          return `Ticket ${ticketId} created. A human agent will follow up shortly.`
-        } catch (error) {
-          console.error('Create ticket error:', {
-            error,
-            message: error?.message,
-          })
-          return `Could not create ticket: ${error?.message || 'Unknown error'}`
-        }
+      humanSupport: {
+        apiBaseUrl: apiBaseUrl.trim(),
       },
-
     })
 
-    return () => widget.destroy()
-  }, [])
+    widgetRef.current = widget
+    setStatusMessage('Chatbot enabled. AI answers use your key; human handoff creates a ticket/session for your company.')
+
+    return () => {
+      if (widgetRef.current) {
+        widgetRef.current.destroy()
+        widgetRef.current = null
+      }
+    }
+  }, [apiBaseUrl, widgetKey, isWidgetEnabled])
+
+  const toggleWidget = () => {
+    setIsWidgetEnabled((prev) => !prev)
+  }
 
   return (
     <div className="layout">
@@ -99,8 +107,41 @@ export default function App() {
       <main className="content">
         <header className="topbar">
           <h1>Support Dashboard</h1>
-          <button type="button">Create Ticket</button>
+          <button type="button" onClick={toggleWidget}>
+            {isWidgetEnabled ? 'Disable Chatbot' : 'Enable Chatbot'}
+          </button>
         </header>
+
+        <section className="config-card">
+          <h2>Widget Setup (Tenant Test)</h2>
+          <p className="config-note">
+            Use the API base URL and widget key generated for the admin company. This simulates how customers
+            install chatbot on their own website with their own key.
+          </p>
+          <div className="config-grid">
+            <label>
+              <span>API Base URL</span>
+              <input
+                type="text"
+                value={apiBaseUrl}
+                onChange={(e) => setApiBaseUrl(e.target.value)}
+                placeholder="http://127.0.0.1:5000/api"
+              />
+            </label>
+            <label>
+              <span>Widget API Key</span>
+              <input
+                type="text"
+                value={widgetKey}
+                onChange={(e) => setWidgetKey(e.target.value)}
+                placeholder="Paste key from Knowledge Base > Deployment"
+              />
+            </label>
+          </div>
+          <div className="status-line">
+            <strong>Status:</strong> {statusMessage}
+          </div>
+        </section>
 
         <section className="cards">
           {stats.map((item) => (

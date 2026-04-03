@@ -94,6 +94,65 @@ body {
   padding: 12px;
 }
 
+.config-card {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+
+.config-card h2 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.config-note {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.config-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.config-grid span {
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.config-grid input {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 13px;
+  outline: none;
+}
+
+.config-grid input:focus {
+  border-color: var(--brand);
+}
+
+.status-line {
+  margin-top: 12px;
+  font-size: 13px;
+  color: #1e293b;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px;
+}
+
 .cards h3 {
   margin: 0;
   font-size: 13px;
@@ -149,6 +208,10 @@ th {
   }
 
   .cards {
+    grid-template-columns: 1fr;
+  }
+
+  .config-grid {
     grid-template-columns: 1fr;
   }
 }

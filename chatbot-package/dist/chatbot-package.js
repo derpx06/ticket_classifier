@@ -99,73 +99,73 @@ Object.keys(y).forEach((e) => {
 var x = {
 	type: "error",
 	data: "parser error"
-}, S = typeof Blob == "function" || typeof Blob < "u" && Object.prototype.toString.call(Blob) === "[object BlobConstructor]", C = typeof ArrayBuffer == "function", w = (e) => typeof ArrayBuffer.isView == "function" ? ArrayBuffer.isView(e) : e && e.buffer instanceof ArrayBuffer, T = ({ type: e, data: t }, n, r) => S && t instanceof Blob ? n ? r(t) : E(t, r) : C && (t instanceof ArrayBuffer || w(t)) ? n ? r(t) : E(new Blob([t]), r) : r(y[e] + (t || "")), E = (e, t) => {
+}, S = typeof Blob == "function" || typeof Blob < "u" && Object.prototype.toString.call(Blob) === "[object BlobConstructor]", C = typeof ArrayBuffer == "function", w = (e) => typeof ArrayBuffer.isView == "function" ? ArrayBuffer.isView(e) : e && e.buffer instanceof ArrayBuffer, T = ({ type: e, data: t }, n, r) => S && t instanceof Blob ? n ? r(t) : te(t, r) : C && (t instanceof ArrayBuffer || w(t)) ? n ? r(t) : te(new Blob([t]), r) : r(y[e] + (t || "")), te = (e, t) => {
 	let n = new FileReader();
 	return n.onload = function() {
 		let e = n.result.split(",")[1];
 		t("b" + (e || ""));
 	}, n.readAsDataURL(e);
 };
-function D(e) {
+function E(e) {
 	return e instanceof Uint8Array ? e : e instanceof ArrayBuffer ? new Uint8Array(e) : new Uint8Array(e.buffer, e.byteOffset, e.byteLength);
 }
-var O;
-function te(e, t) {
-	if (S && e.data instanceof Blob) return e.data.arrayBuffer().then(D).then(t);
-	if (C && (e.data instanceof ArrayBuffer || w(e.data))) return t(D(e.data));
+var D;
+function ne(e, t) {
+	if (S && e.data instanceof Blob) return e.data.arrayBuffer().then(E).then(t);
+	if (C && (e.data instanceof ArrayBuffer || w(e.data))) return t(E(e.data));
 	T(e, !1, (e) => {
-		O ||= new TextEncoder(), t(O.encode(e));
+		D ||= new TextEncoder(), t(D.encode(e));
 	});
 }
 //#endregion
 //#region node_modules/engine.io-parser/build/esm/contrib/base64-arraybuffer.js
-var ne = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/", k = typeof Uint8Array > "u" ? [] : new Uint8Array(256);
-for (let e = 0; e < 64; e++) k[ne.charCodeAt(e)] = e;
-var A = (e) => {
+var re = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/", O = typeof Uint8Array > "u" ? [] : new Uint8Array(256);
+for (let e = 0; e < 64; e++) O[re.charCodeAt(e)] = e;
+var k = (e) => {
 	let t = e.length * .75, n = e.length, r, i = 0, a, o, s, c;
 	e[e.length - 1] === "=" && (t--, e[e.length - 2] === "=" && t--);
 	let l = new ArrayBuffer(t), u = new Uint8Array(l);
-	for (r = 0; r < n; r += 4) a = k[e.charCodeAt(r)], o = k[e.charCodeAt(r + 1)], s = k[e.charCodeAt(r + 2)], c = k[e.charCodeAt(r + 3)], u[i++] = a << 2 | o >> 4, u[i++] = (o & 15) << 4 | s >> 2, u[i++] = (s & 3) << 6 | c & 63;
+	for (r = 0; r < n; r += 4) a = O[e.charCodeAt(r)], o = O[e.charCodeAt(r + 1)], s = O[e.charCodeAt(r + 2)], c = O[e.charCodeAt(r + 3)], u[i++] = a << 2 | o >> 4, u[i++] = (o & 15) << 4 | s >> 2, u[i++] = (s & 3) << 6 | c & 63;
 	return l;
-}, re = typeof ArrayBuffer == "function", j = (e, t) => {
+}, ie = typeof ArrayBuffer == "function", A = (e, t) => {
 	if (typeof e != "string") return {
 		type: "message",
-		data: N(e, t)
+		data: M(e, t)
 	};
 	let n = e.charAt(0);
 	return n === "b" ? {
 		type: "message",
-		data: M(e.substring(1), t)
+		data: j(e.substring(1), t)
 	} : b[n] ? e.length > 1 ? {
 		type: b[n],
 		data: e.substring(1)
 	} : { type: b[n] } : x;
-}, M = (e, t) => re ? N(A(e), t) : {
+}, j = (e, t) => ie ? M(k(e), t) : {
 	base64: !0,
 	data: e
-}, N = (e, t) => {
+}, M = (e, t) => {
 	switch (t) {
 		case "blob": return e instanceof Blob ? e : new Blob([e]);
 		default: return e instanceof ArrayBuffer ? e : e.buffer;
 	}
-}, P = "", F = (e, t) => {
+}, N = "", P = (e, t) => {
 	let n = e.length, r = Array(n), i = 0;
 	e.forEach((e, a) => {
 		T(e, !1, (e) => {
-			r[a] = e, ++i === n && t(r.join(P));
+			r[a] = e, ++i === n && t(r.join(N));
 		});
 	});
-}, I = (e, t) => {
-	let n = e.split(P), r = [];
+}, F = (e, t) => {
+	let n = e.split(N), r = [];
 	for (let e = 0; e < n.length; e++) {
-		let i = j(n[e], t);
+		let i = A(n[e], t);
 		if (r.push(i), i.type === "error") break;
 	}
 	return r;
 };
-function ie() {
+function ae() {
 	return new TransformStream({ transform(e, t) {
-		te(e, (n) => {
+		ne(e, (n) => {
 			let r = n.length, i;
 			if (r < 126) i = new Uint8Array(1), new DataView(i.buffer).setUint8(0, r);
 			else if (r < 65536) {
@@ -181,41 +181,41 @@ function ie() {
 		});
 	} });
 }
-var L;
-function R(e) {
+var I;
+function L(e) {
 	return e.reduce((e, t) => e + t.length, 0);
 }
-function z(e, t) {
+function R(e, t) {
 	if (e[0].length === t) return e.shift();
 	let n = new Uint8Array(t), r = 0;
 	for (let i = 0; i < t; i++) n[i] = e[0][r++], r === e[0].length && (e.shift(), r = 0);
 	return e.length && r < e[0].length && (e[0] = e[0].slice(r)), n;
 }
-function B(e, t) {
-	L ||= new TextDecoder();
+function z(e, t) {
+	I ||= new TextDecoder();
 	let n = [], r = 0, i = -1, a = !1;
 	return new TransformStream({ transform(o, s) {
 		for (n.push(o);;) {
 			if (r === 0) {
-				if (R(n) < 1) break;
-				let e = z(n, 1);
+				if (L(n) < 1) break;
+				let e = R(n, 1);
 				a = (e[0] & 128) == 128, i = e[0] & 127, r = i < 126 ? 3 : i === 126 ? 1 : 2;
 			} else if (r === 1) {
-				if (R(n) < 2) break;
-				let e = z(n, 2);
+				if (L(n) < 2) break;
+				let e = R(n, 2);
 				i = new DataView(e.buffer, e.byteOffset, e.length).getUint16(0), r = 3;
 			} else if (r === 2) {
-				if (R(n) < 8) break;
-				let e = z(n, 8), t = new DataView(e.buffer, e.byteOffset, e.length), a = t.getUint32(0);
+				if (L(n) < 8) break;
+				let e = R(n, 8), t = new DataView(e.buffer, e.byteOffset, e.length), a = t.getUint32(0);
 				if (a > 2 ** 21 - 1) {
 					s.enqueue(x);
 					break;
 				}
 				i = a * 2 ** 32 + t.getUint32(4), r = 3;
 			} else {
-				if (R(n) < i) break;
-				let e = z(n, i);
-				s.enqueue(j(a ? e : L.decode(e), t)), r = 0;
+				if (L(n) < i) break;
+				let e = R(n, i);
+				s.enqueue(A(a ? e : I.decode(e), t)), r = 0;
 			}
 			if (i === 0 || i > e) {
 				s.enqueue(x);
@@ -226,21 +226,21 @@ function B(e, t) {
 }
 //#endregion
 //#region node_modules/@socket.io/component-emitter/lib/esm/index.js
-function V(e) {
-	if (e) return H(e);
+function B(e) {
+	if (e) return V(e);
 }
-function H(e) {
-	for (var t in V.prototype) e[t] = V.prototype[t];
+function V(e) {
+	for (var t in B.prototype) e[t] = B.prototype[t];
 	return e;
 }
-V.prototype.on = V.prototype.addEventListener = function(e, t) {
+B.prototype.on = B.prototype.addEventListener = function(e, t) {
 	return this._callbacks = this._callbacks || {}, (this._callbacks["$" + e] = this._callbacks["$" + e] || []).push(t), this;
-}, V.prototype.once = function(e, t) {
+}, B.prototype.once = function(e, t) {
 	function n() {
 		this.off(e, n), t.apply(this, arguments);
 	}
 	return n.fn = t, this.on(e, n), this;
-}, V.prototype.off = V.prototype.removeListener = V.prototype.removeAllListeners = V.prototype.removeEventListener = function(e, t) {
+}, B.prototype.off = B.prototype.removeListener = B.prototype.removeAllListeners = B.prototype.removeEventListener = function(e, t) {
 	if (this._callbacks = this._callbacks || {}, arguments.length == 0) return this._callbacks = {}, this;
 	var n = this._callbacks["$" + e];
 	if (!n) return this;
@@ -250,7 +250,7 @@ V.prototype.on = V.prototype.addEventListener = function(e, t) {
 		break;
 	}
 	return n.length === 0 && delete this._callbacks["$" + e], this;
-}, V.prototype.emit = function(e) {
+}, B.prototype.emit = function(e) {
 	this._callbacks = this._callbacks || {};
 	for (var t = Array(arguments.length - 1), n = this._callbacks["$" + e], r = 1; r < arguments.length; r++) t[r - 1] = arguments[r];
 	if (n) {
@@ -258,26 +258,26 @@ V.prototype.on = V.prototype.addEventListener = function(e, t) {
 		for (var r = 0, i = n.length; r < i; ++r) n[r].apply(this, t);
 	}
 	return this;
-}, V.prototype.emitReserved = V.prototype.emit, V.prototype.listeners = function(e) {
+}, B.prototype.emitReserved = B.prototype.emit, B.prototype.listeners = function(e) {
 	return this._callbacks = this._callbacks || {}, this._callbacks["$" + e] || [];
-}, V.prototype.hasListeners = function(e) {
+}, B.prototype.hasListeners = function(e) {
 	return !!this.listeners(e).length;
 };
 //#endregion
 //#region node_modules/engine.io-client/build/esm/globals.js
-var U = typeof Promise == "function" && typeof Promise.resolve == "function" ? (e) => Promise.resolve().then(e) : (e, t) => t(e, 0), W = typeof self < "u" ? self : typeof window < "u" ? window : Function("return this")(), ae = "arraybuffer";
+var H = typeof Promise == "function" && typeof Promise.resolve == "function" ? (e) => Promise.resolve().then(e) : (e, t) => t(e, 0), U = typeof self < "u" ? self : typeof window < "u" ? window : Function("return this")(), W = "arraybuffer";
 //#endregion
 //#region node_modules/engine.io-client/build/esm/util.js
 function G(e, ...t) {
 	return t.reduce((t, n) => (e.hasOwnProperty(n) && (t[n] = e[n]), t), {});
 }
-var K = W.setTimeout, q = W.clearTimeout;
-function J(e, t) {
-	t.useNativeTimers ? (e.setTimeoutFn = K.bind(W), e.clearTimeoutFn = q.bind(W)) : (e.setTimeoutFn = W.setTimeout.bind(W), e.clearTimeoutFn = W.clearTimeout.bind(W));
+var K = U.setTimeout, oe = U.clearTimeout;
+function q(e, t) {
+	t.useNativeTimers ? (e.setTimeoutFn = K.bind(U), e.clearTimeoutFn = oe.bind(U)) : (e.setTimeoutFn = U.setTimeout.bind(U), e.clearTimeoutFn = U.clearTimeout.bind(U));
 }
-var oe = 1.33;
+var J = 1.33;
 function se(e) {
-	return typeof e == "string" ? ce(e) : Math.ceil((e.byteLength || e.size) * oe);
+	return typeof e == "string" ? ce(e) : Math.ceil((e.byteLength || e.size) * J);
 }
 function ce(e) {
 	let t = 0, n = 0;
@@ -308,9 +308,9 @@ var fe = class extends Error {
 	constructor(e, t, n) {
 		super(e), this.description = t, this.context = n, this.type = "TransportError";
 	}
-}, pe = class extends V {
+}, pe = class extends B {
 	constructor(e) {
-		super(), this.writable = !1, J(this, e), this.opts = e, this.query = e.query, this.socket = e.socket, this.supportsBinary = !e.forceBase64;
+		super(), this.writable = !1, q(this, e), this.opts = e, this.query = e.query, this.socket = e.socket, this.supportsBinary = !e.forceBase64;
 	}
 	onError(e, t, n) {
 		return super.emitReserved("error", new fe(e, t, n)), this;
@@ -328,7 +328,7 @@ var fe = class extends Error {
 		this.readyState = "open", this.writable = !0, super.emitReserved("open");
 	}
 	onData(e) {
-		let t = j(e, this.socket.binaryType);
+		let t = A(e, this.socket.binaryType);
 		this.onPacket(t);
 	}
 	onPacket(e) {
@@ -380,7 +380,7 @@ var fe = class extends Error {
 		this._polling = !0, this.doPoll(), this.emitReserved("poll");
 	}
 	onData(e) {
-		I(e, this.socket.binaryType).forEach((e) => {
+		F(e, this.socket.binaryType).forEach((e) => {
 			if (this.readyState === "opening" && e.type === "open" && this.onOpen(), e.type === "close") return this.onClose({ description: "transport closed by the server" }), !1;
 			this.onPacket(e);
 		}), this.readyState !== "closed" && (this._polling = !1, this.emitReserved("pollComplete"), this.readyState === "open" && this._poll());
@@ -392,7 +392,7 @@ var fe = class extends Error {
 		this.readyState === "open" ? e() : this.once("open", e);
 	}
 	write(e) {
-		this.writable = !1, F(e, (e) => {
+		this.writable = !1, P(e, (e) => {
 			this.doWrite(e, () => {
 				this.writable = !0, this.emitReserved("drain");
 			});
@@ -432,9 +432,9 @@ var ve = class extends me {
 			this.onError("xhr poll error", e, t);
 		}), this.pollXhr = e;
 	}
-}, Y = class e extends V {
+}, Y = class e extends B {
 	constructor(e, t, n) {
-		super(), this.createRequest = e, J(this, n), this._opts = n, this._method = n.method || "GET", this._uri = t, this._data = n.data === void 0 ? null : n.data, this._create();
+		super(), this.createRequest = e, q(this, n), this._opts = n, this._method = n.method || "GET", this._uri = t, this._data = n.data === void 0 ? null : n.data, this._create();
 	}
 	_create() {
 		var t;
@@ -491,7 +491,7 @@ var ve = class extends me {
 if (Y.requestsCount = 0, Y.requests = {}, typeof document < "u") {
 	if (typeof attachEvent == "function") attachEvent("onunload", ye);
 	else if (typeof addEventListener == "function") {
-		let e = "onpagehide" in W ? "pagehide" : "unload";
+		let e = "onpagehide" in U ? "pagehide" : "unload";
 		addEventListener(e, ye, !1);
 	}
 }
@@ -517,7 +517,7 @@ function Se(e) {
 		if (typeof XMLHttpRequest < "u" && (!t || ge)) return new XMLHttpRequest();
 	} catch {}
 	if (!t) try {
-		return new W[["Active", "Object"].join("X")]("Microsoft.XMLHTTP");
+		return new U[["Active", "Object"].join("X")]("Microsoft.XMLHTTP");
 	} catch {}
 }
 //#endregion
@@ -552,7 +552,7 @@ var Ce = typeof navigator < "u" && typeof navigator.product == "string" && navig
 				try {
 					this.doWrite(n, e);
 				} catch {}
-				r && U(() => {
+				r && H(() => {
 					this.writable = !0, this.emitReserved("drain");
 				}, this.setTimeoutFn);
 			});
@@ -565,7 +565,7 @@ var Ce = typeof navigator < "u" && typeof navigator.product == "string" && navig
 		let e = this.opts.secure ? "wss" : "ws", t = this.query || {};
 		return this.opts.timestampRequests && (t[this.opts.timestampParam] = le()), this.supportsBinary || (t.b64 = 1), this.createUri(e, t);
 	}
-}, Te = W.WebSocket || W.MozWebSocket, Ee = {
+}, Te = U.WebSocket || U.MozWebSocket, Ee = {
 	websocket: class extends we {
 		createSocket(e, t, n) {
 			return Ce ? new Te(e, t, n) : t ? new Te(e, t) : new Te(e);
@@ -590,7 +590,7 @@ var Ce = typeof navigator < "u" && typeof navigator.product == "string" && navig
 				this.onError("webtransport error", e);
 			}), this._transport.ready.then(() => {
 				this._transport.createBidirectionalStream().then((e) => {
-					let t = B(2 ** 53 - 1, this.socket.binaryType), n = e.readable.pipeThrough(t).getReader(), r = ie();
+					let t = z(2 ** 53 - 1, this.socket.binaryType), n = e.readable.pipeThrough(t).getReader(), r = ae();
 					r.readable.pipeTo(e.writable), this._writer = r.writable.getWriter();
 					let i = () => {
 						n.read().then(({ done: e, value: t }) => {
@@ -608,7 +608,7 @@ var Ce = typeof navigator < "u" && typeof navigator.product == "string" && navig
 			for (let t = 0; t < e.length; t++) {
 				let n = e[t], r = t === e.length - 1;
 				this._writer.write(n).then(() => {
-					r && U(() => {
+					r && H(() => {
 						this.writable = !0, this.emitReserved("drain");
 					}, this.setTimeoutFn);
 				});
@@ -660,13 +660,13 @@ var Me = typeof addEventListener == "function" && typeof removeEventListener == 
 Me && addEventListener("offline", () => {
 	Ne.forEach((e) => e());
 }, !1);
-var Pe = class e extends V {
+var Pe = class e extends B {
 	constructor(e, t) {
-		if (super(), this.binaryType = ae, this.writeBuffer = [], this._prevBufferLen = 0, this._pingInterval = -1, this._pingTimeout = -1, this._maxPayload = -1, this._pingTimeoutTime = Infinity, e && typeof e == "object" && (t = e, e = null), e) {
+		if (super(), this.binaryType = W, this.writeBuffer = [], this._prevBufferLen = 0, this._pingInterval = -1, this._pingTimeout = -1, this._maxPayload = -1, this._pingTimeoutTime = Infinity, e && typeof e == "object" && (t = e, e = null), e) {
 			let n = ke(e);
 			t.hostname = n.host, t.secure = n.protocol === "https" || n.protocol === "wss", t.port = n.port, n.query && (t.query = n.query);
 		} else t.host && (t.hostname = ke(t.host).host);
-		J(this, t), this.secure = t.secure == null ? typeof location < "u" && location.protocol === "https:" : t.secure, t.hostname && !t.port && (t.port = this.secure ? "443" : "80"), this.hostname = t.hostname || (typeof location < "u" ? location.hostname : "localhost"), this.port = t.port || (typeof location < "u" && location.port ? location.port : this.secure ? "443" : "80"), this.transports = [], this._transportsByName = {}, t.transports.forEach((e) => {
+		q(this, t), this.secure = t.secure == null ? typeof location < "u" && location.protocol === "https:" : t.secure, t.hostname && !t.port && (t.port = this.secure ? "443" : "80"), this.hostname = t.hostname || (typeof location < "u" ? location.hostname : "localhost"), this.port = t.port || (typeof location < "u" && location.port ? location.port : this.secure ? "443" : "80"), this.transports = [], this._transportsByName = {}, t.transports.forEach((e) => {
 			let t = e.prototype.name;
 			this.transports.push(t), this._transportsByName[t] = e;
 		}), this.opts = Object.assign({
@@ -766,7 +766,7 @@ var Pe = class e extends V {
 	_hasPingExpired() {
 		if (!this._pingTimeoutTime) return !0;
 		let e = Date.now() > this._pingTimeoutTime;
-		return e && (this._pingTimeoutTime = 0, U(() => {
+		return e && (this._pingTimeoutTime = 0, H(() => {
 			this._onClose("ping timeout");
 		}, this.setTimeoutFn)), e;
 	}
@@ -985,7 +985,7 @@ var Ze = class {
 		let t = Ge(e), n = this.encodeAsString(t.packet), r = t.buffers;
 		return r.unshift(n), r;
 	}
-}, Qe = class e extends V {
+}, Qe = class e extends B {
 	constructor(e) {
 		super(), this.opts = Object.assign({
 			reviver: void 0,
@@ -1118,7 +1118,7 @@ var ot = Object.freeze({
 	disconnecting: 1,
 	newListener: 1,
 	removeListener: 1
-}), st = class extends V {
+}), st = class extends B {
 	constructor(e, t, n) {
 		super(), this.connected = !1, this.recovered = !1, this.receiveBuffer = [], this.sendBuffer = [], this._queue = [], this._queueSeq = 0, this.ids = 0, this.acks = {}, this.flags = {}, this.io = e, this.nsp = t, n && n.auth && (this.auth = n.auth), this._opts = Object.assign({}, n), this.io._autoConnect && this.open();
 	}
@@ -1371,9 +1371,9 @@ Q.prototype.duration = function() {
 };
 //#endregion
 //#region node_modules/socket.io-client/build/esm/manager.js
-var ct = class extends V {
+var ct = class extends B {
 	constructor(e, t) {
-		super(), this.nsps = {}, this.subs = [], e && typeof e == "object" && (t = e, e = void 0), t ||= {}, t.path = t.path || "/socket.io", this.opts = t, J(this, t), this.reconnection(t.reconnection !== !1), this.reconnectionAttempts(t.reconnectionAttempts || Infinity), this.reconnectionDelay(t.reconnectionDelay || 1e3), this.reconnectionDelayMax(t.reconnectionDelayMax || 5e3), this.randomizationFactor(t.randomizationFactor ?? .5), this.backoff = new Q({
+		super(), this.nsps = {}, this.subs = [], e && typeof e == "object" && (t = e, e = void 0), t ||= {}, t.path = t.path || "/socket.io", this.opts = t, q(this, t), this.reconnection(t.reconnection !== !1), this.reconnectionAttempts(t.reconnectionAttempts || Infinity), this.reconnectionDelay(t.reconnectionDelay || 1e3), this.reconnectionDelayMax(t.reconnectionDelayMax || 5e3), this.randomizationFactor(t.randomizationFactor ?? .5), this.backoff = new Q({
 			min: this.reconnectionDelay(),
 			max: this.reconnectionDelayMax(),
 			jitter: this.randomizationFactor()
@@ -1444,7 +1444,7 @@ var ct = class extends V {
 		}
 	}
 	ondecoded(e) {
-		U(() => {
+		H(() => {
 			this.emitReserved("packet", e);
 		}, this.setTimeoutFn);
 	}
@@ -1541,7 +1541,7 @@ var ut = "chatbot-package-styles", dt = {
 		CheckCircle: ee,
 		ArrowLeft: f
 	} });
-}, _t = (e) => e.replace(/\/+$/, ""), vt = (e) => e.replace(/\/api\/?$/i, ""), yt = (e) => e && typeof e == "object" && "data" in e ? e.data : e, bt = (e = {}) => {
+}, _t = (e) => e.replace(/\/+$/, ""), vt = (e) => e.startsWith("/") ? e : `/${e}`, yt = (e) => e.replace(/\/api\/?$/i, ""), bt = (e) => e && typeof e == "object" && "data" in e ? e.data : e, xt = (e = {}) => {
 	if (typeof window > "u" || typeof document > "u") throw Error("chatbot-package can only run in a browser environment.");
 	pt();
 	let t = {
@@ -1599,146 +1599,181 @@ var ut = "chatbot-package-styles", dt = {
 	w.type = "submit", w.setAttribute("aria-label", "Send message"), w.innerHTML = "<i data-lucide=\"send-horizontal\" aria-hidden=\"true\"></i>", S.append(C, w);
 	let T = document.createElement("button");
 	T.type = "button", T.className = "chatbot-human-button";
-	let E = "<i data-lucide=\"user-round\" aria-hidden=\"true\"></i><span>Talk to a real human</span>";
-	T.innerHTML = E;
-	let D = document.createElement("p");
-	D.className = "chatbot-powered", D.innerHTML = "Powered by <strong>AI assistant</strong>", x.append(S, T, D);
-	let O = document.createElement("div");
-	O.className = "chatbot-human-container";
-	let te = document.createElement("div");
-	te.className = "chatbot-human-header";
-	let ne = document.createElement("h3");
-	ne.textContent = "Contact Support";
-	let k = document.createElement("p");
-	k.textContent = "Please provide your details and we will get back to you shortly.", te.append(ne, k);
-	let A = document.createElement("form");
-	A.className = "chatbot-human-form";
-	let re = (e, t) => {
+	let te = "<i data-lucide=\"user-round\" aria-hidden=\"true\"></i><span>Talk to a real human</span>";
+	T.innerHTML = te;
+	let E = document.createElement("p");
+	E.className = "chatbot-powered", E.innerHTML = "Powered by <strong>AI assistant</strong>", x.append(S, T, E);
+	let D = document.createElement("div");
+	D.className = "chatbot-human-container";
+	let ne = document.createElement("div");
+	ne.className = "chatbot-human-header";
+	let re = document.createElement("h3");
+	re.textContent = "Contact Support";
+	let O = document.createElement("p");
+	O.textContent = "Please provide your details and we will get back to you shortly.", ne.append(re, O);
+	let k = document.createElement("form");
+	k.className = "chatbot-human-form";
+	let ie = (e, t) => {
 		let n = document.createElement("div");
 		n.className = "chatbot-form-group";
 		let r = document.createElement("label");
 		return r.textContent = e, n.append(r, t), n;
-	}, j = document.createElement("input");
-	j.type = "text", j.placeholder = "John Doe", j.required = !0;
-	let M = document.createElement("input");
-	M.type = "email", M.placeholder = "john@example.com", M.required = !0;
-	let N = document.createElement("textarea");
-	N.placeholder = "How can we help you?", N.required = !0;
-	let P = document.createElement("div");
-	P.className = "chatbot-form-actions";
+	}, A = document.createElement("input");
+	A.type = "text", A.placeholder = "John Doe", A.required = !0;
+	let j = document.createElement("input");
+	j.type = "email", j.placeholder = "john@example.com", j.required = !0;
+	let M = document.createElement("textarea");
+	M.placeholder = "How can we help you?", M.required = !0;
+	let N = document.createElement("div");
+	N.className = "chatbot-form-actions";
+	let P = document.createElement("button");
+	P.type = "button", P.className = "chatbot-btn-secondary", P.innerHTML = "<i data-lucide=\"arrow-left\" aria-hidden=\"true\" style=\"width: 16px; height: 16px;\"></i> Back";
 	let F = document.createElement("button");
-	F.type = "button", F.className = "chatbot-btn-secondary", F.innerHTML = "<i data-lucide=\"arrow-left\" aria-hidden=\"true\" style=\"width: 16px; height: 16px;\"></i> Back";
-	let I = document.createElement("button");
-	I.type = "submit", I.className = "chatbot-btn-primary", I.textContent = "Send Message", P.append(F, I), A.append(re("Name", j), re("Email", M), re("Description", N), P);
-	let ie = document.createElement("div");
-	ie.className = "chatbot-human-success";
-	let L = document.createElement("div");
-	L.className = "chatbot-success-icon", L.innerHTML = "<i data-lucide=\"check-circle\" aria-hidden=\"true\"></i>";
-	let R = document.createElement("h3");
-	R.textContent = "Message Sent!";
-	let z = document.createElement("p");
-	z.textContent = "Our support team will reach out to you via email shortly.";
-	let B = document.createElement("button");
-	B.type = "button", B.className = "chatbot-btn-primary", B.textContent = "Back to Chat", ie.append(L, R, z, B), O.append(te, A, ie), i.append(a, m, x, O), n.append(i, r), document.body.appendChild(n), gt();
-	let V = !1, H = !1, U = !1, W = null, ae = null, G = null, K = (e) => {
+	F.type = "submit", F.className = "chatbot-btn-primary", F.textContent = "Send Message", N.append(P, F), k.append(ie("Name", A), ie("Email", j), ie("Description", M), N);
+	let ae = document.createElement("div");
+	ae.className = "chatbot-human-success";
+	let I = document.createElement("div");
+	I.className = "chatbot-success-icon", I.innerHTML = "<i data-lucide=\"check-circle\" aria-hidden=\"true\"></i>";
+	let L = document.createElement("h3");
+	L.textContent = "Message Sent!";
+	let R = document.createElement("p");
+	R.textContent = "Our support team will reach out to you via email shortly.";
+	let z = document.createElement("button");
+	z.type = "button", z.className = "chatbot-btn-primary", z.textContent = "Back to Chat", ae.append(I, L, R, z), D.append(ne, k, ae), i.append(a, m, x, D), n.append(i, r), document.body.appendChild(n), gt();
+	let B = !1, V = !1, H = !1, U = !1, W = null, G = null, K = null, oe = e.aiSupport?.sessionId || (typeof crypto < "u" && typeof crypto.randomUUID == "function" ? crypto.randomUUID() : `widget-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`), q = (e) => {
 		e.trim() && (m.classList.add("has-messages"), b.appendChild(mt(e.trim(), "bot")), m.scrollTop = m.scrollHeight);
-	}, q = (e) => {
-		H || (V = e, n.classList.toggle("open", V), r.setAttribute("aria-expanded", String(V)), V && window.setTimeout(() => C.focus(), 0));
-	}, J = async (n) => {
-		if (U && W) {
+	}, J = (e) => {
+		V || (B = e, n.classList.toggle("open", B), r.setAttribute("aria-expanded", String(B)), B && window.setTimeout(() => C.focus(), 0));
+	}, se = async (n) => {
+		if (H && W) {
 			W.emit("widget:message", { text: n });
 			return;
 		}
 		if (e.onUserMessage) {
 			let t = await e.onUserMessage(n);
-			typeof t == "string" && t.trim() && K(t);
+			typeof t == "string" && t.trim() && q(t);
 			return;
 		}
-		K(`Thanks! ${t.botName} received: "${n}"`);
-	}, oe = async (e) => {
+		if (e.aiSupport) {
+			try {
+				let t = _t(e.aiSupport.apiBaseUrl), r = vt(e.aiSupport.chatPath || "/rag/chat"), i = await fetch(`${t}${r}`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						"x-api-key": e.aiSupport.apiKey
+					},
+					body: JSON.stringify({
+						query: n,
+						sessionId: oe
+					})
+				});
+				if (!i.ok) throw Error("Unable to fetch chatbot response right now.");
+				let a = bt(await i.json());
+				q(typeof a?.answer == "string" && a.answer || typeof a?.response == "string" && a.response || typeof a?.message == "string" && a.message || "I processed your question, but no answer text was returned.");
+			} catch (e) {
+				q(e instanceof Error ? e.message : "Sorry, I am having trouble connecting right now.");
+			}
+			return;
+		}
+		q(`Thanks! ${t.botName} received: "${n}"`);
+	}, ce = async (n) => {
 		if (!t.humanSupport) {
-			K("Human support is not configured for this widget yet.");
+			q("Human support is not configured for this widget yet.");
 			return;
 		}
-		let n = _t(t.humanSupport.apiBaseUrl), r = await fetch(`${n}/widget/session`, {
+		let r = t.humanSupport.widgetKey || e.aiSupport?.apiKey;
+		if (!r) throw Error("Human support requires a widget key or aiSupport.apiKey.");
+		let i = _t(t.humanSupport.apiBaseUrl), a = await fetch(`${i}/widget/session`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
-				widgetKey: t.humanSupport.widgetKey,
-				visitorName: e.name,
-				visitorEmail: e.email,
-				issue: e.issue
+				widgetKey: r,
+				visitorName: n.name,
+				visitorEmail: n.email,
+				issue: n.issue
 			})
 		});
-		if (!r.ok) throw Error("Unable to connect to human support right now.");
-		let i = yt(await r.json());
-		ae = i.sessionId, G = i.ticketId, U = !0;
-		let a = lt(vt(n), {
+		if (!a.ok) throw Error("Unable to connect to human support right now.");
+		let o = bt(await a.json());
+		G = o.sessionId, K = o.ticketId, H = !0;
+		let s = lt(yt(i), {
 			path: "/socket.io",
 			transports: ["websocket"],
-			auth: { token: i.chatToken }
+			auth: { token: o.chatToken }
 		});
-		W = a, a.on("connect", () => {
-			f.textContent = "Connected with human support";
-		}), a.on("disconnect", () => {
-			U && (f.textContent = "Reconnecting to human support...");
-		}), a.on("chat:message", (e) => {
-			e.sessionId === ae && e.sender === "agent" && typeof e.text == "string" && K(e.text);
-		}), a.on("chat:error", (e) => {
-			K(e.message || "Support connection error. Please try again.");
-		}), a.emit("widget:request_human", {
-			name: e.name,
-			email: e.email,
-			issue: e.issue
-		});
-	}, se = async (e) => {
+		W = s, s.on("connect", () => {
+			f.textContent = "Connecting to a human agent...";
+		}), s.on("disconnect", () => {
+			H && (f.textContent = "Reconnecting to human support...");
+		}), s.on("chat:message", (e) => {
+			e.sessionId === G && e.sender === "agent" && typeof e.text == "string" && q(e.text);
+		}), s.on("chat:ticket_status", (e) => {
+			if (e.sessionId && e.sessionId === G || e.ticketId && e.ticketId === K) {
+				if (e.status === "assigned") {
+					U || q("A human agent has accepted your chat. You are now connected."), U = !0, f.textContent = "Connected with human support";
+					return;
+				}
+				e.status === "pending" && (f.textContent = "Connecting to a human agent...");
+			}
+		}), s.on("chat:error", (e) => {
+			q(e.message || "Support connection error. Please try again.");
+		}), s.emit("widget:request_human", {
+			name: n.name,
+			email: n.email,
+			issue: n.issue
+		}), f.textContent = "Connecting to a human agent...";
+	}, le = async (e) => {
 		let t = e.trim();
-		!t || H || (m.classList.add("has-messages"), b.appendChild(mt(t, "user")), C.value = "", m.scrollTop = m.scrollHeight, await J(t));
+		!t || V || (m.classList.add("has-messages"), b.appendChild(mt(t, "user")), C.value = "", m.scrollTop = m.scrollHeight, await se(t));
 	};
 	return r.addEventListener("click", () => {
-		q(!V);
+		J(!B);
 	}), S.addEventListener("submit", async (e) => {
-		e.preventDefault(), await se(C.value);
+		e.preventDefault(), await le(C.value);
 	}), T.addEventListener("click", async () => {
+		if (H) {
+			q(U ? "You are already connected with a human agent in this chat." : "Your request is already in queue. An agent will join shortly.");
+			return;
+		}
 		if (e.onTalkToHumanClick) {
 			T.disabled = !0, T.textContent = "Creating ticket...";
 			try {
 				let t = await e.onTalkToHumanClick();
-				typeof t == "string" && t.trim() && K(t);
+				typeof t == "string" && t.trim() && q(t);
 			} catch (e) {
-				K(e instanceof Error ? e.message : "Unable to create support ticket right now.");
+				q(e instanceof Error ? e.message : "Unable to create support ticket right now.");
 			} finally {
-				T.disabled = !1, T.innerHTML = E, gt();
+				T.disabled = !1, T.innerHTML = te, gt();
 			}
 			return;
 		}
 		n.classList.add("show-human-form"), n.classList.remove("show-human-success");
-	}), F.addEventListener("click", () => {
+	}), P.addEventListener("click", () => {
 		n.classList.remove("show-human-form");
-	}), A.addEventListener("submit", async (e) => {
-		e.preventDefault(), I.disabled = !0, I.textContent = "Connecting...";
+	}), k.addEventListener("submit", async (e) => {
+		e.preventDefault(), F.disabled = !0, F.textContent = "Connecting...";
 		try {
-			await oe({
-				name: j.value.trim(),
-				email: M.value.trim(),
-				issue: N.value.trim()
-			}), n.classList.add("show-human-success"), R.textContent = "Connected to Support", z.textContent = "You can now continue chatting with a human support agent.", I.textContent = "Send Message";
+			await ce({
+				name: A.value.trim(),
+				email: j.value.trim(),
+				issue: M.value.trim()
+			}), n.classList.remove("show-human-form"), n.classList.remove("show-human-success"), k.reset(), m.classList.add("has-messages"), b.appendChild(mt(K ? `Ticket ${K.slice(-6)} created. Connecting you to a human agent now...` : "Your request is submitted. Connecting you to a human agent now...", "bot")), m.scrollTop = m.scrollHeight, T.disabled = !0, T.innerHTML = "<i data-lucide=\"check-circle\" aria-hidden=\"true\"></i><span>Human Support Requested</span>", gt(), F.textContent = "Send Message";
 		} catch (e) {
-			K(e instanceof Error ? e.message : "Unable to connect to support right now."), I.textContent = "Send Message";
+			q(e instanceof Error ? e.message : "Unable to connect to support right now."), F.textContent = "Send Message";
 		} finally {
-			I.disabled = !1;
+			F.disabled = !1;
 		}
-	}), B.addEventListener("click", () => {
-		n.classList.remove("show-human-form"), n.classList.remove("show-human-success"), A.reset(), m.classList.add("has-messages"), b.appendChild(mt(U && G ? `You are now connected with our support team (ticket ${G.slice(-6)}).` : "Your issue has been submitted. A human agent will contact you soon.", "bot")), m.scrollTop = m.scrollHeight;
+	}), z.addEventListener("click", () => {
+		n.classList.remove("show-human-form"), n.classList.remove("show-human-success"), k.reset(), m.classList.add("has-messages"), b.appendChild(mt(H && K ? U ? `You are now connected with our support team (ticket ${K.slice(-6)}).` : `Your ticket ${K.slice(-6)} is waiting for an available human agent.` : "Your issue has been submitted. A human agent will contact you soon.", "bot")), m.scrollTop = m.scrollHeight;
 	}), {
-		open: () => q(!0),
-		close: () => q(!1),
-		toggle: () => q(!V),
-		sendMessage: se,
+		open: () => J(!0),
+		close: () => J(!1),
+		toggle: () => J(!B),
+		sendMessage: le,
 		destroy: () => {
-			H || (H = !0, W &&= (W.close(), null), n.remove());
+			V || (V = !0, W &&= (W.close(), null), n.remove());
 		}
 	};
 };
 //#endregion
-export { bt as createChatbotWidget };
+export { xt as createChatbotWidget };
