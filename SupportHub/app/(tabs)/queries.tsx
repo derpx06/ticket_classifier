@@ -9,27 +9,30 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatDistanceToNow } from 'date-fns';
 import { Feather } from '@expo/vector-icons';
-import { getTickets, acceptTicket, updateTicketConfig, Ticket, TicketPriority, TicketStatus } from '@/services/ticket-service';
+import {
+  getTickets,
+  acceptTicket,
+  updateTicketConfig,
+  formatTicketCardDetails,
+  Ticket,
+  TicketPriority,
+  TicketStatus,
+} from '@/services/ticket-service';
 import { TicketDetailsModal } from '@/components/ticket-details-modal';
-import { Spacing, Radius, Palette, Layout } from '@/constants/theme';
+import { Spacing, Radius, Palette, Colors } from '@/constants/theme';
 import { Font } from '@/constants/typography';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-
-const OUTER_BG = '#2f3036';
-const CARD_SHEET = '#f1f5f9';
-const CARD_INNER = '#ffffff';
-const BRAND_NAVY = '#1e3a5f';
-const BRAND_BLUE = '#2563eb';
 
 type FilterFacet = 'status' | 'priority' | 'category';
 
 function ticketCode(id: string): string {
-  const tail = id.replace(/\s/g, '').slice(-4);
-  return tail ? `NX-${tail.toUpperCase()}` : 'NX-XXXX';
+  const tail = id.replace(/\s/g, '').slice(-6);
+  return tail ? tail.toUpperCase() : '—';
 }
 
 function titleCaseWord(s: string): string {
@@ -38,24 +41,76 @@ function titleCaseWord(s: string): string {
   return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
 }
 
-function statusAccent(status: Ticket['status']) {
-  switch (status) {
-    case 'escalated':
-      return { accent: '#9f1239', badgeBg: '#9f1239', badgeFg: '#ffffff', label: 'ESCALATED' };
-    case 'resolved':
-      return { accent: '#4ade80', badgeBg: '#22c55e', badgeFg: '#ffffff', label: 'RESOLVED' };
-    case 'assigned':
-      return { accent: '#38bdf8', badgeBg: '#e5e7eb', badgeFg: '#374151', label: 'IN PROGRESS' };
-    case 'closed':
-      return { accent: '#94a3b8', badgeBg: '#64748b', badgeFg: '#ffffff', label: 'CLOSED' };
-    case 'pending':
-    default:
-      return { accent: '#f59e0b', badgeBg: '#fef3c7', badgeFg: '#92400e', label: 'PENDING' };
-  }
-}
-
 function isTerminalStatus(status: Ticket['status']): boolean {
   return status === 'resolved' || status === 'escalated' || status === 'closed';
+}
+
+function cardElevation(isDark: boolean): object {
+  if (isDark) return { elevation: 0 };
+  return Platform.select({
+    ios: {
+      shadowColor: '#0f172a',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.06,
+      shadowRadius: 12,
+    },
+    android: { elevation: 2 },
+    default: {},
+  });
+}
+
+function statusPresentation(status: Ticket['status'], isDark: boolean) {
+  const s = status;
+  if (s === 'escalated') {
+    return {
+      stripe: Palette.danger,
+      label: 'Escalated',
+      pillBg: isDark ? `${Palette.danger}28` : `${Palette.danger}12`,
+      pillFg: isDark ? '#fecaca' : Palette.danger,
+      pillBorder: `${Palette.danger}45`,
+    };
+  }
+  if (s === 'resolved') {
+    return {
+      stripe: Palette.success,
+      label: 'Resolved',
+      pillBg: isDark ? `${Palette.success}28` : `${Palette.success}12`,
+      pillFg: isDark ? '#a7f3d0' : Palette.success,
+      pillBorder: `${Palette.success}40`,
+    };
+  }
+  if (s === 'closed') {
+    return {
+      stripe: isDark ? '#64748b' : '#94a3b8',
+      label: 'Closed',
+      pillBg: isDark ? '#334155' : '#f4f4f5',
+      pillFg: isDark ? '#cbd5e1' : '#64748b',
+      pillBorder: isDark ? '#475569' : '#e4e4e7',
+    };
+  }
+  if (s === 'assigned') {
+    return {
+      stripe: Palette.primary,
+      label: 'In progress',
+      pillBg: isDark ? `${Palette.primary}30` : `${Palette.primary}12`,
+      pillFg: isDark ? '#93c5fd' : Palette.primary,
+      pillBorder: `${Palette.primary}40`,
+    };
+  }
+  return {
+    stripe: Palette.warning,
+    label: 'Pending',
+    pillBg: isDark ? `${Palette.warning}30` : `${Palette.warning}14`,
+    pillFg: isDark ? '#fcd34d' : '#b45309',
+    pillBorder: `${Palette.warning}45`,
+  };
+}
+
+function priorityDotColor(p: TicketPriority): string {
+  if (p === 'critical') return Palette.danger;
+  if (p === 'high') return Palette.warning;
+  if (p === 'medium') return Palette.info;
+  return '#64748b';
 }
 
 const STATUS_OPTIONS: (TicketStatus | 'all')[] = ['all', 'pending', 'assigned', 'resolved', 'escalated'];
@@ -74,8 +129,10 @@ export default function QueriesScreen() {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const c = Colors[colorScheme ?? 'light'];
+  const lift = cardElevation(isDark);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const data = await getTickets();
       if (__DEV__) {
@@ -86,17 +143,17 @@ export default function QueriesScreen() {
     } catch (e) {
       console.error('Failed to fetch tickets:', e);
     }
-  };
+  }, []);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchData();
     setRefreshing(false);
-  }, []);
+  }, [fetchData]);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    void fetchData();
+  }, [fetchData]);
 
   const categoryOptions = useMemo(() => {
     const map = new Map<string, string>();
@@ -112,7 +169,7 @@ export default function QueriesScreen() {
   const handleStatusChange = async (id: string, newStatus: Ticket['status']) => {
     try {
       await updateTicketConfig(id, { status: newStatus });
-      fetchData();
+      void fetchData();
     } catch {
       Alert.alert('Error', 'Could not update ticket status');
     }
@@ -122,22 +179,22 @@ export default function QueriesScreen() {
 
   const modalAccept = async (id: string) => {
     await acceptTicket(id);
-    fetchData();
+    void fetchData();
   };
 
   const modalReject = async (id: string) => {
     await updateTicketConfig(id, { status: 'escalated' });
-    fetchData();
+    void fetchData();
   };
 
   const modalResolve = async (id: string) => {
     await updateTicketConfig(id, { status: 'resolved' });
-    fetchData();
+    void fetchData();
   };
 
   const modalEscalate = async (id: string) => {
     await updateTicketConfig(id, { status: 'escalated' });
-    fetchData();
+    void fetchData();
   };
 
   const filteredTickets = useMemo(() => {
@@ -168,301 +225,347 @@ export default function QueriesScreen() {
     [tickets],
   );
 
-  const facetChipStyle = (active: boolean) => ({
-    backgroundColor: active ? '#dbeafe' : '#e5e7eb',
-    borderColor: active ? BRAND_BLUE : 'transparent',
-  });
-  const facetChipText = (active: boolean) => ({
-    color: active ? '#1e40af' : '#475569',
-  });
-
   const renderFacetValuePills = () => {
+    const row = (children: React.ReactNode) => (
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.valuePillScroll}
+        style={styles.valuePillScrollView}
+      >
+        {children}
+      </ScrollView>
+    );
+
     if (facet === 'status') {
-      return (
-        <View style={styles.valuePillRow}>
-          {STATUS_OPTIONS.map((opt) => {
-            const active = statusFilter === opt;
-            const label = opt === 'all' ? 'All' : titleCaseWord(opt);
-            return (
-              <TouchableOpacity
-                key={String(opt)}
-                onPress={() => setStatusFilter(opt)}
-                style={[styles.valuePill, active ? styles.valuePillOn : styles.valuePillOff]}
-                activeOpacity={0.85}
-              >
-                <Text style={[styles.valuePillText, { color: active ? '#fff' : '#475569', fontFamily: Font.semibold }]}>
-                  {label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      );
-    }
-    if (facet === 'priority') {
-      return (
-        <View style={styles.valuePillRow}>
-          {PRIORITY_OPTIONS.map((opt) => {
-            const active = priorityFilter === opt;
-            const label = opt === 'all' ? 'All' : titleCaseWord(opt);
-            return (
-              <TouchableOpacity
-                key={String(opt)}
-                onPress={() => setPriorityFilter(opt)}
-                style={[styles.valuePill, active ? styles.valuePillOn : styles.valuePillOff]}
-                activeOpacity={0.85}
-              >
-                <Text style={[styles.valuePillText, { color: active ? '#fff' : '#475569', fontFamily: Font.semibold }]}>
-                  {label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      );
-    }
-    return (
-      <View style={styles.valuePillRow}>
-        {categoryOptions.map((opt) => {
-          const active = categoryFilter === opt;
+      return row(
+        STATUS_OPTIONS.map((opt) => {
+          const active = statusFilter === opt;
           const label = opt === 'all' ? 'All' : titleCaseWord(opt);
           return (
             <TouchableOpacity
-              key={opt}
-              onPress={() => setCategoryFilter(opt)}
-              style={[styles.valuePill, active ? styles.valuePillOn : styles.valuePillOff]}
+              key={String(opt)}
+              onPress={() => setStatusFilter(opt)}
+              style={[
+                styles.valuePill,
+                {
+                  backgroundColor: active ? Palette.primary : c.surface,
+                  borderColor: active ? Palette.primary : c.border,
+                },
+              ]}
               activeOpacity={0.85}
             >
-              <Text style={[styles.valuePillText, { color: active ? '#fff' : '#475569', fontFamily: Font.semibold }]}>
+              <Text
+                style={[
+                  styles.valuePillText,
+                  { color: active ? '#ffffff' : c.textSecondary, fontFamily: Font.semibold },
+                ]}
+              >
                 {label}
               </Text>
             </TouchableOpacity>
           );
-        })}
-      </View>
+        }),
+      );
+    }
+    if (facet === 'priority') {
+      return row(
+        PRIORITY_OPTIONS.map((opt) => {
+          const active = priorityFilter === opt;
+          const label = opt === 'all' ? 'All' : titleCaseWord(opt);
+          return (
+            <TouchableOpacity
+              key={String(opt)}
+              onPress={() => setPriorityFilter(opt)}
+              style={[
+                styles.valuePill,
+                {
+                  backgroundColor: active ? Palette.primary : c.surface,
+                  borderColor: active ? Palette.primary : c.border,
+                },
+              ]}
+              activeOpacity={0.85}
+            >
+              <Text
+                style={[
+                  styles.valuePillText,
+                  { color: active ? '#ffffff' : c.textSecondary, fontFamily: Font.semibold },
+                ]}
+              >
+                {label}
+              </Text>
+            </TouchableOpacity>
+          );
+        }),
+      );
+    }
+    return row(
+      categoryOptions.map((opt) => {
+        const active = categoryFilter === opt;
+        const label = opt === 'all' ? 'All' : titleCaseWord(opt);
+        return (
+          <TouchableOpacity
+            key={opt}
+            onPress={() => setCategoryFilter(opt)}
+            style={[
+              styles.valuePill,
+              {
+                backgroundColor: active ? Palette.primary : c.surface,
+                borderColor: active ? Palette.primary : c.border,
+              },
+            ]}
+            activeOpacity={0.85}
+          >
+            <Text
+              style={[
+                styles.valuePillText,
+                { color: active ? '#ffffff' : c.textSecondary, fontFamily: Font.semibold },
+              ]}
+              numberOfLines={1}
+            >
+              {label}
+            </Text>
+          </TouchableOpacity>
+        );
+      }),
     );
   };
 
   const renderHeader = () => (
     <View style={styles.headerBlock}>
-      <View style={styles.brandRow}>
-        <View style={styles.logoMark}>
-          <View style={styles.logoDot} />
-          <View style={styles.logoDot} />
-          <View style={styles.logoDot} />
+      <View style={styles.titleRow}>
+        <View style={styles.titleCol}>
+          <Text style={[styles.pageTitle, { color: c.text, fontFamily: Font.bold }]}>Queries</Text>
+          <Text style={[styles.pageHint, { color: c.textSecondary, fontFamily: Font.regular }]}>
+            Search and filter your queue
+          </Text>
         </View>
-        <Text style={[styles.brandName, { fontFamily: Font.bold }]}>Support Hub</Text>
-        <TouchableOpacity style={styles.bellBtn} hitSlop={12} activeOpacity={0.7}>
-          <Feather name="bell" size={20} color={BRAND_NAVY} />
-        </TouchableOpacity>
+        <View style={[styles.countPill, { backgroundColor: c.surfaceMuted, borderColor: c.border }]}>
+          <Text style={[styles.countPillText, { color: c.textSecondary, fontFamily: Font.semibold }]}>
+            {filteredTickets.length}
+          </Text>
+          <Text style={[styles.countPillSuffix, { color: c.textSecondary, fontFamily: Font.medium }]}>
+            {filteredTickets.length === 1 ? 'ticket' : 'tickets'}
+          </Text>
+        </View>
       </View>
 
-      <Text style={[styles.pageTitle, { fontFamily: Font.bold }]}>Queries</Text>
       {activeHighPriority > 0 ? (
-        <Text style={[styles.pageSub, { fontFamily: Font.medium }]}>
-          {activeHighPriority} high-priority {activeHighPriority === 1 ? 'query' : 'queries'} need attention
-        </Text>
+        <View style={[styles.alertStrip, { backgroundColor: `${Palette.danger}12`, borderColor: `${Palette.danger}35` }]}>
+          <Feather name="alert-circle" size={16} color={Palette.danger} />
+          <Text style={[styles.alertStripText, { color: isDark ? '#fecaca' : '#991b1b', fontFamily: Font.medium }]}>
+            {activeHighPriority} high-priority {activeHighPriority === 1 ? 'item needs' : 'items need'} attention
+          </Text>
+        </View>
       ) : null}
 
-      <View style={styles.searchInner}>
-        <Feather name="search" size={18} color="#64748b" style={styles.searchIcon} />
+      <View style={[styles.searchInner, { backgroundColor: c.surface, borderColor: c.border }]}>
+        <Feather name="search" size={18} color={c.icon} style={styles.searchIcon} />
         <TextInput
-          style={[styles.searchInput, { fontFamily: Font.regular }]}
-          placeholder="Search ticket archives..."
-          placeholderTextColor="#94a3b8"
+          style={[styles.searchInput, { color: c.text, fontFamily: Font.regular }]}
+          placeholder="Search subject, customer, category…"
+          placeholderTextColor={c.textSecondary}
           value={search}
           onChangeText={setSearch}
         />
+        {search.length > 0 ? (
+          <TouchableOpacity onPress={() => setSearch('')} hitSlop={12} accessibilityLabel="Clear search">
+            <Feather name="x-circle" size={20} color={c.icon} />
+          </TouchableOpacity>
+        ) : null}
       </View>
 
+      <Text style={[styles.filterLabel, { color: c.textSecondary, fontFamily: Font.semibold }]}>Filter by</Text>
       <View style={styles.facetRow}>
         <TouchableOpacity
-          style={[styles.facetChip, facetChipStyle(facet === 'status')]}
+          style={[
+            styles.facetChip,
+            {
+              backgroundColor: facet === 'status' ? `${Palette.primary}14` : c.surface,
+              borderColor: facet === 'status' ? `${Palette.primary}45` : c.border,
+            },
+          ]}
           onPress={() => setFacet('status')}
           activeOpacity={0.85}
         >
-          <Feather name="filter" size={14} color={facet === 'status' ? '#1e40af' : '#64748b'} style={styles.facetIcon} />
-          <Text style={[styles.facetChipText, facetChipText(facet === 'status'), { fontFamily: Font.semibold }]}>
+          <Feather name="git-branch" size={15} color={facet === 'status' ? Palette.primary : c.icon} />
+          <Text
+            style={[
+              styles.facetChipText,
+              { color: facet === 'status' ? Palette.primary : c.text, fontFamily: Font.semibold },
+            ]}
+          >
             Status
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.facetChip, facetChipStyle(facet === 'priority')]}
+          style={[
+            styles.facetChip,
+            {
+              backgroundColor: facet === 'priority' ? `${Palette.primary}14` : c.surface,
+              borderColor: facet === 'priority' ? `${Palette.primary}45` : c.border,
+            },
+          ]}
           onPress={() => setFacet('priority')}
           activeOpacity={0.85}
         >
-          <Text style={[styles.facetChipText, facetChipText(facet === 'priority'), { fontFamily: Font.semibold }]}>
+          <Feather name="flag" size={15} color={facet === 'priority' ? Palette.primary : c.icon} />
+          <Text
+            style={[
+              styles.facetChipText,
+              { color: facet === 'priority' ? Palette.primary : c.text, fontFamily: Font.semibold },
+            ]}
+          >
             Priority
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.facetChip, facetChipStyle(facet === 'category')]}
+          style={[
+            styles.facetChip,
+            {
+              backgroundColor: facet === 'category' ? `${Palette.primary}14` : c.surface,
+              borderColor: facet === 'category' ? `${Palette.primary}45` : c.border,
+            },
+          ]}
           onPress={() => setFacet('category')}
           activeOpacity={0.85}
         >
-          <Text style={[styles.facetChipText, facetChipText(facet === 'category'), { fontFamily: Font.semibold }]}>
+          <Feather name="layers" size={15} color={facet === 'category' ? Palette.primary : c.icon} />
+          <Text
+            style={[
+              styles.facetChipText,
+              { color: facet === 'category' ? Palette.primary : c.text, fontFamily: Font.semibold },
+            ]}
+          >
             Category
           </Text>
         </TouchableOpacity>
       </View>
 
       {renderFacetValuePills()}
+
+      <View style={[styles.listRule, { backgroundColor: c.border }]} />
     </View>
   );
 
   const renderItem = ({ item }: { item: Ticket }) => {
-    const vis = statusAccent(item.status);
-    const ago = formatDistanceToNow(new Date(item.updatedAt), { addSuffix: false });
-    const customerLabel = item.customerName?.trim() || 'AI Chat User';
-    const metaMuted = '#64748b';
-
-    const metaPills = (
-      <View style={styles.metaPillRow}>
-        <View style={[styles.metaPill, styles.metaPillCustomer]}>
-          <Feather name="user" size={12} color="#64748b" style={styles.metaPillIcon} />
-          <Text style={[styles.metaPillText, { color: '#334155', fontFamily: Font.semibold }]} numberOfLines={1}>
-            {customerLabel}
-          </Text>
-        </View>
-        <View style={[styles.metaPill, styles.metaPillCategory]}>
-          <Feather name="folder" size={12} color="#5b21b6" style={styles.metaPillIcon} />
-          <Text style={[styles.metaPillText, { color: '#5b21b6', fontFamily: Font.semibold }]}>
-            {titleCaseWord(item.category)}
-          </Text>
-        </View>
-        <View style={[styles.metaPill, styles.metaPillPriority]}>
-          <Feather name="flag" size={12} color="#c2410c" style={styles.metaPillIcon} />
-          <Text style={[styles.metaPillText, { color: '#c2410c', fontFamily: Font.semibold }]}>
-            {titleCaseWord(item.priority)}
-          </Text>
-        </View>
-        {item.urgency ? (
-          <View style={[styles.metaPill, styles.metaPillUrgency]}>
-            <Feather name="zap" size={12} color="#b91c1c" style={styles.metaPillIcon} />
-            <Text style={[styles.metaPillText, { color: '#b91c1c', fontFamily: Font.semibold }]}>
-              {titleCaseWord(item.urgency)}
-            </Text>
-          </View>
-        ) : null}
-        {item.assignedRoleName?.trim() ? (
-          <View style={[styles.metaPill, styles.metaPillRole]}>
-            <Feather name="briefcase" size={12} color="#0369a1" style={styles.metaPillIcon} />
-            <Text
-              style={[styles.metaPillText, { color: '#0369a1', fontFamily: Font.semibold }]}
-              numberOfLines={1}
-            >
-              {item.assignedRoleName.trim()}
-            </Text>
-          </View>
-        ) : null}
-      </View>
-    );
+    const vis = statusPresentation(item.status, isDark);
+    const updated = formatDistanceToNow(new Date(item.updatedAt), { addSuffix: true });
+    const details = formatTicketCardDetails(item);
+    const pDot = priorityDotColor(item.priority);
 
     return (
       <View
         style={[
           styles.ticketCard,
-          {
-            backgroundColor: CARD_INNER,
-            borderColor: '#e2e8f0',
-          },
+          { backgroundColor: c.surface, borderColor: c.border },
+          lift,
         ]}
       >
-        <View style={[styles.accentBar, { backgroundColor: vis.accent }]} />
+        <View style={[styles.accentBar, { backgroundColor: vis.stripe }]} />
 
         <View style={styles.ticketCardBody}>
           <View style={styles.ticketTopRow}>
             <View style={styles.ticketIdRow}>
-              <Text style={[styles.ticketId, { fontFamily: Font.semibold }]}>{ticketCode(item.id)}</Text>
+              <Text style={[styles.ticketKicker, { color: c.textSecondary, fontFamily: Font.medium }]}>Ticket</Text>
+              <Text style={[styles.ticketId, { color: c.text, fontFamily: Font.bold }]} numberOfLines={1}>
+                #{ticketCode(item.id)}
+              </Text>
             </View>
-            <View style={[styles.statusBadge, { backgroundColor: vis.badgeBg }]}>
-              <Text style={[styles.statusBadgeText, { color: vis.badgeFg, fontFamily: Font.bold }]}>{vis.label}</Text>
+            <View style={[styles.statusPill, { backgroundColor: vis.pillBg, borderColor: vis.pillBorder }]}>
+              <Text style={[styles.statusPillText, { color: vis.pillFg, fontFamily: Font.semibold }]}>{vis.label}</Text>
             </View>
           </View>
 
-          <Text style={[styles.ticketSubjectTitle, { color: '#0f172a', fontFamily: Font.bold }]} numberOfLines={2}>
-            {item.subject}
-          </Text>
-
-          {metaPills}
-
-          <View style={styles.ticketFooter}>
-            <Feather name="clock" size={14} color={metaMuted} style={styles.footerClock} />
-            <Text style={[styles.updatedLabel, { color: metaMuted, fontFamily: Font.medium }]}>
-              Updated {ago} ago
+          <View style={styles.subjectRow}>
+            <View style={[styles.priorityDot, { backgroundColor: pDot }]} />
+            <Text style={[styles.ticketSubjectTitle, { color: c.text, fontFamily: Font.semibold }]} numberOfLines={2}>
+              {item.subject}
             </Text>
+          </View>
+
+          {details ? (
+            <Text style={[styles.metaLine, { color: c.textSecondary, fontFamily: Font.regular }]} numberOfLines={2}>
+              {details}
+            </Text>
+          ) : null}
+
+          <View style={[styles.ticketFooter, { borderTopColor: c.border }]}>
+            <Feather name="clock" size={14} color={c.icon} />
+            <Text style={[styles.updatedLabel, { color: c.textSecondary, fontFamily: Font.medium }]}>{updated}</Text>
           </View>
 
           <View style={styles.actions}>
             {item.status === 'pending' && (
               <TouchableOpacity
-                style={styles.btnDetailsPrimary}
+                style={[styles.ctaRow, { backgroundColor: c.surfaceMuted, borderColor: `${Palette.primary}40` }]}
                 onPress={() => openTicketDetails(item)}
-                activeOpacity={0.88}
+                activeOpacity={0.72}
               >
-                <View style={styles.btnDetailsPrimaryRow}>
-                  <View style={styles.btnDetailsPrimaryMain}>
-                    <View style={[styles.btnDetailsIconCircle, { backgroundColor: `${BRAND_BLUE}14` }]}>
-                      <Feather name="eye" size={18} color={BRAND_BLUE} />
-                    </View>
-                    <View style={styles.btnDetailsTextCol}>
-                      <Text style={[styles.btnDetailsPrimaryText, { fontFamily: Font.semibold }]}>View details</Text>
-                      <Text style={[styles.btnDetailsHint, { fontFamily: Font.regular }]}>
-                        Accept or reject from here
-                      </Text>
-                    </View>
-                  </View>
-                  <Feather name="chevron-right" size={20} color={BRAND_BLUE} />
+                <View style={[styles.ctaIcon, { backgroundColor: `${Palette.primary}16` }]}>
+                  <Feather name="inbox" size={20} color={Palette.primary} />
+                </View>
+                <View style={styles.ctaTextCol}>
+                  <Text style={[styles.ctaTitle, { color: c.text, fontFamily: Font.semibold }]}>Review ticket</Text>
+                  <Text style={[styles.ctaHint, { color: c.textSecondary, fontFamily: Font.regular }]}>
+                    Accept or hand off
+                  </Text>
+                </View>
+                <View style={[styles.ctaChevron, { backgroundColor: c.surface, borderColor: c.border }]}>
+                  <Feather name="chevron-right" size={18} color={c.icon} />
                 </View>
               </TouchableOpacity>
             )}
 
             {item.status === 'assigned' && (
               <View style={styles.actionsCol}>
-                <View style={styles.actions}>
+                <View style={styles.btnRow}>
                   <TouchableOpacity
-                    style={[styles.btn, { backgroundColor: BRAND_BLUE }]}
+                    style={[styles.btnSolid, { backgroundColor: Palette.success }]}
                     onPress={() => handleStatusChange(item.id, 'resolved')}
                     activeOpacity={0.9}
                   >
+                    <Feather name="check" size={18} color="#fff" style={styles.btnIconLeft} />
                     <Text style={[styles.btnText, { fontFamily: Font.semibold }]}>Resolve</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[styles.btn, { backgroundColor: '#dc2626' }]}
+                    style={[styles.btnSolid, { backgroundColor: Palette.danger }]}
                     onPress={() => handleStatusChange(item.id, 'escalated')}
                     activeOpacity={0.9}
                   >
+                    <Feather name="arrow-up-right" size={18} color="#fff" style={styles.btnIconLeft} />
                     <Text style={[styles.btnText, { fontFamily: Font.semibold }]}>Escalate</Text>
                   </TouchableOpacity>
                 </View>
                 <TouchableOpacity
-                  style={styles.btnDetailsSecondary}
+                  style={[styles.ctaRowSubtle, { borderColor: c.border, backgroundColor: c.surface }]}
                   onPress={() => openTicketDetails(item)}
-                  activeOpacity={0.88}
+                  activeOpacity={0.72}
                 >
-                  <Feather name="list" size={17} color="#334155" />
-                  <Text style={[styles.btnDetailsSecondaryText, { fontFamily: Font.semibold }]}>View details</Text>
-                  <Feather name="chevron-right" size={18} color="#94a3b8" />
+                  <Feather name="align-left" size={18} color={c.icon} />
+                  <Text style={[styles.ctaRowSubtleText, { color: c.text, fontFamily: Font.semibold }]}>Details</Text>
+                  <Feather name="chevron-right" size={18} color={c.icon} style={{ marginLeft: 'auto' }} />
                 </TouchableOpacity>
               </View>
             )}
 
             {isTerminalStatus(item.status) && (
               <TouchableOpacity
-                style={styles.btnDetailsPrimary}
+                style={[styles.ctaRow, { backgroundColor: c.surfaceMuted, borderColor: c.border }]}
                 onPress={() => openTicketDetails(item)}
-                activeOpacity={0.88}
+                activeOpacity={0.72}
               >
-                <View style={styles.btnDetailsPrimaryRow}>
-                  <View style={styles.btnDetailsPrimaryMain}>
-                    <View style={[styles.btnDetailsIconCircle, { backgroundColor: `${BRAND_BLUE}14` }]}>
-                      <Feather name="eye" size={18} color={BRAND_BLUE} />
-                    </View>
-                    <View style={styles.btnDetailsTextCol}>
-                      <Text style={[styles.btnDetailsPrimaryText, { fontFamily: Font.semibold }]}>View details</Text>
-                    </View>
-                  </View>
-                  <Feather name="chevron-right" size={20} color={BRAND_BLUE} />
+                <View style={[styles.ctaIcon, { backgroundColor: `${Palette.primary}16` }]}>
+                  <Feather name="file-text" size={20} color={Palette.primary} />
+                </View>
+                <View style={styles.ctaTextCol}>
+                  <Text style={[styles.ctaTitle, { color: c.text, fontFamily: Font.semibold }]}>Open thread</Text>
+                  <Text style={[styles.ctaHint, { color: c.textSecondary, fontFamily: Font.regular }]}>
+                    View history and notes
+                  </Text>
+                </View>
+                <View style={[styles.ctaChevron, { backgroundColor: c.surface, borderColor: c.border }]}>
+                  <Feather name="chevron-right" size={18} color={c.icon} />
                 </View>
               </TouchableOpacity>
             )}
@@ -472,11 +575,8 @@ export default function QueriesScreen() {
     );
   };
 
-  /* Light Support Hub shell; honor dark mode only for refresh tint */
-  const refreshTint = isDark ? Palette.primary : BRAND_BLUE;
-
   return (
-    <View style={[styles.outer, { paddingTop: insets.top, backgroundColor: OUTER_BG }]}>
+    <View style={[styles.outer, { paddingTop: insets.top, backgroundColor: c.background }]}>
       <TicketDetailsModal
         ticket={detailTicket}
         visible={detailTicket != null}
@@ -487,26 +587,26 @@ export default function QueriesScreen() {
         onEscalate={modalEscalate}
       />
 
-      <View style={[styles.sheet, { maxWidth: Layout.maxContentWidth, alignSelf: 'center', width: '100%' }]}>
-        <FlatList
-          data={filteredTickets}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          ListHeaderComponent={renderHeader}
-          contentContainerStyle={[styles.listContent, { paddingBottom: Spacing.xxxl + insets.bottom }]}
-          showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={refreshTint} />}
-          ListEmptyComponent={
-            <View style={styles.empty}>
-              <Feather name="folder" size={40} color="#94a3b8" />
-              <Text style={[styles.emptyTitle, { fontFamily: Font.semibold }]}>No queries</Text>
-              <Text style={[styles.emptySub, { fontFamily: Font.regular }]}>
-                Try adjusting search or filters, or pull to refresh
-              </Text>
+      <FlatList
+        data={filteredTickets}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        ListHeaderComponent={renderHeader}
+        contentContainerStyle={[styles.listContent, { paddingBottom: Spacing.xxxl + insets.bottom }]}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Palette.primary} />}
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <View style={[styles.emptyIconWrap, { backgroundColor: `${Palette.primary}14` }]}>
+              <Feather name="inbox" size={28} color={Palette.primary} />
             </View>
-          }
-        />
-      </View>
+            <Text style={[styles.emptyTitle, { color: c.text, fontFamily: Font.semibold }]}>Nothing matches</Text>
+            <Text style={[styles.emptySub, { color: c.textSecondary, fontFamily: Font.regular }]}>
+              Clear search or change filters, then pull to refresh.
+            </Text>
+          </View>
+        }
+      />
     </View>
   );
 }
@@ -515,353 +615,317 @@ const styles = StyleSheet.create({
   outer: {
     flex: 1,
   },
-  sheet: {
-    flex: 1,
-    marginHorizontal: Spacing.md,
-    marginBottom: 0,
-    marginTop: Spacing.sm,
-    backgroundColor: CARD_SHEET,
-    borderRadius: 0,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.35,
-        shadowRadius: 24,
-      },
-      android: { elevation: 8 },
-    }),
-  },
   listContent: {
-    padding: Spacing.lg,
-    gap: Spacing.md,
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.lg,
+    gap: Spacing.lg,
   },
   headerBlock: {
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm,
   },
-  brandRow: {
+  titleRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: Spacing.md,
     marginBottom: Spacing.lg,
   },
-  logoMark: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: BRAND_BLUE,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 3,
-    marginRight: Spacing.sm,
-  },
-  logoDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#fff',
-  },
-  brandName: {
+  titleCol: {
     flex: 1,
-    fontSize: 16,
-    color: BRAND_NAVY,
-    letterSpacing: -0.3,
-  },
-  bellBtn: {
-    padding: Spacing.xs,
+    minWidth: 0,
   },
   pageTitle: {
-    fontSize: 28,
-    color: '#0f172a',
-    letterSpacing: -0.5,
-    marginBottom: Spacing.xs,
+    fontSize: 30,
+    letterSpacing: -0.8,
+    lineHeight: 36,
   },
-  pageSub: {
+  pageHint: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: Spacing.xs,
+  },
+  countPill: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 4,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+    flexShrink: 0,
+  },
+  countPillText: {
+    fontSize: 18,
+    letterSpacing: -0.4,
+  },
+  countPillSuffix: {
+    fontSize: 12,
+    letterSpacing: -0.1,
+  },
+  alertStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: Radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    marginBottom: Spacing.lg,
+  },
+  alertStripText: {
     fontSize: 13,
-    color: '#64748b',
-    marginBottom: Spacing.md,
+    flex: 1,
+    lineHeight: 18,
   },
   searchInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: Radius.sm,
+    borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    paddingHorizontal: Spacing.md,
-    minHeight: 46,
-    marginBottom: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    minHeight: 50,
+    marginBottom: Spacing.lg,
   },
   searchIcon: {
-    marginRight: Spacing.sm,
+    marginRight: Spacing.md,
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
-    color: '#0f172a',
-    paddingVertical: Spacing.sm,
+    fontSize: 16,
+    paddingVertical: Spacing.md,
+  },
+  filterLabel: {
+    fontSize: 11,
+    letterSpacing: 0.9,
+    textTransform: 'uppercase',
+    marginBottom: Spacing.sm,
   },
   facetRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.sm,
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.md,
   },
   facetChip: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: Spacing.xs,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: Radius.pill,
     borderWidth: 1,
   },
-  facetIcon: {
-    marginRight: 6,
-  },
   facetChipText: {
     fontSize: 13,
   },
-  valuePillRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
+  valuePillScrollView: {
+    marginHorizontal: -Spacing.xl,
     marginBottom: Spacing.lg,
   },
+  valuePillScroll: {
+    paddingHorizontal: Spacing.xl,
+    gap: Spacing.sm,
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
   valuePill: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 6,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
     borderRadius: Radius.pill,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  valuePillOn: {
-    backgroundColor: BRAND_BLUE,
-    borderColor: BRAND_BLUE,
-  },
-  valuePillOff: {
-    backgroundColor: '#ffffff',
   },
   valuePillText: {
-    fontSize: 11,
+    fontSize: 13,
+    letterSpacing: -0.1,
+  },
+  listRule: {
+    height: StyleSheet.hairlineWidth,
+    marginBottom: Spacing.md,
   },
   ticketCard: {
-    borderRadius: Radius.lg,
+    borderRadius: Radius.xl,
     borderWidth: 1,
-    marginBottom: Spacing.md,
     flexDirection: 'row',
     overflow: 'hidden',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#0f172a',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.08,
-        shadowRadius: 16,
-      },
-      android: { elevation: 3 },
-    }),
   },
   accentBar: {
-    width: 4,
+    width: 3,
     alignSelf: 'stretch',
   },
   ticketCardBody: {
     flex: 1,
-    padding: Spacing.lg,
-    paddingLeft: Spacing.md,
+    padding: Spacing.xl,
+    paddingLeft: Spacing.lg,
   },
   ticketTopRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: Spacing.md,
     gap: Spacing.md,
+    marginBottom: Spacing.md,
   },
   ticketIdRow: {
     flex: 1,
     minWidth: 0,
   },
-  ticketId: {
-    fontSize: 11,
-    color: '#94a3b8',
+  ticketKicker: {
+    fontSize: 10,
     letterSpacing: 0.85,
     textTransform: 'uppercase',
+    marginBottom: 2,
   },
-  statusBadge: {
+  ticketId: {
+    fontSize: 15,
+    letterSpacing: 0.35,
+  },
+  statusPill: {
     borderRadius: Radius.pill,
-    paddingHorizontal: 10,
+    paddingHorizontal: Spacing.md,
     paddingVertical: 5,
+    borderWidth: StyleSheet.hairlineWidth,
     flexShrink: 0,
   },
-  statusBadgeText: {
-    fontSize: 9,
-    letterSpacing: 0.65,
+  statusPillText: {
+    fontSize: 11,
+    letterSpacing: 0.2,
+  },
+  subjectRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  priorityDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginTop: 7,
+    flexShrink: 0,
   },
   ticketSubjectTitle: {
+    flex: 1,
     fontSize: 17,
     lineHeight: 24,
-    letterSpacing: -0.35,
+    letterSpacing: -0.3,
+  },
+  metaLine: {
+    fontSize: 14,
+    lineHeight: 20,
     marginBottom: Spacing.md,
-  },
-  metaPillRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-    marginBottom: Spacing.md,
-  },
-  metaPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: Radius.pill,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    maxWidth: '100%',
-    borderWidth: 1,
-  },
-  metaPillIcon: {
-    marginRight: 6,
-  },
-  metaPillCustomer: {
-    backgroundColor: '#f8fafc',
-    borderColor: '#e2e8f0',
-  },
-  metaPillCategory: {
-    backgroundColor: '#f5f3ff',
-    borderColor: '#ddd6fe',
-  },
-  metaPillPriority: {
-    backgroundColor: '#fff7ed',
-    borderColor: '#fed7aa',
-  },
-  metaPillUrgency: {
-    backgroundColor: '#fef2f2',
-    borderColor: '#fecaca',
-  },
-  metaPillRole: {
-    backgroundColor: '#f0f9ff',
-    borderColor: '#bae6fd',
-  },
-  metaPillText: {
-    fontSize: 11,
-    letterSpacing: 0.15,
-    flexShrink: 1,
   },
   ticketFooter: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: Spacing.sm,
+    paddingTop: Spacing.md,
     marginBottom: Spacing.lg,
-    paddingTop: Spacing.xs,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#e2e8f0',
-  },
-  footerClock: {
-    marginRight: 6,
   },
   updatedLabel: {
-    fontSize: 12,
+    fontSize: 13,
     flex: 1,
   },
   actions: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-    flexWrap: 'wrap',
+    gap: Spacing.md,
   },
   actionsCol: {
-    width: '100%',
-    gap: Spacing.sm,
-  },
-  btnDetailsPrimary: {
-    width: '100%',
-    borderRadius: Radius.md,
-    borderWidth: 1.5,
-    borderColor: `${BRAND_BLUE}55`,
-    backgroundColor: '#f8fafc',
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.md,
-  },
-  btnDetailsPrimaryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     gap: Spacing.md,
   },
-  btnDetailsPrimaryMain: {
+  btnRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    minWidth: 0,
     gap: Spacing.md,
   },
-  btnDetailsIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnDetailsTextCol: {
+  btnSolid: {
     flex: 1,
-    minWidth: 0,
-  },
-  btnDetailsPrimaryText: {
-    fontSize: 16,
-    color: '#0f172a',
-    letterSpacing: -0.2,
-  },
-  btnDetailsHint: {
-    fontSize: 12,
-    color: '#64748b',
-    marginTop: 3,
-    lineHeight: 16,
-  },
-  btnDetailsSecondary: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
-    width: '100%',
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    backgroundColor: '#ffffff',
+    justifyContent: 'center',
+    borderRadius: Radius.lg,
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.md,
+    minHeight: 48,
   },
-  btnDetailsSecondaryText: {
-    flex: 1,
-    fontSize: 14,
-    color: '#334155',
-    letterSpacing: -0.1,
-  },
-  btn: {
-    borderRadius: Radius.md,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm + 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 112,
-    flex: 1,
+  btnIconLeft: {
+    marginRight: Spacing.xs,
   },
   btnText: {
-    color: '#fff',
-    fontSize: 14,
+    color: '#ffffff',
+    fontSize: 15,
+    letterSpacing: -0.2,
+  },
+  ctaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: Radius.xl,
+    borderWidth: 1,
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
+    gap: Spacing.lg,
+  },
+  ctaRowSubtle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    gap: Spacing.md,
+  },
+  ctaRowSubtleText: {
+    fontSize: 15,
+    letterSpacing: -0.2,
+  },
+  ctaIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: Radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ctaTextCol: {
+    flex: 1,
+    minWidth: 0,
+  },
+  ctaTitle: {
+    fontSize: 16,
+    letterSpacing: -0.25,
+  },
+  ctaHint: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 2,
+  },
+  ctaChevron: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
   },
   empty: {
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: Spacing.xxxl,
     paddingHorizontal: Spacing.xl,
-    gap: Spacing.sm,
+    gap: Spacing.md,
+  },
+  emptyIconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.xs,
   },
   emptyTitle: {
     fontSize: 18,
-    color: '#0f172a',
+    letterSpacing: -0.2,
   },
   emptySub: {
     fontSize: 14,
     textAlign: 'center',
-    lineHeight: 20,
-    color: '#64748b',
+    lineHeight: 21,
+    maxWidth: 280,
   },
 });

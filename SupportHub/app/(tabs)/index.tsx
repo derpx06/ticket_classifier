@@ -8,25 +8,25 @@ import {
   TouchableOpacity,
   Pressable,
   Platform,
+  TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { formatDistanceToNow } from 'date-fns';
 import { Feather } from '@expo/vector-icons';
 import {
   getTickets,
   formatTicketCardDetails,
   Ticket,
-  type TicketPriority,
 } from '@/services/ticket-service';
 import { useAuth } from '@/context/AuthContext';
 import { Colors, Spacing, Radius, Palette } from '@/constants/theme';
 import { Font } from '@/constants/typography';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
-function ticketCode(id: string): string {
-  const tail = id.replace(/\s/g, '').slice(-6);
-  return tail ? tail.toUpperCase() : '—';
+/** Matches reference dashboard: short public-style id */
+function displayTicketId(id: string): string {
+  const tail = id.replace(/\s/g, '').slice(-4);
+  return tail ? tail.toUpperCase() : 'XXXX';
 }
 
 function initials(name?: string | null): string {
@@ -36,18 +36,6 @@ function initials(name?: string | null): string {
   return name.slice(0, 2).toUpperCase();
 }
 
-function firstName(name?: string | null): string {
-  if (!name?.trim()) return 'there';
-  return name.trim().split(/\s+/)[0] ?? 'there';
-}
-
-function greetingLabel(): string {
-  const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 17) return 'Good afternoon';
-  return 'Good evening';
-}
-
 function elevatedCard(isDark: boolean): object {
   if (isDark) {
     return { elevation: 0 };
@@ -55,8 +43,8 @@ function elevatedCard(isDark: boolean): object {
   return Platform.select({
     ios: {
       shadowColor: '#0f172a',
-      shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.07,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.08,
       shadowRadius: 14,
     },
     android: { elevation: 3 },
@@ -64,28 +52,53 @@ function elevatedCard(isDark: boolean): object {
   });
 }
 
-function priorityAccentColor(p: TicketPriority): string {
-  if (p === 'critical') return Palette.danger;
-  if (p === 'high') return Palette.warning;
-  if (p === 'medium') return Palette.info;
-  return Palette.primary;
+function assignedLabel(ticket: Ticket): string {
+  const role = ticket.assignedRoleName?.trim();
+  if (role) return role;
+  const customer = ticket.customerName?.trim();
+  if (customer) return customer;
+  return 'Unassigned';
 }
 
-function titleCaseWord(s: string): string {
-  const t = s.trim();
-  if (!t) return '';
-  return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
+type WorkspaceStatusKey = 'open' | 'escalated' | 'pending' | 'resolved';
+
+function workspaceStatusKey(status: Ticket['status']): WorkspaceStatusKey {
+  if (status === 'escalated') return 'escalated';
+  if (status === 'resolved') return 'resolved';
+  if (status === 'pending' || status === 'closed') return 'pending';
+  return 'open';
+}
+
+function workspacePillLabel(status: Ticket['status']): string {
+  switch (status) {
+    case 'assigned':
+      return 'OPEN';
+    case 'pending':
+      return 'PENDING';
+    case 'resolved':
+      return 'RESOLVED';
+    case 'escalated':
+      return 'ESCALATED';
+    case 'closed':
+      return 'CLOSED';
+    default: {
+      const _x: never = status;
+      return String(_x).toUpperCase();
+    }
+  }
 }
 
 export default function DashboardScreen() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [search, setSearch] = useState('');
   const { user, signOut } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const c = Colors[colorScheme ?? 'light'];
+  const cardLift = elevatedCard(isDark);
 
   const fetchDashboardData = async () => {
     try {
@@ -115,40 +128,24 @@ export default function DashboardScreen() {
   const resolved = useMemo(() => tickets.filter((t) => t.status === 'resolved'), [tickets]);
   const escalated = useMemo(() => tickets.filter((t) => t.status === 'escalated'), [tickets]);
 
-  const oldestPending = useMemo(() => {
-    if (pending.length === 0) return null;
-    return pending.reduce<Ticket | null>((oldest, t) => {
-      const tTime = new Date(t.updatedAt).getTime();
-      if (!oldest || tTime < new Date(oldest.updatedAt).getTime()) return t;
-      return oldest;
-    }, null);
-  }, [pending]);
+  const openCount = assigned.length;
 
-  const pendingSubtitle = oldestPending
-    ? `Oldest waiting ${formatDistanceToNow(new Date(oldestPending.updatedAt), { addSuffix: true })}`
-    : 'Queue is clear';
+  const recentQueries = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    const sorted = [...tickets].sort(
+      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+    );
+    const filtered = q
+      ? sorted.filter((t) => {
+          const hay = `${t.subject} ${t.category} ${t.customerName ?? ''} ${t.assignedRoleName ?? ''} ${t.status}`.toLowerCase();
+          return hay.includes(q);
+        })
+      : sorted;
+    return filtered.slice(0, 4);
+  }, [tickets, search]);
 
-  const criticalHigh = useMemo(
-    () =>
-      tickets.filter((t) => (t.priority === 'high' || t.priority === 'critical') && t.status === 'pending').length,
-    [tickets],
-  );
-
-  const highPrioritySubtitle =
-    criticalHigh > 0
-      ? `${criticalHigh} high-priority in queue`
-      : 'No critical items';
-
-  const recentQueries = useMemo(
-    () =>
-      [...tickets].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 4),
-    [tickets],
-  );
-
-  const openWorkload = assigned.length + pending.length;
+  const titleBlue = Palette.primary;
   const subtleText = c.textSecondary;
-  const heroTint = isDark ? `${Palette.primary}22` : `${Palette.primary}12`;
-  const cardLift = elevatedCard(isDark);
 
   return (
     <View style={[styles.screenRoot, { backgroundColor: c.background }]}>
@@ -157,52 +154,31 @@ export default function DashboardScreen() {
           styles.headerBar,
           {
             paddingTop: insets.top + Spacing.md,
-            backgroundColor: c.surface,
-            borderBottomColor: c.border,
+            paddingBottom: Spacing.lg,
+            backgroundColor: c.background,
           },
         ]}
       >
-        <View style={[styles.headerAccent, { backgroundColor: Palette.primary }]} />
         <View style={[styles.headerInner, { paddingHorizontal: Spacing.xl }]}>
-          <View style={styles.topBarText}>
-            <Text
-              style={[styles.greetingLine, { color: subtleText, fontFamily: Font.medium }]}
-              numberOfLines={1}
-            >
-              {greetingLabel()}
-            </Text>
-            <Text
-              style={[styles.screenTitle, { color: c.text, fontFamily: Font.bold }]}
-              numberOfLines={1}
-            >
-              {firstName(user?.name)}
-            </Text>
-            <Text
-              style={[styles.screenSubtitle, { color: subtleText, fontFamily: Font.regular }]}
-              numberOfLines={2}
-            >
-              Here is what needs attention across your queue.
+          <View style={styles.headerTitles}>
+            <Text style={[styles.dashboardTitle, { color: titleBlue, fontFamily: Font.bold }]}>Dashboard</Text>
+            <Text style={[styles.dashboardSubtitle, { color: subtleText, fontFamily: Font.regular }]}>
+              Queries Workspace Overview
             </Text>
           </View>
-          <View style={styles.topBarActions}>
-            <View
-              style={[
-                styles.avatar,
-                {
-                  borderColor: `${Palette.primary}40`,
-                  backgroundColor: heroTint,
-                },
-              ]}
+          <View style={styles.headerActions}>
+            <Pressable
+              style={({ pressed }) => [styles.headerIconBtn, { opacity: pressed ? 0.55 : 1 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Notifications"
             >
-              <Text style={[styles.avatarText, { color: Palette.primary, fontFamily: Font.semibold }]}>
-                {initials(user?.name)}
-              </Text>
-            </View>
+              <Feather name="bell" size={22} color={titleBlue} />
+            </Pressable>
             <Pressable
               onPress={() => void signOut()}
               style={({ pressed }) => [
-                styles.iconBtn,
-                { backgroundColor: c.surfaceMuted, opacity: pressed ? 0.5 : 1 },
+                styles.headerIconBtn,
+                { opacity: pressed ? 0.55 : 1 },
               ]}
               accessibilityRole="button"
               accessibilityLabel="Sign out"
@@ -221,316 +197,203 @@ export default function DashboardScreen() {
           { paddingBottom: insets.bottom + Spacing.xxxl },
         ]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Palette.primary} />
         }
       >
-        <View
-          style={[
-            styles.heroCard,
-            { backgroundColor: c.surface, borderColor: c.border },
-            cardLift,
-          ]}
-        >
-          <View style={[styles.heroGlow, { backgroundColor: heroTint }]} />
-          <View style={styles.heroRow}>
-            <View style={styles.heroCopy}>
-              <Text style={[styles.heroEyebrow, { color: subtleText, fontFamily: Font.medium }]}>
-                Open workload
-              </Text>
-              <Text style={[styles.heroValue, { color: c.text, fontFamily: Font.extraBold }]}>{openWorkload}</Text>
-              <Text style={[styles.heroCaption, { color: subtleText, fontFamily: Font.regular }]}>
-                Assigned + pending tickets right now
-              </Text>
-            </View>
-            <View style={[styles.heroBadge, { backgroundColor: heroTint, borderColor: `${Palette.primary}33` }]}>
-              <Feather name="activity" size={22} color={Palette.primary} />
-            </View>
-          </View>
+        <View style={[styles.searchShell, { backgroundColor: c.surface, borderColor: c.border }, cardLift]}>
+          <Feather name="search" size={20} color={c.icon} style={styles.searchGlyph} />
+          <TextInput
+            style={[styles.searchField, { color: c.text, fontFamily: Font.regular }]}
+            placeholder="Smart search…"
+            placeholderTextColor={c.textSecondary}
+            value={search}
+            onChangeText={setSearch}
+          />
+          <TouchableOpacity
+            style={styles.askAiBtn}
+            onPress={() => router.push('/(tabs)/chat')}
+            activeOpacity={0.88}
+          >
+            <Text style={[styles.askAiBtnText, { fontFamily: Font.bold }]}>ASK AI</Text>
+          </TouchableOpacity>
         </View>
 
-        <SectionTitle label="Summary" subtleColor={subtleText} accentColor={Palette.primary} />
-
-        <View style={styles.grid}>
-          <View style={styles.gridRow}>
-            <OverviewStatCard
-              icon="user-check"
-              iconColor={Palette.primary}
-              iconBg={`${Palette.primary}18`}
-              count={assigned.length}
-              label="Assigned"
-              activeTag
-              borderColor={c.border}
-              textColor={c.text}
-              subtleColor={subtleText}
-              surface={c.surface}
-              accentBorder={false}
-              cardLift={cardLift}
-            />
-            <OverviewStatCard
-              icon="clock"
-              iconColor={Palette.warning}
-              iconBg={`${Palette.warning}20`}
-              count={pending.length}
-              label="Pending"
-              borderColor={c.border}
-              textColor={c.text}
-              subtleColor={subtleText}
-              surface={c.surface}
-              accentBorder={false}
-              cardLift={cardLift}
-            />
-          </View>
-          <View style={styles.gridRow}>
-            <OverviewStatCard
-              icon="check-circle"
-              iconColor={Palette.success}
-              iconBg={`${Palette.success}18`}
-              count={resolved.length}
-              label="Resolved"
-              borderColor={c.border}
-              textColor={c.text}
-              subtleColor={subtleText}
-              surface={c.surface}
-              accentBorder={false}
-              cardLift={cardLift}
-            />
-            <OverviewStatCard
-              icon="alert-circle"
-              iconColor={Palette.danger}
-              iconBg={`${Palette.danger}20`}
+        <View style={styles.statGrid}>
+          <View style={styles.statRow}>
+            <TintedStatCard variant="open" count={openCount} label="OPEN" icon="layers" isDark={isDark} />
+            <TintedStatCard
+              variant="escalated"
               count={escalated.length}
-              label="Escalated"
-              variant="danger"
-              borderColor={c.border}
-              textColor={c.text}
-              subtleColor={subtleText}
-              surface={c.surface}
-              accentBorder
-              cardLift={cardLift}
+              label="ESCALATED"
+              icon="alert-triangle"
+              isDark={isDark}
+            />
+          </View>
+          <View style={styles.statRow}>
+            <TintedStatCard variant="pending" count={pending.length} label="PENDING" icon="clock" isDark={isDark} />
+            <TintedStatCard
+              variant="resolved"
+              count={resolved.length}
+              label="RESOLVED"
+              icon="check-circle"
+              isDark={isDark}
             />
           </View>
         </View>
 
-        <SectionTitle label="Shortcuts" subtleColor={subtleText} accentColor={Palette.primary} />
-
-        <TouchableOpacity
-          style={[
-            styles.actionRow,
-            { backgroundColor: c.surface, borderColor: c.border },
-            cardLift,
-          ]}
-          activeOpacity={0.72}
-          onPress={() => router.push('/(tabs)/queries')}
-        >
-          <View style={[styles.actionIconWrap, { backgroundColor: `${Palette.primary}14`, borderWidth: 0 }]}>
-            <Feather name="inbox" size={20} color={Palette.primary} />
-          </View>
-          <View style={styles.actionTextWrap}>
-            <Text style={[styles.actionTitle, { color: c.text, fontFamily: Font.semibold }]}>Pending tickets</Text>
-            <Text style={[styles.actionSubtitle, { color: subtleText, fontFamily: Font.regular }]} numberOfLines={2}>
-              {pendingSubtitle}
+        <View style={styles.recentHeaderRow}>
+          <Text style={[styles.recentSectionTitle, { color: c.text, fontFamily: Font.bold }]}>Recent Queries</Text>
+          <TouchableOpacity
+            onPress={() => router.push('/(tabs)/queries')}
+            style={styles.viewAllLink}
+            activeOpacity={0.7}
+            hitSlop={12}
+          >
+            <Text style={[styles.viewAllLinkText, { color: Palette.primary, fontFamily: Font.semibold }]}>
+              View All
             </Text>
-          </View>
-          <View style={[styles.chevronCircle, { backgroundColor: c.surfaceMuted }]}>
-            <Feather name="chevron-right" size={18} color={c.icon} />
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.actionRow,
-            styles.actionRowAlert,
-            { backgroundColor: c.surface, borderColor: c.border, marginTop: Spacing.md },
-            cardLift,
-          ]}
-          activeOpacity={0.72}
-          onPress={() => router.push('/(tabs)/queries')}
-        >
-          <View style={[styles.actionIconWrap, { backgroundColor: `${Palette.danger}16`, borderWidth: 0 }]}>
-            <Feather name="alert-triangle" size={20} color={Palette.danger} />
-          </View>
-          <View style={styles.actionTextWrap}>
-            <Text style={[styles.actionTitle, { color: c.text, fontFamily: Font.semibold }]}>High priority</Text>
-            <Text style={[styles.actionSubtitle, { color: subtleText, fontFamily: Font.regular }]} numberOfLines={2}>
-              {highPrioritySubtitle}
-            </Text>
-          </View>
-          <View style={[styles.chevronCircle, { backgroundColor: c.surfaceMuted }]}>
-            <Feather name="chevron-right" size={18} color={c.icon} />
-          </View>
-        </TouchableOpacity>
-
-        <View
-          style={[
-            styles.recentPanel,
-            {
-              backgroundColor: c.surfaceMuted,
-              borderColor: c.border,
-            },
-            cardLift,
-          ]}
-        >
-          <View style={styles.recentPanelHeader}>
-            <SectionTitle label="Recent queries" subtleColor={subtleText} accentColor={Palette.primary} inline />
-            <TouchableOpacity
-              onPress={() => router.push('/(tabs)/queries')}
-              hitSlop={12}
-              style={[styles.viewAllPill, { backgroundColor: c.surface, borderColor: `${Palette.primary}35` }]}
-              activeOpacity={0.75}
-            >
-              <Text style={[styles.viewAllPillText, { fontFamily: Font.semibold }]}>View all</Text>
-              <Feather name="arrow-right" size={15} color={Palette.primary} />
-            </TouchableOpacity>
-          </View>
-
-          {recentQueries.length > 0 ? (
-            <View style={styles.recentList}>
-              {recentQueries.map((ticket) => (
-                <RecentQueryCard
-                  key={ticket.id}
-                  ticket={ticket}
-                  isDark={isDark}
-                  surface={c.surface}
-                  borderColor={c.border}
-                  textColor={c.text}
-                  subtleText={subtleText}
-                  mutedSurface={c.surfaceMuted}
-                  onPress={() => router.push(`/(tabs)/chat/${ticket.id}`)}
-                />
-              ))}
-            </View>
-          ) : (
-            <View style={[styles.recentEmptyInner, { borderColor: c.border, backgroundColor: c.surface }]}>
-              <View style={[styles.recentEmptyIcon, { backgroundColor: heroTint }]}>
-                <Feather name="inbox" size={26} color={Palette.primary} />
-              </View>
-              <Text style={[styles.recentEmptyTitle, { color: c.text, fontFamily: Font.semibold }]}>
-                Nothing recent yet
-              </Text>
-              <Text style={[styles.recentEmptySub, { color: subtleText, fontFamily: Font.regular }]}>
-                Pull down to refresh, or open Queries to browse everything.
-              </Text>
-            </View>
-          )}
+            <Feather name="arrow-right" size={16} color={Palette.primary} />
+          </TouchableOpacity>
         </View>
+
+        {recentQueries.length > 0 ? (
+          <View style={styles.recentList}>
+            {recentQueries.map((ticket) => (
+              <WorkspaceQueryCard
+                key={ticket.id}
+                ticket={ticket}
+                isDark={isDark}
+                surface={c.surface}
+                borderColor={c.border}
+                textColor={c.text}
+                subtleText={subtleText}
+                mutedSurface={c.surfaceMuted}
+                onPress={() => router.push(`/(tabs)/chat/${ticket.id}`)}
+                cardLift={cardLift}
+              />
+            ))}
+          </View>
+        ) : (
+          <View style={[styles.recentEmpty, { backgroundColor: c.surface, borderColor: c.border }, cardLift]}>
+            <Feather name="inbox" size={32} color={c.icon} />
+            <Text style={[styles.recentEmptyTitle, { color: c.text, fontFamily: Font.semibold }]}>
+              No tickets match
+            </Text>
+            <Text style={[styles.recentEmptySub, { color: subtleText, fontFamily: Font.regular }]}>
+              Try another search or pull to refresh.
+            </Text>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
 }
 
-function SectionTitle({
-  label,
-  subtleColor,
-  accentColor,
-  inline,
-}: {
-  label: string;
-  subtleColor: string;
-  accentColor: string;
-  inline?: boolean;
-}) {
-  return (
-    <View style={[styles.sectionTitleRow, inline && styles.sectionTitleRowInline]}>
-      <View style={[styles.sectionAccent, { backgroundColor: accentColor }]} />
-      <Text style={[styles.sectionLabel, { color: subtleColor, fontFamily: Font.semibold }]}>{label}</Text>
-    </View>
-  );
-}
-
-function OverviewStatCard({
-  icon,
-  iconColor,
-  iconBg,
+function TintedStatCard({
+  variant,
   count,
   label,
-  activeTag,
-  variant,
-  borderColor,
-  textColor,
-  subtleColor,
-  surface,
-  accentBorder,
-  cardLift,
+  icon,
+  isDark,
 }: {
-  icon: keyof typeof Feather.glyphMap;
-  iconColor: string;
-  iconBg: string;
+  variant: WorkspaceStatusKey;
   count: number;
   label: string;
-  activeTag?: boolean;
-  variant?: 'danger';
-  borderColor: string;
-  textColor: string;
-  subtleColor: string;
-  surface: string;
-  accentBorder?: boolean;
-  cardLift: object;
+  icon: keyof typeof Feather.glyphMap;
+  isDark: boolean;
 }) {
-  const countColor = variant === 'danger' ? Palette.danger : textColor;
-  const labelColor = variant === 'danger' ? Palette.danger : subtleColor;
+  const t = isDark ? DARK_TINTS[variant] : LIGHT_TINTS[variant];
 
   return (
-    <View
-      style={[
-        styles.statCardOuter,
-        {
-          backgroundColor: surface,
-          borderColor,
-          borderLeftWidth: accentBorder ? 3 : 1,
-          borderLeftColor: accentBorder ? Palette.danger : borderColor,
-        },
-        cardLift,
-      ]}
-    >
-      <View style={styles.statCardTop}>
-        <View style={[styles.statIconCircle, { backgroundColor: iconBg }]}>
-          <Feather name={icon} size={18} color={iconColor} />
-        </View>
-        {activeTag ? (
-          <View style={[styles.activeTag, { backgroundColor: `${Palette.primary}14`, borderColor: `${Palette.primary}40` }]}>
-            <Text style={[styles.activeTagText, { color: Palette.primary, fontFamily: Font.semibold }]}>Live</Text>
-          </View>
-        ) : null}
+    <View style={[styles.tintedCard, { backgroundColor: t.bg }]}>
+      <View style={[styles.tintedIconWrap, { backgroundColor: t.iconBg }]}>
+        <Feather name={icon} size={22} color={t.iconFg} />
       </View>
-      <Text style={[styles.statCount, { color: countColor, fontFamily: Font.extraBold }]}>{count}</Text>
-      <Text style={[styles.statLabel, { color: labelColor, fontFamily: Font.medium }]}>{label}</Text>
+      <Text style={[styles.tintedLabel, { color: t.labelColor, fontFamily: Font.semibold }]}>{label}</Text>
+      <Text style={[styles.tintedCount, { color: t.countColor, fontFamily: Font.extraBold }]}>{count}</Text>
     </View>
   );
 }
 
-function StatusPill({ status, isDark }: { status: string; isDark: boolean }) {
-  const s = status.toLowerCase();
-  let bg = isDark ? '#33415580' : '#f4f4f5';
-  let fg = isDark ? '#94a3b8' : '#64748b';
-  let border = isDark ? '#475569' : '#e4e4e7';
+const LIGHT_TINTS: Record<
+  WorkspaceStatusKey,
+  { bg: string; leftBar: string; iconBg: string; iconFg: string; labelColor: string; countColor: string }
+> = {
+  open: {
+    bg: '#eff6ff',
+    leftBar: '#2563eb',
+    iconBg: '#dbeafe',
+    iconFg: '#1d4ed8',
+    labelColor: '#1d4ed8',
+    countColor: '#1e3a8a',
+  },
+  escalated: {
+    bg: '#fef2f2',
+    leftBar: '#b91c1c',
+    iconBg: '#fee2e2',
+    iconFg: '#b91c1c',
+    labelColor: '#b91c1c',
+    countColor: '#7f1d1d',
+  },
+  pending: {
+    bg: '#f4f4f5',
+    leftBar: '#71717a',
+    iconBg: '#e4e4e7',
+    iconFg: '#52525b',
+    labelColor: '#52525b',
+    countColor: '#18181b',
+  },
+  resolved: {
+    bg: '#ecfdf5',
+    leftBar: '#059669',
+    iconBg: '#d1fae5',
+    iconFg: '#047857',
+    labelColor: '#047857',
+    countColor: '#064e3b',
+  },
+};
 
-  if (s === 'pending') {
-    bg = isDark ? '#33415599' : '#f4f4f5';
-    fg = isDark ? '#cbd5e1' : '#475569';
-    border = isDark ? '#475569' : '#e2e8f0';
-  } else if (s === 'assigned') {
-    bg = `${Palette.primary}18`;
-    fg = Palette.primary;
-    border = `${Palette.primary}35`;
-  } else if (s === 'resolved') {
-    bg = `${Palette.success}16`;
-    fg = Palette.success;
-    border = `${Palette.success}35`;
-  } else if (s === 'escalated') {
-    bg = `${Palette.danger}18`;
-    fg = Palette.danger;
-    border = `${Palette.danger}40`;
-  }
+const DARK_TINTS: Record<
+  WorkspaceStatusKey,
+  { bg: string; leftBar: string; iconBg: string; iconFg: string; labelColor: string; countColor: string }
+> = {
+  open: {
+    bg: '#172554',
+    leftBar: '#3b82f6',
+    iconBg: '#1e3a8a',
+    iconFg: '#93c5fd',
+    labelColor: '#93c5fd',
+    countColor: '#e0e7ff',
+  },
+  escalated: {
+    bg: '#450a0a',
+    leftBar: '#f87171',
+    iconBg: '#7f1d1d',
+    iconFg: '#fecaca',
+    labelColor: '#fecaca',
+    countColor: '#fef2f2',
+  },
+  pending: {
+    bg: '#27272a',
+    leftBar: '#a1a1aa',
+    iconBg: '#3f3f46',
+    iconFg: '#d4d4d8',
+    labelColor: '#d4d4d8',
+    countColor: '#fafafa',
+  },
+  resolved: {
+    bg: '#064e3b',
+    leftBar: '#34d399',
+    iconBg: '#065f46',
+    iconFg: '#6ee7b7',
+    labelColor: '#6ee7b7',
+    countColor: '#ecfdf5',
+  },
+};
 
-  return (
-    <View style={[styles.pill, { backgroundColor: bg, borderColor: border }]}>
-      <Text style={[styles.pillText, { color: fg, fontFamily: Font.semibold }]}>{status.toUpperCase()}</Text>
-    </View>
-  );
-}
-
-function RecentQueryCard({
+function WorkspaceQueryCard({
   ticket,
   isDark,
   surface,
@@ -539,6 +402,7 @@ function RecentQueryCard({
   subtleText,
   mutedSurface,
   onPress,
+  cardLift,
 }: {
   ticket: Ticket;
   isDark: boolean;
@@ -548,467 +412,323 @@ function RecentQueryCard({
   subtleText: string;
   mutedSurface: string;
   onPress: () => void;
+  cardLift: object;
 }) {
-  const pColor = priorityAccentColor(ticket.priority);
+  const key = workspaceStatusKey(ticket.status);
+  const stripe = isDark ? DARK_TINTS[key].leftBar : LIGHT_TINTS[key].leftBar;
+  const pill = workspacePillVisual(ticket.status, isDark);
   const details = formatTicketCardDetails(ticket);
+  const assignee = assignedLabel(ticket);
+  const assigneeInitials = initials(assignee === 'Unassigned' ? null : assignee);
 
   return (
     <TouchableOpacity
-      style={[styles.recentCard, { backgroundColor: surface, borderColor }]}
-      activeOpacity={0.72}
+      style={[styles.wqCard, { backgroundColor: surface, borderColor }, cardLift]}
       onPress={onPress}
+      activeOpacity={0.72}
     >
-      <View style={[styles.recentStripe, { backgroundColor: pColor }]} />
-      <View style={[styles.recentLeadIcon, { backgroundColor: `${pColor}18`, borderColor: `${pColor}38` }]}>
-        <Feather name="message-square" size={19} color={pColor} />
-      </View>
-      <View style={styles.recentCardMain}>
-        <View style={styles.recentTopRow}>
-          <View style={styles.recentIdCol}>
-            <Text style={[styles.recentKicker, { color: subtleText, fontFamily: Font.medium }]}>Ticket</Text>
-            <Text style={[styles.recentIdMono, { color: textColor, fontFamily: Font.bold }]} numberOfLines={1}>
-              #{ticketCode(ticket.id)}
-            </Text>
+      <View style={[styles.wqStripe, { backgroundColor: stripe }]} />
+      <View style={styles.wqBody}>
+        <View style={styles.wqTop}>
+          <Text style={[styles.wqId, { color: subtleText, fontFamily: Font.medium }]} numberOfLines={1}>
+            ID: #NX-{displayTicketId(ticket.id)}
+          </Text>
+          <View
+            style={[
+              styles.wqPill,
+              {
+                backgroundColor: pill.bg,
+                borderColor: pill.border,
+                borderWidth: pill.border === 'transparent' ? 0 : StyleSheet.hairlineWidth,
+              },
+            ]}
+          >
+            <Text style={[styles.wqPillText, { color: pill.fg, fontFamily: Font.bold }]}>{pill.label}</Text>
           </View>
-          <StatusPill status={ticket.status} isDark={isDark} />
         </View>
-        <Text style={[styles.recentSubject, { color: textColor, fontFamily: Font.semibold }]} numberOfLines={2}>
+        <Text style={[styles.wqTitle, { color: textColor, fontFamily: Font.bold }]} numberOfLines={2}>
           {ticket.subject}
         </Text>
-        <View style={styles.recentChipsRow}>
-          <View style={[styles.recentChip, { backgroundColor: mutedSurface, borderColor }]}>
-            <Feather name="layers" size={12} color={subtleText} />
-            <Text style={[styles.recentChipLabel, { color: subtleText, fontFamily: Font.medium }]} numberOfLines={1}>
-              {titleCaseWord(ticket.category)}
-            </Text>
-          </View>
-          <View style={[styles.recentChip, { backgroundColor: `${pColor}12`, borderColor: `${pColor}32` }]}>
-            <Feather name="flag" size={12} color={pColor} />
-            <Text style={[styles.recentChipLabel, { color: pColor, fontFamily: Font.semibold }]} numberOfLines={1}>
-              {titleCaseWord(ticket.priority)}
-            </Text>
-          </View>
-        </View>
         {details ? (
-          <Text style={[styles.recentDetailsLine, { color: subtleText, fontFamily: Font.regular }]} numberOfLines={1}>
+          <Text style={[styles.wqDesc, { color: subtleText, fontFamily: Font.regular }]} numberOfLines={3}>
             {details}
           </Text>
         ) : null}
-        <View style={[styles.recentFooter, { borderTopColor: borderColor }]}>
-          <Feather name="clock" size={14} color={subtleText} />
-          <Text style={[styles.recentFooterTime, { color: subtleText, fontFamily: Font.medium }]}>
-            {formatDistanceToNow(new Date(ticket.updatedAt), { addSuffix: true })}
+        <View style={styles.wqAssignRow}>
+          <View style={[styles.wqAvatar, { backgroundColor: mutedSurface, borderColor }]}>
+            <Text style={[styles.wqAvatarText, { color: textColor, fontFamily: Font.semibold }]}>{assigneeInitials}</Text>
+          </View>
+          <Text style={[styles.wqAssignText, { color: subtleText, fontFamily: Font.regular }]} numberOfLines={1}>
+            Assigned: {assignee}
           </Text>
         </View>
       </View>
-      <View style={[styles.recentChevronWrap, { backgroundColor: mutedSurface }]}>
-        <Feather name="chevron-right" size={20} color={Palette.primary} />
-      </View>
     </TouchableOpacity>
   );
+}
+
+function workspacePillVisual(
+  status: Ticket['status'],
+  isDark: boolean,
+): { label: string; bg: string; fg: string; border: string } {
+  const label = workspacePillLabel(status);
+  if (status === 'escalated') {
+    return {
+      label,
+      bg: isDark ? '#b91c1c' : '#dc2626',
+      fg: '#ffffff',
+      border: 'transparent',
+    };
+  }
+  if (status === 'assigned') {
+    return {
+      label: 'OPEN',
+      bg: isDark ? '#1e3a8a' : '#dbeafe',
+      fg: isDark ? '#bfdbfe' : '#1d4ed8',
+      border: isDark ? '#3b82f6' : '#93c5fd',
+    };
+  }
+  if (status === 'pending') {
+    return {
+      label: 'PENDING',
+      bg: isDark ? '#3f3f46' : '#f4f4f5',
+      fg: isDark ? '#e4e4e7' : '#52525b',
+      border: isDark ? '#52525b' : '#e4e4e7',
+    };
+  }
+  if (status === 'resolved') {
+    return {
+      label: 'RESOLVED',
+      bg: isDark ? '#065f46' : '#d1fae5',
+      fg: isDark ? '#a7f3d0' : '#047857',
+      border: isDark ? '#059669' : '#6ee7b7',
+    };
+  }
+  if (status === 'closed') {
+    return {
+      label: 'CLOSED',
+      bg: isDark ? '#334155' : '#f1f5f9',
+      fg: isDark ? '#94a3b8' : '#64748b',
+      border: isDark ? '#475569' : '#e2e8f0',
+    };
+  }
+  return {
+    label,
+    bg: isDark ? '#334155' : '#f4f4f5',
+    fg: isDark ? '#e2e8f0' : '#334155',
+    border: isDark ? '#475569' : '#e4e4e7',
+  };
 }
 
 const styles = StyleSheet.create({
   screenRoot: {
     flex: 1,
   },
-  headerBar: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    paddingBottom: Spacing.lg,
-    overflow: 'hidden',
-  },
-  headerAccent: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    height: 3,
-  },
+  headerBar: {},
   headerInner: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    minHeight: 44,
-    paddingTop: Spacing.xs,
+    gap: Spacing.md,
+  },
+  headerTitles: {
+    flex: 1,
+    minWidth: 0,
+  },
+  dashboardTitle: {
+    fontSize: 30,
+    letterSpacing: -0.8,
+    lineHeight: 36,
+  },
+  dashboardSubtitle: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: Spacing.xs,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingTop: 2,
+  },
+  headerIconBtn: {
+    padding: Spacing.sm,
   },
   scrollFlex: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.lg,
+    paddingTop: Spacing.sm,
   },
-  topBarText: {
-    flex: 1,
-    minWidth: 0,
-    paddingRight: Spacing.md,
-    justifyContent: 'center',
-  },
-  greetingLine: {
-    fontSize: 13,
-    letterSpacing: 0.2,
-    marginBottom: 2,
-  },
-  screenTitle: {
-    fontSize: 28,
-    letterSpacing: -0.6,
-    lineHeight: 34,
-  },
-  screenSubtitle: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: Spacing.xs,
-    maxWidth: 260,
-  },
-  topBarActions: {
+  searchShell: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexShrink: 0,
-    gap: Spacing.sm,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-  },
-  avatarText: {
-    fontSize: 14,
-  },
-  iconBtn: {
-    padding: Spacing.sm,
-    borderRadius: Radius.md,
-  },
-  heroCard: {
-    borderRadius: Radius.lg,
+    borderRadius: Radius.xl,
     borderWidth: 1,
-    padding: Spacing.lg,
-    marginBottom: Spacing.md,
-    overflow: 'hidden',
+    paddingLeft: Spacing.lg,
+    paddingRight: Spacing.xs,
+    paddingVertical: Spacing.xs,
+    marginBottom: Spacing.xl,
+    minHeight: 52,
   },
-  heroGlow: {
-    ...StyleSheet.absoluteFillObject,
-    opacity: 0.9,
+  searchGlyph: {
+    marginRight: Spacing.sm,
   },
-  heroRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: Spacing.md,
-  },
-  heroCopy: {
+  searchField: {
     flex: 1,
+    fontSize: 16,
+    paddingVertical: Spacing.sm,
     minWidth: 0,
   },
-  heroEyebrow: {
+  askAiBtn: {
+    backgroundColor: Palette.primary,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderRadius: Radius.lg,
+    marginLeft: Spacing.sm,
+  },
+  askAiBtnText: {
+    color: '#ffffff',
     fontSize: 12,
     letterSpacing: 0.6,
-    textTransform: 'uppercase',
-    marginBottom: Spacing.xs,
   },
-  heroValue: {
-    fontSize: 40,
-    letterSpacing: -1,
-    lineHeight: 44,
-  },
-  heroCaption: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: Spacing.xs,
-  },
-  heroBadge: {
-    width: 52,
-    height: 52,
-    borderRadius: Radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-  },
-  sectionTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    marginTop: Spacing.lg,
-    marginBottom: Spacing.md,
-  },
-  sectionTitleRowInline: {
-    marginTop: 0,
-    marginBottom: 0,
-    flexShrink: 1,
-    minWidth: 0,
-  },
-  sectionAccent: {
-    width: 4,
-    height: 16,
-    borderRadius: 2,
-  },
-  sectionLabel: {
-    fontSize: 12,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-  },
-  grid: {
+  statGrid: {
     gap: Spacing.md,
+    marginBottom: Spacing.xxl,
   },
-  gridRow: {
+  statRow: {
     flexDirection: 'row',
     gap: Spacing.md,
   },
-  statCardOuter: {
+  tintedCard: {
     flex: 1,
-    borderRadius: Radius.lg,
+    borderRadius: Radius.xl,
     padding: Spacing.lg,
-    borderWidth: 1,
-    minHeight: 124,
-    overflow: 'hidden',
+    minHeight: 128,
   },
-  statCardTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: Spacing.md,
-  },
-  statIconCircle: {
+  tintedIconWrap: {
     width: 40,
     height: 40,
     borderRadius: Radius.md,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: Spacing.md,
   },
-  activeTag: {
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 4,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
+  tintedLabel: {
+    fontSize: 11,
+    letterSpacing: 0.85,
+    marginBottom: Spacing.xs,
   },
-  activeTagText: {
-    fontSize: 10,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
+  tintedCount: {
+    fontSize: 34,
+    letterSpacing: -1,
+    lineHeight: 38,
   },
-  statCount: {
-    fontSize: 30,
-    letterSpacing: -0.8,
-  },
-  statLabel: {
-    fontSize: 13,
-    marginTop: 4,
-    letterSpacing: -0.1,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: Spacing.lg,
-    paddingHorizontal: Spacing.lg,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    gap: Spacing.md,
-  },
-  actionRowAlert: {
-    borderLeftWidth: 3,
-    borderLeftColor: Palette.danger,
-  },
-  actionIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: Radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-  },
-  actionTextWrap: {
-    flex: 1,
-    minWidth: 0,
-  },
-  actionTitle: {
-    fontSize: 16,
-    lineHeight: 22,
-    letterSpacing: -0.2,
-  },
-  actionSubtitle: {
-    fontSize: 13,
-    lineHeight: 18,
-    marginTop: 4,
-  },
-  chevronCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  recentPanel: {
-    marginTop: Spacing.xxxl,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    padding: Spacing.md,
-    paddingBottom: Spacing.lg,
-  },
-  recentPanelHeader: {
+  recentHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Spacing.md,
-    gap: Spacing.md,
+    marginBottom: Spacing.lg,
   },
-  viewAllPill: {
+  recentSectionTitle: {
+    fontSize: 18,
+    letterSpacing: -0.35,
+  },
+  viewAllLink: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    flexShrink: 0,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
+    gap: 4,
   },
-  viewAllPillText: {
-    fontSize: 13,
-    color: Palette.primary,
+  viewAllLinkText: {
+    fontSize: 14,
     letterSpacing: -0.1,
   },
   recentList: {
-    gap: Spacing.md,
+    gap: Spacing.lg,
   },
-  recentCard: {
+  wqCard: {
     flexDirection: 'row',
-    alignItems: 'stretch',
-    borderRadius: Radius.lg,
+    borderRadius: Radius.xl,
     borderWidth: 1,
     overflow: 'hidden',
   },
-  recentStripe: {
-    width: 3,
+  wqStripe: {
+    width: 4,
+    alignSelf: 'stretch',
   },
-  recentLeadIcon: {
-    alignSelf: 'center',
-    width: 44,
-    height: 44,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: Spacing.md,
-    marginVertical: Spacing.md,
-  },
-  recentCardMain: {
+  wqBody: {
     flex: 1,
-    paddingVertical: Spacing.md,
-    paddingLeft: Spacing.md,
-    paddingRight: Spacing.sm,
-    minWidth: 0,
+    padding: Spacing.lg,
   },
-  recentTopRow: {
+  wqTop: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    gap: Spacing.sm,
+    gap: Spacing.md,
     marginBottom: Spacing.sm,
   },
-  recentIdCol: {
+  wqId: {
+    fontSize: 13,
     flex: 1,
-    minWidth: 0,
+    letterSpacing: 0.2,
   },
-  recentKicker: {
+  wqPill: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 5,
+    borderRadius: Radius.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  wqPillText: {
     fontSize: 10,
-    letterSpacing: 0.9,
-    textTransform: 'uppercase',
-    marginBottom: 2,
+    letterSpacing: 0.55,
   },
-  recentIdMono: {
-    fontSize: 15,
-    letterSpacing: 0.5,
-  },
-  recentSubject: {
+  wqTitle: {
     fontSize: 16,
-    lineHeight: 23,
+    lineHeight: 22,
     letterSpacing: -0.25,
     marginBottom: Spacing.sm,
   },
-  recentChipsRow: {
+  wqDesc: {
+    fontSize: 13,
+    lineHeight: 19,
+    marginBottom: Spacing.lg,
+  },
+  wqAssignRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
     gap: Spacing.sm,
-    marginBottom: Spacing.xs,
   },
-  recentChip: {
-    flexDirection: 'row',
+  wqAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
-    maxWidth: '100%',
+    justifyContent: 'center',
   },
-  recentChipLabel: {
+  wqAvatarText: {
     fontSize: 11,
-    letterSpacing: 0.1,
-    flexShrink: 1,
   },
-  recentDetailsLine: {
-    fontSize: 12,
-    lineHeight: 16,
-    marginBottom: Spacing.sm,
-    opacity: 0.92,
-  },
-  recentFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingTop: Spacing.sm,
-    marginTop: Spacing.xs,
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
-  recentFooterTime: {
-    fontSize: 12,
+  wqAssignText: {
+    fontSize: 13,
     flex: 1,
   },
-  recentChevronWrap: {
-    alignSelf: 'center',
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  recentEmpty: {
     alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: Spacing.md,
-  },
-  recentEmptyInner: {
-    borderRadius: Radius.md,
+    paddingVertical: Spacing.xxxl,
+    paddingHorizontal: Spacing.xl,
+    borderRadius: Radius.xl,
     borderWidth: 1,
-    paddingVertical: Spacing.xxl,
-    paddingHorizontal: Spacing.lg,
-    alignItems: 'center',
-  },
-  recentEmptyIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.md,
+    gap: Spacing.sm,
   },
   recentEmptyTitle: {
     fontSize: 16,
-    letterSpacing: -0.2,
-    marginBottom: Spacing.xs,
-    textAlign: 'center',
   },
   recentEmptySub: {
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: 14,
     textAlign: 'center',
+    lineHeight: 20,
     maxWidth: 260,
-  },
-  pill: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
-  },
-  pillText: {
-    fontSize: 9,
-    letterSpacing: 0.6,
   },
 });
