@@ -58,8 +58,11 @@ export const createChatbotWidget = (
   const { footer, inputRow, input, humanButton, loadingRow, attachInput, attachButton } =
     buildFooter(config)
   const humanButtonMarkup =
-    '<i data-lucide="user-round" aria-hidden="true"></i><span>Talk to a real human</span>'
-  const aiButtonMarkup = '<i data-lucide="bot" aria-hidden="true"></i><span>Talk to AI</span>'
+    '<i data-lucide="user-round" aria-hidden="true"></i><span>Connect to real human</span>'
+  const waitingHumanButtonMarkup =
+    '<i data-lucide="clock-3" aria-hidden="true"></i><span>Waiting for real human</span>'
+  const restartChatButtonMarkup =
+    '<i data-lucide="rotate-ccw" aria-hidden="true"></i><span>Restart chat</span>'
   humanButton.innerHTML = humanButtonMarkup
 
   const { humanContainer, humanForm, cancelBtn, successBackBtn } = buildHumanContainer()
@@ -178,6 +181,7 @@ export const createChatbotWidget = (
   let isDestroyed = false
   let isHumanChatActive = false
   let isHumanAgentConnected = false
+  let isHumanSessionResolved = false
   let isHumanConnecting = false
   let agentJoinedNoticeSent = false
   let awaitingHumanIssue = false
@@ -300,20 +304,29 @@ export const createChatbotWidget = (
 
   let pendingImageUrl: string | null = null
 
+  const syncHumanButton = (): void => {
+    if (isHumanSessionResolved) {
+      humanButton.innerHTML = restartChatButtonMarkup
+    } else if (isHumanChatActive) {
+      humanButton.innerHTML = waitingHumanButtonMarkup
+    } else {
+      humanButton.innerHTML = humanButtonMarkup
+    }
+    hydrateIcons()
+  }
+
   let setHumanMode = (enabled: boolean): void => {
     body.classList.toggle('human-mode', enabled)
     if (enabled) {
       if (!messages.contains(humanDivider)) {
         messages.insertBefore(humanDivider, messages.firstChild)
       }
-      humanButton.innerHTML = aiButtonMarkup
     } else {
       if (messages.contains(humanDivider)) {
         humanDivider.remove()
       }
-      humanButton.innerHTML = humanButtonMarkup
     }
-    hydrateIcons()
+    syncHumanButton()
     updateAttachmentVisibility()
   }
 
@@ -348,6 +361,34 @@ export const createChatbotWidget = (
       body.scrollTop = body.scrollHeight
     }
 
+    const resetWidgetState = () => {
+      if (widgetSocket) {
+        widgetSocket.close()
+        widgetSocket = null
+      }
+      widgetSessionId = null
+      widgetTicketId = null
+      isHumanChatActive = false
+      isHumanAgentConnected = false
+      isHumanSessionResolved = false
+      agentJoinedNoticeSent = false
+      awaitingHumanIssue = false
+      pendingImageUrl = null
+      showHumanRecent = false
+      humanMessages.splice(0, humanMessages.length)
+      humanSessionHistory.splice(0, humanSessionHistory.length)
+      setHumanLoading(false)
+      statusText.textContent = config.subtitle
+      input.value = ''
+      clearHistory(historyStorageKey, messageHistory)
+      historyOffset = Math.max(messageHistory.length - HISTORY_PAGE_SIZE, 0)
+      messages.innerHTML = ''
+      body.classList.remove('has-messages')
+      messages.appendChild(createBubble(config.welcomeMessage, 'bot', true))
+      setHumanMode(false)
+      syncHumanButton()
+    }
+
     const startNewHumanSession = () => {
       if (humanMessages.length > 0) {
         humanSessionHistory.push([...humanMessages])
@@ -360,6 +401,7 @@ export const createChatbotWidget = (
       widgetTicketId = null
       isHumanChatActive = false
       isHumanAgentConnected = false
+      isHumanSessionResolved = false
       agentJoinedNoticeSent = false
       awaitingHumanIssue = true
       humanMessages.splice(0, humanMessages.length)
@@ -367,8 +409,7 @@ export const createChatbotWidget = (
       setHumanMode(true)
       renderHumanMessages()
       appendHumanBubble('Please describe the issue you are facing.', 'bot')
-      humanButton.innerHTML = aiButtonMarkup
-      hydrateIcons()
+      syncHumanButton()
     }
 
     clearBtn.addEventListener('click', resetAiHistory)
@@ -389,7 +430,11 @@ export const createChatbotWidget = (
         body.classList.remove('has-messages')
         messages.appendChild(createBubble(config.welcomeMessage, 'bot', true))
       }
+      syncHumanButton()
     }
+
+    ;(humanButton as HTMLButtonElement & { __resetWidgetState?: () => void }).__resetWidgetState =
+      resetWidgetState
   }
 
   const setOpen = (nextOpen: boolean): void => {
@@ -432,6 +477,8 @@ export const createChatbotWidget = (
           },
           body: JSON.stringify({
             query: message,
+            customerName: 'Website Visitor',
+            chatHistory: messageHistory,
           }),
         })
 
@@ -447,6 +494,9 @@ export const createChatbotWidget = (
           'I processed your question, but no answer text was returned.'
         appendBotBubble(answer, { markdown: true, store: true })
         if (data?.raise_ticket && data?.ticket_payload) {
+          const handoffSession = (data as {
+            human_handoff?: { sessionId?: string; ticketId?: string; chatToken?: string }
+          }).human_handoff
           const payload = data.ticket_payload as {
             summary?: string
             priority?: string
@@ -455,14 +505,31 @@ export const createChatbotWidget = (
           const ticketId =
             (data as any)?.ticket?._id || (data as any)?.ticketId || (data as any)?.ticket_id
           const details = [
-            '### Ticket Details',
+            '### Ticket Raised',
             payload?.summary ? `- Summary: ${payload.summary}` : null,
             payload?.priority ? `- Priority: ${String(payload.priority).toUpperCase()}` : null,
             payload?.urgency ? `- Urgency: ${String(payload.urgency).toUpperCase()}` : null,
             ticketId ? `- Ticket ID: ${ticketId}` : null,
-            '- Status: Pending',
+            '- Status: Pending human acceptance',
           ].filter(Boolean) as string[]
           appendBotBubble(details.join('\n'), { markdown: true, store: true })
+
+          if (handoffSession?.sessionId && handoffSession?.ticketId && handoffSession?.chatToken) {
+            await connectHumanSupport(
+              {
+                name: 'Website Visitor',
+                email: '',
+                issue: message,
+              },
+              {
+                sessionId: handoffSession.sessionId,
+                ticketId: handoffSession.ticketId,
+                chatToken: handoffSession.chatToken,
+              },
+            )
+            appendHumanBubble('Wait, we are connecting you to a real human.', 'bot')
+            setHumanLoading(true, 'Waiting for real human')
+          }
         }
       } catch (error) {
         const msg = error instanceof Error
@@ -480,58 +547,17 @@ export const createChatbotWidget = (
     appendBotBubble(`Thanks! ${config.botName} received: "${message}"`, { store: true })
   }
 
-  const connectHumanSupport = async (payload: {
-    name: string
-    email: string
-    issue: string
-  }): Promise<void> => {
-    if (!config.humanSupport) {
-      appendHumanBubble('Human support is not configured for this widget yet.', 'bot')
-      return
-    }
-
-    const widgetKey = await resolveWidgetKey()
-    if (!widgetKey) {
-      throw new Error('Human support requires a widget key or aiSupport.apiKey.')
-    }
-
-    const apiBaseUrl = resolveApiBase(config.humanSupport.apiBaseUrl)
-    const sessionUrl = /\/api$/i.test(apiBaseUrl)
-      ? `${apiBaseUrl}/widget/session`
-      : `${apiBaseUrl}/api/widget/session`
-    const response = await fetch(sessionUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        widgetKey,
-        visitorName: payload.name,
-        visitorEmail: payload.email,
-        issue: payload.issue,
-        chatHistory: messageHistory,
-      }),
-    })
-
-    if (!response.ok) {
-      const errorPayload = await response.json().catch(() => null)
-      const msg =
-        errorPayload?.message ||
-        errorPayload?.error ||
-        'Unable to connect to human support right now.'
-      throw new Error(msg)
-    }
-
-    const sessionData = unwrapResponseData<{
-      sessionId: string
-      ticketId: string
-      chatToken: string
-    }>(await response.json())
-
+  const openHumanSocketSession = async (
+    payload: { name: string; email: string; issue: string },
+    sessionData: { sessionId: string; ticketId: string; chatToken: string },
+    apiBaseUrl: string,
+  ): Promise<void> => {
     widgetSessionId = sessionData.sessionId
     widgetTicketId = sessionData.ticketId
     isHumanChatActive = true
+    isHumanSessionResolved = false
     setHumanMode(true)
+    syncHumanButton()
 
     const socket = io(resolveSocketBase(apiBaseUrl), {
       path: '/socket.io',
@@ -584,6 +610,7 @@ export const createChatbotWidget = (
             appendHumanBubble('A human agent has accepted your chat. You are now connected.', 'bot')
           }
           isHumanAgentConnected = true
+          isHumanSessionResolved = false
           setHumanLoading(false)
           if (!agentJoinedNoticeSent) {
             appendHumanBubble('AGENT JOINED THE SESSION', 'system')
@@ -594,7 +621,30 @@ export const createChatbotWidget = (
         }
 
         if (event.status === 'pending') {
-          statusText.textContent = 'Connecting to a human agent...'
+          statusText.textContent = 'Waiting for a real human...'
+          syncHumanButton()
+          return
+        }
+
+        if (event.status === 'resolved') {
+          if (humanMessages.length > 0) {
+            humanSessionHistory.push([...humanMessages])
+          }
+          isHumanChatActive = false
+          isHumanAgentConnected = false
+          isHumanSessionResolved = true
+          awaitingHumanIssue = false
+          setHumanLoading(false)
+          statusText.textContent = 'Your query was resolved'
+          if (widgetSocket) {
+            widgetSocket.close()
+            widgetSocket = null
+          }
+          widgetSessionId = null
+          widgetTicketId = null
+          setHumanMode(false)
+          appendBotBubble('Your query was resolved. Tap restart chat if you need more help.')
+          syncHumanButton()
         }
       },
     )
@@ -608,11 +658,74 @@ export const createChatbotWidget = (
       email: payload.email,
       issue: payload.issue,
     })
-    statusText.textContent = 'Connecting to a human agent...'
-    setHumanLoading(true, 'Connecting to support')
+    statusText.textContent = 'Waiting for a real human...'
+    setHumanLoading(true, 'Waiting for real human')
+  }
+
+  const connectHumanSupport = async (
+    payload: {
+      name: string
+      email: string
+      issue: string
+    },
+    existingSession?: { sessionId: string; ticketId: string; chatToken: string },
+  ): Promise<void> => {
+    if (!config.humanSupport) {
+      appendHumanBubble('Human support is not configured for this widget yet.', 'bot')
+      return
+    }
+
+    const apiBaseUrl = resolveApiBase(config.humanSupport.apiBaseUrl)
+    let sessionData = existingSession
+    if (!sessionData) {
+      const widgetKey = await resolveWidgetKey()
+      if (!widgetKey) {
+        throw new Error('Human support requires a widget key or aiSupport.apiKey.')
+      }
+
+      const sessionUrl = /\/api$/i.test(apiBaseUrl)
+        ? `${apiBaseUrl}/widget/session`
+        : `${apiBaseUrl}/api/widget/session`
+      const response = await fetch(sessionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          widgetKey,
+          visitorName: payload.name,
+          visitorEmail: payload.email,
+          issue: payload.issue,
+          chatHistory: messageHistory,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorPayload = await response.json().catch(() => null)
+        const msg =
+          errorPayload?.message ||
+          errorPayload?.error ||
+          'Unable to connect to human support right now.'
+        throw new Error(msg)
+      }
+
+      sessionData = unwrapResponseData<{
+        sessionId: string
+        ticketId: string
+        chatToken: string
+      }>(await response.json())
+    }
+
+    await openHumanSocketSession(payload, sessionData, apiBaseUrl)
   }
 
   const sendMessage = async (message: string): Promise<void> => {
+    if (isHumanSessionResolved) {
+      input.value = ''
+      appendBotBubble('Your previous query is closed. Tap restart chat to begin a new conversation.')
+      return
+    }
+
     const cleaned = message.trim()
     const attachmentUrl = pendingImageUrl
     if ((!cleaned && !attachmentUrl) || isDestroyed) {
@@ -647,10 +760,9 @@ export const createChatbotWidget = (
           email: '',
           issue: finalMessage,
         })
-        appendHumanBubble("You're now connected to a support agent. Please wait...", 'bot')
-        setHumanLoading(true, 'Waiting for support')
-        humanButton.innerHTML = aiButtonMarkup
-        hydrateIcons()
+        appendHumanBubble('Wait, we are connecting you to a real human.', 'bot')
+        setHumanLoading(true, 'Waiting for real human')
+        syncHumanButton()
       } catch (error) {
         const msg =
           error instanceof Error ? error.message : 'Unable to connect to support right now.'
@@ -665,7 +777,7 @@ export const createChatbotWidget = (
     setHumanMode(isHumanChatActive)
     if (isHumanChatActive) {
       appendHumanBubble(finalMessage, 'user', { markdown: !!attachmentUrl })
-      setHumanLoading(true, 'Waiting for support')
+      setHumanLoading(true, 'Waiting for real human')
     } else {
       messages.appendChild(createBubble(finalMessage, 'user', !!attachmentUrl))
     }
@@ -732,28 +844,22 @@ export const createChatbotWidget = (
   })
 
   humanButton.addEventListener('click', async () => {
+    const resetWidgetState = (
+      humanButton as HTMLButtonElement & { __resetWidgetState?: () => void }
+    ).__resetWidgetState
+    if (isHumanSessionResolved) {
+      resetWidgetState?.()
+      return
+    }
     if (!isHumanChatActive && awaitingHumanIssue) {
       awaitingHumanIssue = false
+      isHumanSessionResolved = false
       setHumanMode(false)
       setHumanLoading(false)
-      humanButton.innerHTML = humanButtonMarkup
-      hydrateIcons()
+      syncHumanButton()
       return
     }
     if (isHumanChatActive) {
-      // Switch back to AI mode.
-      if (humanMessages.length > 0) {
-        humanSessionHistory.push([...humanMessages])
-        humanMessages.splice(0, humanMessages.length)
-      }
-      isHumanChatActive = false
-      isHumanAgentConnected = false
-      setHumanLoading(false)
-      awaitingHumanIssue = false
-      setHumanMode(false)
-      appendBotBubble('You are now chatting with AI again.')
-      humanButton.innerHTML = humanButtonMarkup
-      hydrateIcons()
       return
     }
 
@@ -768,8 +874,7 @@ export const createChatbotWidget = (
       updateAttachmentVisibility()
     }
     try {
-      humanButton.innerHTML = aiButtonMarkup
-      hydrateIcons()
+      syncHumanButton()
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Unable to connect to support right now.'
       appendBotBubble(
@@ -780,8 +885,7 @@ export const createChatbotWidget = (
       setHumanLoading(false)
       awaitingHumanIssue = false
       setHumanMode(false)
-      humanButton.innerHTML = humanButtonMarkup
-      hydrateIcons()
+      syncHumanButton()
     } finally {
       isHumanConnecting = false
     }

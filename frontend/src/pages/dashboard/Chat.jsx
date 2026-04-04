@@ -12,6 +12,7 @@ import {
   X,
 } from 'lucide-react';
 import {
+  acceptTicket,
   getTickets,
   getMessagesByTicket,
   getMyTickets,
@@ -110,6 +111,7 @@ const Chat = () => {
   const [teamMembers, setTeamMembers] = useState([]);
   const [isLoadingTeamMembers, setIsLoadingTeamMembers] = useState(false);
   const [assigningMemberId, setAssigningMemberId] = useState(null);
+  const [acceptingConversationId, setAcceptingConversationId] = useState('');
   const bottomRef = useRef(null);
   const uploadInputRef = useRef(null);
   const socketRef = useRef(null);
@@ -413,6 +415,36 @@ const Chat = () => {
     }
   };
 
+  const acceptActiveConversation = async () => {
+    if (!activeConversation || !activeId || acceptingConversationId) return;
+
+    try {
+      setAcceptingConversationId(activeId);
+      const accepted = await acceptTicket(activeId);
+      setConversations((previous) =>
+        previous.map((conversation) =>
+          (conversation._id || conversation.id) === activeId
+            ? {
+                ...conversation,
+                status: accepted?.status || 'assigned',
+                assignedTo:
+                  typeof accepted?.assignedTo === 'number'
+                    ? accepted.assignedTo
+                    : Number.isFinite(currentUserId)
+                      ? currentUserId
+                      : conversation.assignedTo ?? null,
+              }
+            : conversation
+        )
+      );
+      toast.success('Live chat started. You are now connected to the customer.');
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Failed to accept ticket.');
+    } finally {
+      setAcceptingConversationId('');
+    }
+  };
+
   const openEscalationModal = async () => {
     setIsEscalationModalOpen(true);
 
@@ -688,9 +720,22 @@ const Chat = () => {
 
               {!isLockedConversation && (
                 <div className="flex flex-wrap gap-2 rounded-2xl border border-slate-200/80 bg-white/90 p-2.5">
+                  {activeStatus === 'pending' && (
+                    <button
+                      type="button"
+                      onClick={acceptActiveConversation}
+                      disabled={acceptingConversationId === activeId}
+                      className="rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400"
+                    >
+                      {acceptingConversationId === activeId
+                        ? 'Connecting...'
+                        : 'Accept & Start Live Chat'}
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => updateStatus('pending')}
+                    disabled={activeStatus === 'pending'}
                     className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
                   >
                     Mark Pending

@@ -209,7 +209,7 @@ export async function createWidgetSession(req: Request, res: Response): Promise<
 
     if (initialIssue) {
       if (chatHistory.length > 0) {
-        const seeded = chatHistory.map((entry, index) => {
+        const seeded = chatHistory.map((entry: { role: "user" | "bot"; text: string }, index: number) => {
           const createdAt = new Date(now.getTime() + index);
           return {
             ticketId: ticketObjectId,

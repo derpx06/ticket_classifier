@@ -5,13 +5,14 @@ import { indexerService } from '../services/Indexer';
 import { getCollections, nextSequence, ApiKeyDoc } from '../config/db';
 import { qdrant, COLLECTION_NAME } from '../config/qdrant';
 import { ragEngine } from '../services/RAGEngine';
-import { emitTicketUpdateFromHttp } from '../services/chatSocketServer';
+import { emitRealtimeTicketStatusFromHttp } from '../services/chatSocketServer';
 import { createRouteMap, routeMapToSitemapPages, summarizeRouteMap } from '../utils/mapNextRoutes';
 import { requireAdmin, requireAuth } from '../middleware/authMiddleware';
 import { env } from '../config/env';
 import { resolveAssignedRole } from '../utils/roleAssignment';
 import { inferSentiment } from '../utils/sentiment';
 import { ticketVectorService } from '../services/TicketVectorService';
+import { signWidgetToken } from '../utils/chatTokens';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 
@@ -102,12 +103,16 @@ router.post('/chat', resolveChatCompany, async (req: Request, res: Response) => 
     const { query, sessionId } = req.body;
     const companyId = Number((req as any).chatCompanyId);
     const websiteId = (req as any).chatWebsiteId ?? null;
+    const apiKeyHeader = req.headers['x-api-key'];
+    const apiKey = Array.isArray(apiKeyHeader) ? apiKeyHeader[0] : apiKeyHeader;
+    const isWidgetChat = typeof apiKey === 'string' && apiKey.trim() !== '';
     if (!Number.isFinite(companyId) || companyId <= 0) {
         return res.status(401).json({ error: 'Unable to resolve company context.' });
     }
 
     try {
         const result = await ragEngine.answerTicket(query, sessionId, companyId, websiteId);
+        const resultRecord = result as typeof result & { response?: string; message?: string };
         if (result?.raise_ticket && result?.ticket_payload) {
             try {
                 const { users } = await getCollections();
@@ -119,6 +124,23 @@ router.post('/chat', resolveChatCompany, async (req: Request, res: Response) => 
                     result.ticket_payload.customer_message || query,
                 );
                 const sentiment = inferSentiment(result.ticket_payload.customer_message || query);
+                const customerName =
+                    String(req.body?.customerName || (isWidgetChat ? 'Website Visitor' : 'AI Chat User')).trim()
+                    || (isWidgetChat ? 'Website Visitor' : 'AI Chat User');
+                const aiAnswer =
+                    (typeof result?.answer === 'string' && result.answer.trim())
+                    || (typeof resultRecord.response === 'string' && resultRecord.response.trim())
+                    || (typeof resultRecord.message === 'string' && resultRecord.message.trim())
+                    || '';
+                const chatHistory = Array.isArray(req.body?.chatHistory)
+                    ? req.body.chatHistory
+                        .filter((entry: any) => entry && (entry.role === 'user' || entry.role === 'bot'))
+                        .map((entry: any) => ({
+                            role: entry.role as 'user' | 'bot',
+                            text: String(entry.text ?? '').trim(),
+                        }))
+                        .filter((entry: { text: string }) => entry.text.length > 0)
+                    : [];
 
                 const ticketDoc = {
                     companyId,
@@ -132,8 +154,8 @@ router.post('/chat', resolveChatCompany, async (req: Request, res: Response) => 
                     assignedRoleName: assignedRole?.name ?? null,
                     sentiment: sentiment.label,
                     sentimentEmoji: sentiment.emoji,
-                    customerName: String(req.body?.customerName || 'AI Chat User').trim() || 'AI Chat User',
-                    source: 'ai',
+                    customerName,
+                    source: isWidgetChat ? 'widget' : 'ai',
                     createdAt: now,
                     updatedAt: now,
                 };
@@ -141,27 +163,98 @@ router.post('/chat', resolveChatCompany, async (req: Request, res: Response) => 
                 const inserted = await db.collection('tickets').insertOne(ticketDoc);
                 const ticketId = inserted.insertedId;
 
-                await db.collection('messages').insertOne({
-                    ticketId,
-                    companyId,
-                    sender: 'user',
-                    text: result.ticket_payload.customer_message || query,
-                    createdAt: now,
-                    updatedAt: now,
-                });
+                let widgetSessionId: string | null = null;
+                let widgetChatToken: string | null = null;
 
-                emitTicketUpdateFromHttp({
+                if (isWidgetChat) {
+                    widgetSessionId = crypto.randomUUID();
+                    await db.collection('chat_sessions').insertOne({
+                        sessionId: widgetSessionId,
+                        companyId,
+                        ticketId,
+                        handoffRequested: false,
+                        visitorName: customerName,
+                        visitorEmail: null,
+                        source: 'widget',
+                        createdAt: now,
+                        updatedAt: now,
+                    });
+
+                    if (chatHistory.length > 0) {
+                        const seeded = chatHistory.map((entry: { role: 'user' | 'bot'; text: string }, index: number) => {
+                            const createdAt = new Date(now.getTime() + index);
+                            return {
+                                ticketId,
+                                companyId,
+                                sessionId: widgetSessionId,
+                                sender: entry.role,
+                                text: entry.text,
+                                createdAt,
+                                updatedAt: createdAt,
+                            };
+                        });
+                        await db.collection('messages').insertMany(seeded);
+                    } else {
+                        await db.collection('messages').insertOne({
+                            ticketId,
+                            companyId,
+                            sessionId: widgetSessionId,
+                            sender: 'user',
+                            text: result.ticket_payload.customer_message || query,
+                            createdAt: now,
+                            updatedAt: now,
+                        });
+                    }
+
+                    if (aiAnswer) {
+                        const answerCreatedAt = new Date(now.getTime() + chatHistory.length + 1);
+                        await db.collection('messages').insertOne({
+                            ticketId,
+                            companyId,
+                            sessionId: widgetSessionId,
+                            sender: 'bot',
+                            text: aiAnswer,
+                            createdAt: answerCreatedAt,
+                            updatedAt: answerCreatedAt,
+                        });
+                    }
+
+                    widgetChatToken = signWidgetToken({
+                        companyId,
+                        sessionId: widgetSessionId,
+                        ticketId: ticketId.toString(),
+                    });
+                } else {
+                    await db.collection('messages').insertOne({
+                        ticketId,
+                        companyId,
+                        sender: 'user',
+                        text: result.ticket_payload.customer_message || query,
+                        createdAt: now,
+                        updatedAt: now,
+                    });
+                }
+
+                emitRealtimeTicketStatusFromHttp({
                     companyId,
                     ticketId: ticketId.toString(),
+                    sessionId: widgetSessionId,
                     status: 'pending',
                     assignedTo: null,
-                    updatedAt: now,
                 });
 
                 (result as any).ticket = {
                     _id: ticketId,
                     ...ticketDoc,
                 };
+                if (widgetSessionId && widgetChatToken) {
+                    (result as any).human_handoff = {
+                        sessionId: widgetSessionId,
+                        ticketId: ticketId.toString(),
+                        chatToken: widgetChatToken,
+                        handoffRequested: false,
+                    };
+                }
                 try {
                     await ticketVectorService.upsertTicket({
                         ticketId: ticketId.toString(),

@@ -15,7 +15,7 @@ function resolveDevApiProxyTarget(mode, envDir) {
   const fileEnv = loadEnv(mode, envDir, '')
   const explicit =
     fileEnv.VITE_DEV_PROXY_TARGET ||
-    process.env.VITE_DEV_PROXY_TARGET
+    globalThis.process?.env?.VITE_DEV_PROXY_TARGET
   if (explicit && String(explicit).trim()) {
     return String(explicit).trim().replace(/\/+$/, '')
   }
@@ -44,6 +44,11 @@ export default defineConfig(({ mode }) => {
   }
   return {
     plugins: [react(), tailwindcss()],
+    resolve: {
+      alias: {
+        'chatbot-package': resolve(__dirname, '../chatbot-package/dist/chatbot-package.js'),
+      },
+    },
     server: {
       host: true,
       proxy: {

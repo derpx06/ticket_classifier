@@ -46,33 +46,33 @@ var h = (e) => {
 }, g = typeof ArrayBuffer == "function", _ = (e, t) => {
 	if (typeof e != "string") return {
 		type: "message",
-		data: ee(e, t)
+		data: te(e, t)
 	};
 	let n = e.charAt(0);
 	return n === "b" ? {
 		type: "message",
-		data: v(e.substring(1), t)
+		data: ee(e.substring(1), t)
 	} : r[n] ? e.length > 1 ? {
 		type: r[n],
 		data: e.substring(1)
 	} : { type: r[n] } : i;
-}, v = (e, t) => g ? ee(h(e), t) : {
+}, ee = (e, t) => g ? te(h(e), t) : {
 	base64: !0,
 	data: e
-}, ee = (e, t) => {
+}, te = (e, t) => {
 	switch (t) {
 		case "blob": return e instanceof Blob ? e : new Blob([e]);
 		default: return e instanceof ArrayBuffer ? e : e.buffer;
 	}
-}, te = "", ne = (e, t) => {
+}, ne = "", re = (e, t) => {
 	let n = e.length, r = Array(n), i = 0;
 	e.forEach((e, a) => {
 		c(e, !1, (e) => {
-			r[a] = e, ++i === n && t(r.join(te));
+			r[a] = e, ++i === n && t(r.join(ne));
 		});
 	});
-}, re = (e, t) => {
-	let n = e.split(te), r = [];
+}, v = (e, t) => {
+	let n = e.split(ne), r = [];
 	for (let e = 0; e < n.length; e++) {
 		let i = _(n[e], t);
 		if (r.push(i), i.type === "error") break;
@@ -143,9 +143,9 @@ function C(e, t) {
 //#endregion
 //#region node_modules/@socket.io/component-emitter/lib/esm/index.js
 function w(e) {
-	if (e) return T(e);
+	if (e) return ie(e);
 }
-function T(e) {
+function ie(e) {
 	for (var t in w.prototype) e[t] = w.prototype[t];
 	return e;
 }
@@ -181,36 +181,36 @@ w.prototype.on = w.prototype.addEventListener = function(e, t) {
 };
 //#endregion
 //#region node_modules/engine.io-client/build/esm/globals.js
-var E = typeof Promise == "function" && typeof Promise.resolve == "function" ? (e) => Promise.resolve().then(e) : (e, t) => t(e, 0), D = typeof self < "u" ? self : typeof window < "u" ? window : Function("return this")(), ie = "arraybuffer";
+var T = typeof Promise == "function" && typeof Promise.resolve == "function" ? (e) => Promise.resolve().then(e) : (e, t) => t(e, 0), E = typeof self < "u" ? self : typeof window < "u" ? window : Function("return this")(), ae = "arraybuffer";
 //#endregion
 //#region node_modules/engine.io-client/build/esm/util.js
-function ae(e, ...t) {
+function oe(e, ...t) {
 	return t.reduce((t, n) => (e.hasOwnProperty(n) && (t[n] = e[n]), t), {});
 }
-var oe = D.setTimeout, O = D.clearTimeout;
+var D = E.setTimeout, O = E.clearTimeout;
 function k(e, t) {
-	t.useNativeTimers ? (e.setTimeoutFn = oe.bind(D), e.clearTimeoutFn = O.bind(D)) : (e.setTimeoutFn = D.setTimeout.bind(D), e.clearTimeoutFn = D.clearTimeout.bind(D));
+	t.useNativeTimers ? (e.setTimeoutFn = D.bind(E), e.clearTimeoutFn = O.bind(E)) : (e.setTimeoutFn = E.setTimeout.bind(E), e.clearTimeoutFn = E.clearTimeout.bind(E));
 }
 var A = 1.33;
 function j(e) {
-	return typeof e == "string" ? se(e) : Math.ceil((e.byteLength || e.size) * A);
+	return typeof e == "string" ? M(e) : Math.ceil((e.byteLength || e.size) * A);
 }
-function se(e) {
+function M(e) {
 	let t = 0, n = 0;
 	for (let r = 0, i = e.length; r < i; r++) t = e.charCodeAt(r), t < 128 ? n += 1 : t < 2048 ? n += 2 : t < 55296 || t >= 57344 ? n += 3 : (r++, n += 4);
 	return n;
 }
-function M() {
+function N() {
 	return Date.now().toString(36).substring(3) + Math.random().toString(36).substring(2, 5);
 }
 //#endregion
 //#region node_modules/engine.io-client/build/esm/contrib/parseqs.js
-function N(e) {
+function P(e) {
 	let t = "";
 	for (let n in e) e.hasOwnProperty(n) && (t.length && (t += "&"), t += encodeURIComponent(n) + "=" + encodeURIComponent(e[n]));
 	return t;
 }
-function P(e) {
+function F(e) {
 	let t = {}, n = e.split("&");
 	for (let e = 0, r = n.length; e < r; e++) {
 		let r = n[e].split("=");
@@ -220,16 +220,16 @@ function P(e) {
 }
 //#endregion
 //#region node_modules/engine.io-client/build/esm/transport.js
-var F = class extends Error {
+var I = class extends Error {
 	constructor(e, t, n) {
 		super(e), this.description = t, this.context = n, this.type = "TransportError";
 	}
-}, I = class extends w {
+}, L = class extends w {
 	constructor(e) {
 		super(), this.writable = !1, k(this, e), this.opts = e, this.query = e.query, this.socket = e.socket, this.supportsBinary = !e.forceBase64;
 	}
 	onError(e, t, n) {
-		return super.emitReserved("error", new F(e, t, n)), this;
+		return super.emitReserved("error", new I(e, t, n)), this;
 	}
 	open() {
 		return this.readyState = "opening", this.doOpen(), this;
@@ -265,10 +265,10 @@ var F = class extends Error {
 		return this.opts.port && (this.opts.secure && Number(this.opts.port) !== 443 || !this.opts.secure && Number(this.opts.port) !== 80) ? ":" + this.opts.port : "";
 	}
 	_query(e) {
-		let t = N(e);
+		let t = P(e);
 		return t.length ? "?" + t : "";
 	}
-}, ce = class extends I {
+}, se = class extends L {
 	constructor() {
 		super(...arguments), this._polling = !1;
 	}
@@ -296,7 +296,7 @@ var F = class extends Error {
 		this._polling = !0, this.doPoll(), this.emitReserved("poll");
 	}
 	onData(e) {
-		re(e, this.socket.binaryType).forEach((e) => {
+		v(e, this.socket.binaryType).forEach((e) => {
 			if (this.readyState === "opening" && e.type === "open" && this.onOpen(), e.type === "close") return this.onClose({ description: "transport closed by the server" }), !1;
 			this.onPacket(e);
 		}), this.readyState !== "closed" && (this._polling = !1, this.emitReserved("pollComplete"), this.readyState === "open" && this._poll());
@@ -308,7 +308,7 @@ var F = class extends Error {
 		this.readyState === "open" ? e() : this.once("open", e);
 	}
 	write(e) {
-		this.writable = !1, ne(e, (e) => {
+		this.writable = !1, re(e, (e) => {
 			this.doWrite(e, () => {
 				this.writable = !0, this.emitReserved("drain");
 			});
@@ -316,17 +316,17 @@ var F = class extends Error {
 	}
 	uri() {
 		let e = this.opts.secure ? "https" : "http", t = this.query || {};
-		return !1 !== this.opts.timestampRequests && (t[this.opts.timestampParam] = M()), !this.supportsBinary && !t.sid && (t.b64 = 1), this.createUri(e, t);
+		return !1 !== this.opts.timestampRequests && (t[this.opts.timestampParam] = N()), !this.supportsBinary && !t.sid && (t.b64 = 1), this.createUri(e, t);
 	}
-}, L = !1;
+}, R = !1;
 try {
-	L = typeof XMLHttpRequest < "u" && "withCredentials" in new XMLHttpRequest();
+	R = typeof XMLHttpRequest < "u" && "withCredentials" in new XMLHttpRequest();
 } catch {}
-var R = L;
+var z = R;
 //#endregion
 //#region node_modules/engine.io-client/build/esm/transports/polling-xhr.js
-function z() {}
-var B = class extends ce {
+function B() {}
+var V = class extends se {
 	constructor(e) {
 		if (super(e), typeof location < "u") {
 			let t = location.protocol === "https:", n = location.port;
@@ -348,13 +348,13 @@ var B = class extends ce {
 			this.onError("xhr poll error", e, t);
 		}), this.pollXhr = e;
 	}
-}, V = class e extends w {
+}, H = class e extends w {
 	constructor(e, t, n) {
 		super(), this.createRequest = e, k(this, n), this._opts = n, this._method = n.method || "GET", this._uri = t, this._data = n.data === void 0 ? null : n.data, this._create();
 	}
 	_create() {
 		var t;
-		let n = ae(this._opts, "agent", "pfx", "key", "passphrase", "cert", "ca", "ciphers", "rejectUnauthorized", "autoUnref");
+		let n = oe(this._opts, "agent", "pfx", "key", "passphrase", "cert", "ca", "ciphers", "rejectUnauthorized", "autoUnref");
 		n.xdomain = !!this._opts.xd;
 		let r = this._xhr = this.createRequest(n);
 		try {
@@ -390,7 +390,7 @@ var B = class extends ce {
 	}
 	_cleanup(t) {
 		if (!(this._xhr === void 0 || this._xhr === null)) {
-			if (this._xhr.onreadystatechange = z, t) try {
+			if (this._xhr.onreadystatechange = B, t) try {
 				this._xhr.abort();
 			} catch {}
 			typeof document < "u" && delete e.requests[this._index], this._xhr = null;
@@ -404,46 +404,46 @@ var B = class extends ce {
 		this._cleanup();
 	}
 };
-if (V.requestsCount = 0, V.requests = {}, typeof document < "u") {
-	if (typeof attachEvent == "function") attachEvent("onunload", le);
+if (H.requestsCount = 0, H.requests = {}, typeof document < "u") {
+	if (typeof attachEvent == "function") attachEvent("onunload", ce);
 	else if (typeof addEventListener == "function") {
-		let e = "onpagehide" in D ? "pagehide" : "unload";
-		addEventListener(e, le, !1);
+		let e = "onpagehide" in E ? "pagehide" : "unload";
+		addEventListener(e, ce, !1);
 	}
 }
-function le() {
-	for (let e in V.requests) V.requests.hasOwnProperty(e) && V.requests[e].abort();
+function ce() {
+	for (let e in H.requests) H.requests.hasOwnProperty(e) && H.requests[e].abort();
 }
-var ue = (function() {
-	let e = U({ xdomain: !1 });
+var le = (function() {
+	let e = W({ xdomain: !1 });
 	return e && e.responseType !== null;
-})(), H = class extends B {
+})(), U = class extends V {
 	constructor(e) {
 		super(e);
 		let t = e && e.forceBase64;
-		this.supportsBinary = ue && !t;
+		this.supportsBinary = le && !t;
 	}
 	request(e = {}) {
-		return Object.assign(e, { xd: this.xd }, this.opts), new V(U, this.uri(), e);
+		return Object.assign(e, { xd: this.xd }, this.opts), new H(W, this.uri(), e);
 	}
 };
-function U(e) {
+function W(e) {
 	let t = e.xdomain;
 	try {
-		if (typeof XMLHttpRequest < "u" && (!t || R)) return new XMLHttpRequest();
+		if (typeof XMLHttpRequest < "u" && (!t || z)) return new XMLHttpRequest();
 	} catch {}
 	if (!t) try {
-		return new D[["Active", "Object"].join("X")]("Microsoft.XMLHTTP");
+		return new E[["Active", "Object"].join("X")]("Microsoft.XMLHTTP");
 	} catch {}
 }
 //#endregion
 //#region node_modules/engine.io-client/build/esm/transports/websocket.js
-var W = typeof navigator < "u" && typeof navigator.product == "string" && navigator.product.toLowerCase() === "reactnative", G = class extends I {
+var G = typeof navigator < "u" && typeof navigator.product == "string" && navigator.product.toLowerCase() === "reactnative", ue = class extends L {
 	get name() {
 		return "websocket";
 	}
 	doOpen() {
-		let e = this.uri(), t = this.opts.protocols, n = W ? {} : ae(this.opts, "agent", "perMessageDeflate", "pfx", "key", "passphrase", "cert", "ca", "ciphers", "rejectUnauthorized", "localAddress", "protocolVersion", "origin", "maxPayload", "family", "checkServerIdentity");
+		let e = this.uri(), t = this.opts.protocols, n = G ? {} : oe(this.opts, "agent", "perMessageDeflate", "pfx", "key", "passphrase", "cert", "ca", "ciphers", "rejectUnauthorized", "localAddress", "protocolVersion", "origin", "maxPayload", "family", "checkServerIdentity");
 		this.opts.extraHeaders && (n.headers = this.opts.extraHeaders);
 		try {
 			this.ws = this.createSocket(e, t, n);
@@ -468,7 +468,7 @@ var W = typeof navigator < "u" && typeof navigator.product == "string" && naviga
 				try {
 					this.doWrite(n, e);
 				} catch {}
-				r && E(() => {
+				r && T(() => {
 					this.writable = !0, this.emitReserved("drain");
 				}, this.setTimeoutFn);
 			});
@@ -479,18 +479,18 @@ var W = typeof navigator < "u" && typeof navigator.product == "string" && naviga
 	}
 	uri() {
 		let e = this.opts.secure ? "wss" : "ws", t = this.query || {};
-		return this.opts.timestampRequests && (t[this.opts.timestampParam] = M()), this.supportsBinary || (t.b64 = 1), this.createUri(e, t);
+		return this.opts.timestampRequests && (t[this.opts.timestampParam] = N()), this.supportsBinary || (t.b64 = 1), this.createUri(e, t);
 	}
-}, de = D.WebSocket || D.MozWebSocket, fe = {
-	websocket: class extends G {
+}, K = E.WebSocket || E.MozWebSocket, de = {
+	websocket: class extends ue {
 		createSocket(e, t, n) {
-			return W ? new de(e, t, n) : t ? new de(e, t) : new de(e);
+			return G ? new K(e, t, n) : t ? new K(e, t) : new K(e);
 		}
 		doWrite(e, t) {
 			this.ws.send(t);
 		}
 	},
-	webtransport: class extends I {
+	webtransport: class extends L {
 		get name() {
 			return "webtransport";
 		}
@@ -524,7 +524,7 @@ var W = typeof navigator < "u" && typeof navigator.product == "string" && naviga
 			for (let t = 0; t < e.length; t++) {
 				let n = e[t], r = t === e.length - 1;
 				this._writer.write(n).then(() => {
-					r && E(() => {
+					r && T(() => {
 						this.writable = !0, this.emitReserved("drain");
 					}, this.setTimeoutFn);
 				});
@@ -535,8 +535,8 @@ var W = typeof navigator < "u" && typeof navigator.product == "string" && naviga
 			(e = this._transport) == null || e.close();
 		}
 	},
-	polling: H
-}, pe = /^(?:(?![^:@\/?#]+:[^:@\/]*@)(http|https|ws|wss):\/\/)?((?:(([^:@\/?#]*)(?::([^:@\/?#]*))?)?@)?((?:[a-f0-9]{0,4}:){2,7}[a-f0-9]{0,4}|[^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/, me = [
+	polling: U
+}, fe = /^(?:(?![^:@\/?#]+:[^:@\/]*@)(http|https|ws|wss):\/\/)?((?:(([^:@\/?#]*)(?::([^:@\/?#]*))?)?@)?((?:[a-f0-9]{0,4}:){2,7}[a-f0-9]{0,4}|[^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/, pe = [
 	"source",
 	"protocol",
 	"authority",
@@ -552,19 +552,19 @@ var W = typeof navigator < "u" && typeof navigator.product == "string" && naviga
 	"query",
 	"anchor"
 ];
-function he(e) {
+function q(e) {
 	if (e.length > 8e3) throw "URI too long";
 	let t = e, n = e.indexOf("["), r = e.indexOf("]");
 	n != -1 && r != -1 && (e = e.substring(0, n) + e.substring(n, r).replace(/:/g, ";") + e.substring(r, e.length));
-	let i = pe.exec(e || ""), a = {}, o = 14;
-	for (; o--;) a[me[o]] = i[o] || "";
-	return n != -1 && r != -1 && (a.source = t, a.host = a.host.substring(1, a.host.length - 1).replace(/;/g, ":"), a.authority = a.authority.replace("[", "").replace("]", "").replace(/;/g, ":"), a.ipv6uri = !0), a.pathNames = ge(a, a.path), a.queryKey = _e(a, a.query), a;
+	let i = fe.exec(e || ""), a = {}, o = 14;
+	for (; o--;) a[pe[o]] = i[o] || "";
+	return n != -1 && r != -1 && (a.source = t, a.host = a.host.substring(1, a.host.length - 1).replace(/;/g, ":"), a.authority = a.authority.replace("[", "").replace("]", "").replace(/;/g, ":"), a.ipv6uri = !0), a.pathNames = me(a, a.path), a.queryKey = he(a, a.query), a;
 }
-function ge(e, t) {
+function me(e, t) {
 	let n = t.replace(/\/{2,9}/g, "/").split("/");
 	return (t.slice(0, 1) == "/" || t.length === 0) && n.splice(0, 1), t.slice(-1) == "/" && n.splice(n.length - 1, 1), n;
 }
-function _e(e, t) {
+function he(e, t) {
 	let n = {};
 	return t.replace(/(?:^|&)([^&=]*)=?([^&]*)/g, function(e, t, r) {
 		t && (n[t] = r);
@@ -572,16 +572,16 @@ function _e(e, t) {
 }
 //#endregion
 //#region node_modules/engine.io-client/build/esm/socket.js
-var ve = typeof addEventListener == "function" && typeof removeEventListener == "function", ye = [];
-ve && addEventListener("offline", () => {
-	ye.forEach((e) => e());
+var ge = typeof addEventListener == "function" && typeof removeEventListener == "function", _e = [];
+ge && addEventListener("offline", () => {
+	_e.forEach((e) => e());
 }, !1);
-var be = class e extends w {
+var ve = class e extends w {
 	constructor(e, t) {
-		if (super(), this.binaryType = ie, this.writeBuffer = [], this._prevBufferLen = 0, this._pingInterval = -1, this._pingTimeout = -1, this._maxPayload = -1, this._pingTimeoutTime = Infinity, e && typeof e == "object" && (t = e, e = null), e) {
-			let n = he(e);
+		if (super(), this.binaryType = ae, this.writeBuffer = [], this._prevBufferLen = 0, this._pingInterval = -1, this._pingTimeout = -1, this._maxPayload = -1, this._pingTimeoutTime = Infinity, e && typeof e == "object" && (t = e, e = null), e) {
+			let n = q(e);
 			t.hostname = n.host, t.secure = n.protocol === "https" || n.protocol === "wss", t.port = n.port, n.query && (t.query = n.query);
-		} else t.host && (t.hostname = he(t.host).host);
+		} else t.host && (t.hostname = q(t.host).host);
 		k(this, t), this.secure = t.secure == null ? typeof location < "u" && location.protocol === "https:" : t.secure, t.hostname && !t.port && (t.port = this.secure ? "443" : "80"), this.hostname = t.hostname || (typeof location < "u" ? location.hostname : "localhost"), this.port = t.port || (typeof location < "u" && location.port ? location.port : this.secure ? "443" : "80"), this.transports = [], this._transportsByName = {}, t.transports.forEach((e) => {
 			let t = e.prototype.name;
 			this.transports.push(t), this._transportsByName[t] = e;
@@ -597,11 +597,11 @@ var be = class e extends w {
 			perMessageDeflate: { threshold: 1024 },
 			transportOptions: {},
 			closeOnBeforeunload: !1
-		}, t), this.opts.path = this.opts.path.replace(/\/$/, "") + (this.opts.addTrailingSlash ? "/" : ""), typeof this.opts.query == "string" && (this.opts.query = P(this.opts.query)), ve && (this.opts.closeOnBeforeunload && (this._beforeunloadEventListener = () => {
+		}, t), this.opts.path = this.opts.path.replace(/\/$/, "") + (this.opts.addTrailingSlash ? "/" : ""), typeof this.opts.query == "string" && (this.opts.query = F(this.opts.query)), ge && (this.opts.closeOnBeforeunload && (this._beforeunloadEventListener = () => {
 			this.transport && (this.transport.removeAllListeners(), this.transport.close());
 		}, addEventListener("beforeunload", this._beforeunloadEventListener, !1)), this.hostname !== "localhost" && (this._offlineEventListener = () => {
 			this._onClose("transport close", { description: "network connection lost" });
-		}, ye.push(this._offlineEventListener))), this.opts.withCredentials && (this._cookieJar = void 0), this._open();
+		}, _e.push(this._offlineEventListener))), this.opts.withCredentials && (this._cookieJar = void 0), this._open();
 	}
 	createTransport(e) {
 		let t = Object.assign({}, this.opts.query);
@@ -682,7 +682,7 @@ var be = class e extends w {
 	_hasPingExpired() {
 		if (!this._pingTimeoutTime) return !0;
 		let e = Date.now() > this._pingTimeoutTime;
-		return e && (this._pingTimeoutTime = 0, E(() => {
+		return e && (this._pingTimeoutTime = 0, T(() => {
 			this._onClose("ping timeout");
 		}, this.setTimeoutFn)), e;
 	}
@@ -720,16 +720,16 @@ var be = class e extends w {
 	}
 	_onClose(e, t) {
 		if (this.readyState === "opening" || this.readyState === "open" || this.readyState === "closing") {
-			if (this.clearTimeoutFn(this._pingTimeoutTimer), this.transport.removeAllListeners("close"), this.transport.close(), this.transport.removeAllListeners(), ve && (this._beforeunloadEventListener && removeEventListener("beforeunload", this._beforeunloadEventListener, !1), this._offlineEventListener)) {
-				let e = ye.indexOf(this._offlineEventListener);
-				e !== -1 && ye.splice(e, 1);
+			if (this.clearTimeoutFn(this._pingTimeoutTimer), this.transport.removeAllListeners("close"), this.transport.close(), this.transport.removeAllListeners(), ge && (this._beforeunloadEventListener && removeEventListener("beforeunload", this._beforeunloadEventListener, !1), this._offlineEventListener)) {
+				let e = _e.indexOf(this._offlineEventListener);
+				e !== -1 && _e.splice(e, 1);
 			}
 			this.readyState = "closed", this.id = null, this.emitReserved("close", e, t), this.writeBuffer = [], this._prevBufferLen = 0;
 		}
 	}
 };
-be.protocol = 4;
-var xe = class extends be {
+ve.protocol = 4;
+var ye = class extends ve {
 	constructor() {
 		super(...arguments), this._upgrades = [];
 	}
@@ -738,7 +738,7 @@ var xe = class extends be {
 	}
 	_probe(e) {
 		let t = this.createTransport(e), n = !1;
-		be.priorWebsocketSuccess = !1;
+		ve.priorWebsocketSuccess = !1;
 		let r = () => {
 			n || (t.send([{
 				type: "ping",
@@ -746,7 +746,7 @@ var xe = class extends be {
 			}]), t.once("packet", (e) => {
 				if (!n) if (e.type === "pong" && e.data === "probe") {
 					if (this.upgrading = !0, this.emitReserved("upgrading", t), !t) return;
-					be.priorWebsocketSuccess = t.name === "websocket", this.transport.pause(() => {
+					ve.priorWebsocketSuccess = t.name === "websocket", this.transport.pause(() => {
 						n || this.readyState !== "closed" && (l(), this.setTransport(t), t.send([{ type: "upgrade" }]), this.emitReserved("upgrade", t), t = null, this.upgrading = !1, this.flush());
 					});
 				} else {
@@ -786,54 +786,54 @@ var xe = class extends be {
 		for (let n = 0; n < e.length; n++) ~this.transports.indexOf(e[n]) && t.push(e[n]);
 		return t;
 	}
-}, Se = class extends xe {
+}, be = class extends ye {
 	constructor(e, t = {}) {
 		let n = typeof e == "object" ? e : t;
 		(!n.transports || n.transports && typeof n.transports[0] == "string") && (n.transports = (n.transports || [
 			"polling",
 			"websocket",
 			"webtransport"
-		]).map((e) => fe[e]).filter((e) => !!e)), super(e, n);
+		]).map((e) => de[e]).filter((e) => !!e)), super(e, n);
 	}
 };
-Se.protocol;
+be.protocol;
 //#endregion
 //#region node_modules/socket.io-client/build/esm/url.js
-function Ce(e, t = "", n) {
+function xe(e, t = "", n) {
 	let r = e;
-	n ||= typeof location < "u" && location, e ??= n.protocol + "//" + n.host, typeof e == "string" && (e.charAt(0) === "/" && (e = e.charAt(1) === "/" ? n.protocol + e : n.host + e), /^(https?|wss?):\/\//.test(e) || (e = n === void 0 ? "https://" + e : n.protocol + "//" + e), r = he(e)), r.port || (/^(http|ws)$/.test(r.protocol) ? r.port = "80" : /^(http|ws)s$/.test(r.protocol) && (r.port = "443")), r.path = r.path || "/";
+	n ||= typeof location < "u" && location, e ??= n.protocol + "//" + n.host, typeof e == "string" && (e.charAt(0) === "/" && (e = e.charAt(1) === "/" ? n.protocol + e : n.host + e), /^(https?|wss?):\/\//.test(e) || (e = n === void 0 ? "https://" + e : n.protocol + "//" + e), r = q(e)), r.port || (/^(http|ws)$/.test(r.protocol) ? r.port = "80" : /^(http|ws)s$/.test(r.protocol) && (r.port = "443")), r.path = r.path || "/";
 	let i = r.host.indexOf(":") === -1 ? r.host : "[" + r.host + "]";
 	return r.id = r.protocol + "://" + i + ":" + r.port + t, r.href = r.protocol + "://" + i + (n && n.port === r.port ? "" : ":" + r.port), r;
 }
 //#endregion
 //#region node_modules/socket.io-parser/build/esm/is-binary.js
-var we = typeof ArrayBuffer == "function", Te = (e) => typeof ArrayBuffer.isView == "function" ? ArrayBuffer.isView(e) : e.buffer instanceof ArrayBuffer, Ee = Object.prototype.toString, De = typeof Blob == "function" || typeof Blob < "u" && Ee.call(Blob) === "[object BlobConstructor]", Oe = typeof File == "function" || typeof File < "u" && Ee.call(File) === "[object FileConstructor]";
-function ke(e) {
-	return we && (e instanceof ArrayBuffer || Te(e)) || De && e instanceof Blob || Oe && e instanceof File;
+var Se = typeof ArrayBuffer == "function", Ce = (e) => typeof ArrayBuffer.isView == "function" ? ArrayBuffer.isView(e) : e.buffer instanceof ArrayBuffer, we = Object.prototype.toString, Te = typeof Blob == "function" || typeof Blob < "u" && we.call(Blob) === "[object BlobConstructor]", Ee = typeof File == "function" || typeof File < "u" && we.call(File) === "[object FileConstructor]";
+function De(e) {
+	return Se && (e instanceof ArrayBuffer || Ce(e)) || Te && e instanceof Blob || Ee && e instanceof File;
 }
-function Ae(e, t) {
+function Oe(e, t) {
 	if (!e || typeof e != "object") return !1;
 	if (Array.isArray(e)) {
-		for (let t = 0, n = e.length; t < n; t++) if (Ae(e[t])) return !0;
+		for (let t = 0, n = e.length; t < n; t++) if (Oe(e[t])) return !0;
 		return !1;
 	}
-	if (ke(e)) return !0;
-	if (e.toJSON && typeof e.toJSON == "function" && arguments.length === 1) return Ae(e.toJSON(), !0);
-	for (let t in e) if (Object.prototype.hasOwnProperty.call(e, t) && Ae(e[t])) return !0;
+	if (De(e)) return !0;
+	if (e.toJSON && typeof e.toJSON == "function" && arguments.length === 1) return Oe(e.toJSON(), !0);
+	for (let t in e) if (Object.prototype.hasOwnProperty.call(e, t) && Oe(e[t])) return !0;
 	return !1;
 }
 //#endregion
 //#region node_modules/socket.io-parser/build/esm/binary.js
-function je(e) {
+function ke(e) {
 	let t = [], n = e.data, r = e;
-	return r.data = Me(n, t), r.attachments = t.length, {
+	return r.data = Ae(n, t), r.attachments = t.length, {
 		packet: r,
 		buffers: t
 	};
 }
-function Me(e, t) {
+function Ae(e, t) {
 	if (!e) return e;
-	if (ke(e)) {
+	if (De(e)) {
 		let n = {
 			_placeholder: !0,
 			num: t.length
@@ -841,53 +841,53 @@ function Me(e, t) {
 		return t.push(e), n;
 	} else if (Array.isArray(e)) {
 		let n = Array(e.length);
-		for (let r = 0; r < e.length; r++) n[r] = Me(e[r], t);
+		for (let r = 0; r < e.length; r++) n[r] = Ae(e[r], t);
 		return n;
 	} else if (typeof e == "object" && !(e instanceof Date)) {
 		let n = {};
-		for (let r in e) Object.prototype.hasOwnProperty.call(e, r) && (n[r] = Me(e[r], t));
+		for (let r in e) Object.prototype.hasOwnProperty.call(e, r) && (n[r] = Ae(e[r], t));
 		return n;
 	}
 	return e;
 }
-function Ne(e, t) {
-	return e.data = Pe(e.data, t), delete e.attachments, e;
+function je(e, t) {
+	return e.data = Me(e.data, t), delete e.attachments, e;
 }
-function Pe(e, t) {
+function Me(e, t) {
 	if (!e) return e;
 	if (e && e._placeholder === !0) {
 		if (typeof e.num == "number" && e.num >= 0 && e.num < t.length) return t[e.num];
 		throw Error("illegal attachments");
-	} else if (Array.isArray(e)) for (let n = 0; n < e.length; n++) e[n] = Pe(e[n], t);
-	else if (typeof e == "object") for (let n in e) Object.prototype.hasOwnProperty.call(e, n) && (e[n] = Pe(e[n], t));
+	} else if (Array.isArray(e)) for (let n = 0; n < e.length; n++) e[n] = Me(e[n], t);
+	else if (typeof e == "object") for (let n in e) Object.prototype.hasOwnProperty.call(e, n) && (e[n] = Me(e[n], t));
 	return e;
 }
 //#endregion
 //#region node_modules/socket.io-parser/build/esm/index.js
-var Fe = /* @__PURE__ */ t({
-	Decoder: () => Re,
-	Encoder: () => Le,
-	PacketType: () => K,
-	isPacketValid: () => Ge,
+var Ne = /* @__PURE__ */ t({
+	Decoder: () => Ie,
+	Encoder: () => Fe,
+	PacketType: () => J,
+	isPacketValid: () => Ue,
 	protocol: () => 5
-}), Ie = [
+}), Pe = [
 	"connect",
 	"connect_error",
 	"disconnect",
 	"disconnecting",
 	"newListener",
 	"removeListener"
-], K;
+], J;
 (function(e) {
 	e[e.CONNECT = 0] = "CONNECT", e[e.DISCONNECT = 1] = "DISCONNECT", e[e.EVENT = 2] = "EVENT", e[e.ACK = 3] = "ACK", e[e.CONNECT_ERROR = 4] = "CONNECT_ERROR", e[e.BINARY_EVENT = 5] = "BINARY_EVENT", e[e.BINARY_ACK = 6] = "BINARY_ACK";
-})(K ||= {});
-var Le = class {
+})(J ||= {});
+var Fe = class {
 	constructor(e) {
 		this.replacer = e;
 	}
 	encode(e) {
-		return (e.type === K.EVENT || e.type === K.ACK) && Ae(e) ? this.encodeAsBinary({
-			type: e.type === K.EVENT ? K.BINARY_EVENT : K.BINARY_ACK,
+		return (e.type === J.EVENT || e.type === J.ACK) && Oe(e) ? this.encodeAsBinary({
+			type: e.type === J.EVENT ? J.BINARY_EVENT : J.BINARY_ACK,
 			nsp: e.nsp,
 			data: e.data,
 			id: e.id
@@ -895,13 +895,13 @@ var Le = class {
 	}
 	encodeAsString(e) {
 		let t = "" + e.type;
-		return (e.type === K.BINARY_EVENT || e.type === K.BINARY_ACK) && (t += e.attachments + "-"), e.nsp && e.nsp !== "/" && (t += e.nsp + ","), e.id != null && (t += e.id), e.data != null && (t += JSON.stringify(e.data, this.replacer)), t;
+		return (e.type === J.BINARY_EVENT || e.type === J.BINARY_ACK) && (t += e.attachments + "-"), e.nsp && e.nsp !== "/" && (t += e.nsp + ","), e.id != null && (t += e.id), e.data != null && (t += JSON.stringify(e.data, this.replacer)), t;
 	}
 	encodeAsBinary(e) {
-		let t = je(e), n = this.encodeAsString(t.packet), r = t.buffers;
+		let t = ke(e), n = this.encodeAsString(t.packet), r = t.buffers;
 		return r.unshift(n), r;
 	}
-}, Re = class e extends w {
+}, Ie = class e extends w {
 	constructor(e) {
 		super(), this.opts = Object.assign({
 			reviver: void 0,
@@ -913,22 +913,22 @@ var Le = class {
 		if (typeof e == "string") {
 			if (this.reconstructor) throw Error("got plaintext data when reconstructing a packet");
 			t = this.decodeString(e);
-			let n = t.type === K.BINARY_EVENT;
-			n || t.type === K.BINARY_ACK ? (t.type = n ? K.EVENT : K.ACK, this.reconstructor = new ze(t), t.attachments === 0 && super.emitReserved("decoded", t)) : super.emitReserved("decoded", t);
-		} else if (ke(e) || e.base64) if (this.reconstructor) t = this.reconstructor.takeBinaryData(e), t && (this.reconstructor = null, super.emitReserved("decoded", t));
+			let n = t.type === J.BINARY_EVENT;
+			n || t.type === J.BINARY_ACK ? (t.type = n ? J.EVENT : J.ACK, this.reconstructor = new Le(t), t.attachments === 0 && super.emitReserved("decoded", t)) : super.emitReserved("decoded", t);
+		} else if (De(e) || e.base64) if (this.reconstructor) t = this.reconstructor.takeBinaryData(e), t && (this.reconstructor = null, super.emitReserved("decoded", t));
 		else throw Error("got binary data when not reconstructing a packet");
 		else throw Error("Unknown type: " + e);
 	}
 	decodeString(t) {
 		let n = 0, r = { type: Number(t.charAt(0)) };
-		if (K[r.type] === void 0) throw Error("unknown packet type " + r.type);
-		if (r.type === K.BINARY_EVENT || r.type === K.BINARY_ACK) {
+		if (J[r.type] === void 0) throw Error("unknown packet type " + r.type);
+		if (r.type === J.BINARY_EVENT || r.type === J.BINARY_ACK) {
 			let e = n + 1;
 			for (; t.charAt(++n) !== "-" && n != t.length;);
 			let i = t.substring(e, n);
 			if (i != Number(i) || t.charAt(n) !== "-") throw Error("Illegal attachments");
 			let a = Number(i);
-			if (!Ve(a) || a < 0) throw Error("Illegal attachments");
+			if (!ze(a) || a < 0) throw Error("Illegal attachments");
 			if (a > this.opts.maxAttachments) throw Error("too many attachments");
 			r.attachments = a;
 		}
@@ -966,25 +966,25 @@ var Le = class {
 	}
 	static isPayloadValid(e, t) {
 		switch (e) {
-			case K.CONNECT: return Ue(t);
-			case K.DISCONNECT: return t === void 0;
-			case K.CONNECT_ERROR: return typeof t == "string" || Ue(t);
-			case K.EVENT:
-			case K.BINARY_EVENT: return Array.isArray(t) && (typeof t[0] == "number" || typeof t[0] == "string" && Ie.indexOf(t[0]) === -1);
-			case K.ACK:
-			case K.BINARY_ACK: return Array.isArray(t);
+			case J.CONNECT: return Ve(t);
+			case J.DISCONNECT: return t === void 0;
+			case J.CONNECT_ERROR: return typeof t == "string" || Ve(t);
+			case J.EVENT:
+			case J.BINARY_EVENT: return Array.isArray(t) && (typeof t[0] == "number" || typeof t[0] == "string" && Pe.indexOf(t[0]) === -1);
+			case J.ACK:
+			case J.BINARY_ACK: return Array.isArray(t);
 		}
 	}
 	destroy() {
 		this.reconstructor &&= (this.reconstructor.finishedReconstruction(), null);
 	}
-}, ze = class {
+}, Le = class {
 	constructor(e) {
 		this.packet = e, this.buffers = [], this.reconPack = e;
 	}
 	takeBinaryData(e) {
 		if (this.buffers.push(e), this.buffers.length === this.reconPack.attachments) {
-			let e = Ne(this.reconPack, this.buffers);
+			let e = je(this.reconPack, this.buffers);
 			return this.finishedReconstruction(), e;
 		}
 		return null;
@@ -993,48 +993,48 @@ var Le = class {
 		this.reconPack = null, this.buffers = [];
 	}
 };
-function Be(e) {
+function Re(e) {
 	return typeof e == "string";
 }
-var Ve = Number.isInteger || function(e) {
+var ze = Number.isInteger || function(e) {
 	return typeof e == "number" && isFinite(e) && Math.floor(e) === e;
 };
-function He(e) {
-	return e === void 0 || Ve(e);
+function Be(e) {
+	return e === void 0 || ze(e);
 }
-function Ue(e) {
+function Ve(e) {
 	return Object.prototype.toString.call(e) === "[object Object]";
 }
-function We(e, t) {
+function He(e, t) {
 	switch (e) {
-		case K.CONNECT: return t === void 0 || Ue(t);
-		case K.DISCONNECT: return t === void 0;
-		case K.EVENT: return Array.isArray(t) && (typeof t[0] == "number" || typeof t[0] == "string" && Ie.indexOf(t[0]) === -1);
-		case K.ACK: return Array.isArray(t);
-		case K.CONNECT_ERROR: return typeof t == "string" || Ue(t);
+		case J.CONNECT: return t === void 0 || Ve(t);
+		case J.DISCONNECT: return t === void 0;
+		case J.EVENT: return Array.isArray(t) && (typeof t[0] == "number" || typeof t[0] == "string" && Pe.indexOf(t[0]) === -1);
+		case J.ACK: return Array.isArray(t);
+		case J.CONNECT_ERROR: return typeof t == "string" || Ve(t);
 		default: return !1;
 	}
 }
-function Ge(e) {
-	return Be(e.nsp) && He(e.id) && We(e.type, e.data);
+function Ue(e) {
+	return Re(e.nsp) && Be(e.id) && He(e.type, e.data);
 }
 //#endregion
 //#region node_modules/socket.io-client/build/esm/on.js
-function q(e, t, n) {
+function Y(e, t, n) {
 	return e.on(t, n), function() {
 		e.off(t, n);
 	};
 }
 //#endregion
 //#region node_modules/socket.io-client/build/esm/socket.js
-var Ke = Object.freeze({
+var We = Object.freeze({
 	connect: 1,
 	connect_error: 1,
 	disconnect: 1,
 	disconnecting: 1,
 	newListener: 1,
 	removeListener: 1
-}), qe = class extends w {
+}), Ge = class extends w {
 	constructor(e, t, n) {
 		super(), this.connected = !1, this.recovered = !1, this.receiveBuffer = [], this.sendBuffer = [], this._queue = [], this._queueSeq = 0, this.ids = 0, this.acks = {}, this.flags = {}, this.io = e, this.nsp = t, n && n.auth && (this.auth = n.auth), this._opts = Object.assign({}, n), this.io._autoConnect && this.open();
 	}
@@ -1045,10 +1045,10 @@ var Ke = Object.freeze({
 		if (this.subs) return;
 		let e = this.io;
 		this.subs = [
-			q(e, "open", this.onopen.bind(this)),
-			q(e, "packet", this.onpacket.bind(this)),
-			q(e, "error", this.onerror.bind(this)),
-			q(e, "close", this.onclose.bind(this))
+			Y(e, "open", this.onopen.bind(this)),
+			Y(e, "packet", this.onpacket.bind(this)),
+			Y(e, "error", this.onerror.bind(this)),
+			Y(e, "close", this.onclose.bind(this))
 		];
 	}
 	get active() {
@@ -1064,10 +1064,10 @@ var Ke = Object.freeze({
 		return e.unshift("message"), this.emit.apply(this, e), this;
 	}
 	emit(e, ...t) {
-		if (Ke.hasOwnProperty(e)) throw Error("\"" + e.toString() + "\" is a reserved event name");
+		if (We.hasOwnProperty(e)) throw Error("\"" + e.toString() + "\" is a reserved event name");
 		if (t.unshift(e), this._opts.retries && !this.flags.fromQueue && !this.flags.volatile) return this._addToQueue(t), this;
 		let n = {
-			type: K.EVENT,
+			type: J.EVENT,
 			data: t
 		};
 		if (n.options = {}, n.options.compress = this.flags.compress !== !1, typeof t[t.length - 1] == "function") {
@@ -1125,7 +1125,7 @@ var Ke = Object.freeze({
 	}
 	_sendConnectPacket(e) {
 		this.packet({
-			type: K.CONNECT,
+			type: J.CONNECT,
 			data: this._pid ? Object.assign({
 				pid: this._pid,
 				offset: this._lastOffset
@@ -1148,21 +1148,21 @@ var Ke = Object.freeze({
 	}
 	onpacket(e) {
 		if (e.nsp === this.nsp) switch (e.type) {
-			case K.CONNECT:
+			case J.CONNECT:
 				e.data && e.data.sid ? this.onconnect(e.data.sid, e.data.pid) : this.emitReserved("connect_error", /* @__PURE__ */ Error("It seems you are trying to reach a Socket.IO server in v2.x with a v3.x client, but they are not compatible (more information here: https://socket.io/docs/v3/migrating-from-2-x-to-3-0/)"));
 				break;
-			case K.EVENT:
-			case K.BINARY_EVENT:
+			case J.EVENT:
+			case J.BINARY_EVENT:
 				this.onevent(e);
 				break;
-			case K.ACK:
-			case K.BINARY_ACK:
+			case J.ACK:
+			case J.BINARY_ACK:
 				this.onack(e);
 				break;
-			case K.DISCONNECT:
+			case J.DISCONNECT:
 				this.ondisconnect();
 				break;
-			case K.CONNECT_ERROR:
+			case J.CONNECT_ERROR:
 				this.destroy();
 				let t = Error(e.data.message);
 				t.data = e.data.data, this.emitReserved("connect_error", t);
@@ -1184,7 +1184,7 @@ var Ke = Object.freeze({
 		let t = this, n = !1;
 		return function(...r) {
 			n || (n = !0, t.packet({
-				type: K.ACK,
+				type: J.ACK,
 				id: e,
 				data: r
 			}));
@@ -1209,7 +1209,7 @@ var Ke = Object.freeze({
 		this.subs &&= (this.subs.forEach((e) => e()), void 0), this.io._destroy(this);
 	}
 	disconnect() {
-		return this.connected && this.packet({ type: K.DISCONNECT }), this.destroy(), this.connected && this.onclose("io client disconnect"), this;
+		return this.connected && this.packet({ type: J.DISCONNECT }), this.destroy(), this.connected && this.onclose("io client disconnect"), this;
 	}
 	close() {
 		return this.disconnect();
@@ -1266,35 +1266,35 @@ var Ke = Object.freeze({
 };
 //#endregion
 //#region node_modules/socket.io-client/build/esm/contrib/backo2.js
-function J(e) {
+function X(e) {
 	e ||= {}, this.ms = e.min || 100, this.max = e.max || 1e4, this.factor = e.factor || 2, this.jitter = e.jitter > 0 && e.jitter <= 1 ? e.jitter : 0, this.attempts = 0;
 }
-J.prototype.duration = function() {
+X.prototype.duration = function() {
 	var e = this.ms * this.factor ** + this.attempts++;
 	if (this.jitter) {
 		var t = Math.random(), n = Math.floor(t * this.jitter * e);
 		e = Math.floor(t * 10) & 1 ? e + n : e - n;
 	}
 	return Math.min(e, this.max) | 0;
-}, J.prototype.reset = function() {
+}, X.prototype.reset = function() {
 	this.attempts = 0;
-}, J.prototype.setMin = function(e) {
+}, X.prototype.setMin = function(e) {
 	this.ms = e;
-}, J.prototype.setMax = function(e) {
+}, X.prototype.setMax = function(e) {
 	this.max = e;
-}, J.prototype.setJitter = function(e) {
+}, X.prototype.setJitter = function(e) {
 	this.jitter = e;
 };
 //#endregion
 //#region node_modules/socket.io-client/build/esm/manager.js
-var Je = class extends w {
+var Ke = class extends w {
 	constructor(e, t) {
-		super(), this.nsps = {}, this.subs = [], e && typeof e == "object" && (t = e, e = void 0), t ||= {}, t.path = t.path || "/socket.io", this.opts = t, k(this, t), this.reconnection(t.reconnection !== !1), this.reconnectionAttempts(t.reconnectionAttempts || Infinity), this.reconnectionDelay(t.reconnectionDelay || 1e3), this.reconnectionDelayMax(t.reconnectionDelayMax || 5e3), this.randomizationFactor(t.randomizationFactor ?? .5), this.backoff = new J({
+		super(), this.nsps = {}, this.subs = [], e && typeof e == "object" && (t = e, e = void 0), t ||= {}, t.path = t.path || "/socket.io", this.opts = t, k(this, t), this.reconnection(t.reconnection !== !1), this.reconnectionAttempts(t.reconnectionAttempts || Infinity), this.reconnectionDelay(t.reconnectionDelay || 1e3), this.reconnectionDelayMax(t.reconnectionDelayMax || 5e3), this.randomizationFactor(t.randomizationFactor ?? .5), this.backoff = new X({
 			min: this.reconnectionDelay(),
 			max: this.reconnectionDelayMax(),
 			jitter: this.randomizationFactor()
 		}), this.timeout(t.timeout == null ? 2e4 : t.timeout), this._readyState = "closed", this.uri = e;
-		let n = t.parser || Fe;
+		let n = t.parser || Ne;
 		this.encoder = new n.Encoder(), this.decoder = new n.Decoder(), this._autoConnect = t.autoConnect !== !1, this._autoConnect && this.open();
 	}
 	reconnection(e) {
@@ -1323,14 +1323,14 @@ var Je = class extends w {
 	}
 	open(e) {
 		if (~this._readyState.indexOf("open")) return this;
-		this.engine = new Se(this.uri, this.opts);
+		this.engine = new be(this.uri, this.opts);
 		let t = this.engine, n = this;
 		this._readyState = "opening", this.skipReconnect = !1;
-		let r = q(t, "open", function() {
+		let r = Y(t, "open", function() {
 			n.onopen(), e && e();
 		}), i = (t) => {
 			this.cleanup(), this._readyState = "closed", this.emitReserved("error", t), e ? e(t) : this.maybeReconnectOnOpen();
-		}, a = q(t, "error", i);
+		}, a = Y(t, "error", i);
 		if (!1 !== this._timeout) {
 			let e = this._timeout, n = this.setTimeoutFn(() => {
 				r(), i(/* @__PURE__ */ Error("timeout")), t.close();
@@ -1347,7 +1347,7 @@ var Je = class extends w {
 	onopen() {
 		this.cleanup(), this._readyState = "open", this.emitReserved("open");
 		let e = this.engine;
-		this.subs.push(q(e, "ping", this.onping.bind(this)), q(e, "data", this.ondata.bind(this)), q(e, "error", this.onerror.bind(this)), q(e, "close", this.onclose.bind(this)), q(this.decoder, "decoded", this.ondecoded.bind(this)));
+		this.subs.push(Y(e, "ping", this.onping.bind(this)), Y(e, "data", this.ondata.bind(this)), Y(e, "error", this.onerror.bind(this)), Y(e, "close", this.onclose.bind(this)), Y(this.decoder, "decoded", this.ondecoded.bind(this)));
 	}
 	onping() {
 		this.emitReserved("ping");
@@ -1360,7 +1360,7 @@ var Je = class extends w {
 		}
 	}
 	ondecoded(e) {
-		E(() => {
+		T(() => {
 			this.emitReserved("packet", e);
 		}, this.setTimeoutFn);
 	}
@@ -1369,7 +1369,7 @@ var Je = class extends w {
 	}
 	socket(e, t) {
 		let n = this.nsps[e];
-		return n ? this._autoConnect && !n.active && n.connect() : (n = new qe(this, e, t), this.nsps[e] = n), n;
+		return n ? this._autoConnect && !n.active && n.connect() : (n = new Ge(this, e, t), this.nsps[e] = n), n;
 	}
 	_destroy(e) {
 		let t = Object.keys(this.nsps);
@@ -1414,21 +1414,21 @@ var Je = class extends w {
 		let e = this.backoff.attempts;
 		this._reconnecting = !1, this.backoff.reset(), this.emitReserved("reconnect", e);
 	}
-}, Y = {};
-function Ye(e, t) {
+}, Z = {};
+function qe(e, t) {
 	typeof e == "object" && (t = e, e = void 0), t ||= {};
-	let n = Ce(e, t.path || "/socket.io"), r = n.source, i = n.id, a = n.path, o = Y[i] && a in Y[i].nsps, s = t.forceNew || t["force new connection"] || !1 === t.multiplex || o, c;
-	return s ? c = new Je(r, t) : (Y[i] || (Y[i] = new Je(r, t)), c = Y[i]), n.query && !t.query && (t.query = n.queryKey), c.socket(n.path, t);
+	let n = xe(e, t.path || "/socket.io"), r = n.source, i = n.id, a = n.path, o = Z[i] && a in Z[i].nsps, s = t.forceNew || t["force new connection"] || !1 === t.multiplex || o, c;
+	return s ? c = new Ke(r, t) : (Z[i] || (Z[i] = new Ke(r, t)), c = Z[i]), n.query && !t.query && (t.query = n.queryKey), c.socket(n.path, t);
 }
-Object.assign(Ye, {
-	Manager: Je,
-	Socket: qe,
-	io: Ye,
-	connect: Ye
+Object.assign(qe, {
+	Manager: Ke,
+	Socket: Ge,
+	io: qe,
+	connect: qe
 });
 //#endregion
 //#region src/widget/constants.ts
-var Xe = "chatbot-package-styles", Ze = {
+var Je = "chatbot-package-styles", Ye = {
 	botName: "Support Assistant",
 	title: "Support Assistant",
 	subtitle: "Online",
@@ -1437,11 +1437,11 @@ var Xe = "chatbot-package-styles", Ze = {
 	primaryColor: "#2563eb",
 	position: "bottom-right",
 	zIndex: 9999
-}, Qe = "\n.chatbot-widget-root {\n  position: fixed;\n  bottom: 16px;\n  font-family: \"Segoe UI\", -apple-system, BlinkMacSystemFont, sans-serif;\n}\n\n.chatbot-widget-root.right {\n  right: 16px;\n}\n\n.chatbot-widget-root.left {\n  left: 16px;\n}\n\n.chatbot-launcher {\n  width: 56px;\n  height: 56px;\n  border-radius: 9999px;\n  border: 0;\n  background: linear-gradient(135deg, var(--chatbot-primary), #1d4ed8);\n  color: #ffffff;\n  box-shadow: 0 16px 30px rgba(37, 99, 235, 0.35);\n  cursor: pointer;\n  display: grid;\n  place-items: center;\n  font-size: 12px;\n  font-weight: 700;\n  letter-spacing: 0.2px;\n  transition: transform 0.18s ease, box-shadow 0.18s ease;\n}\n\n.chatbot-launcher svg {\n  width: 20px;\n  height: 20px;\n}\n\n.chatbot-launcher:hover {\n  transform: translateY(-2px);\n  box-shadow: 0 20px 34px rgba(37, 99, 235, 0.42);\n}\n\n.chatbot-panel {\n  position: absolute;\n  bottom: 66px;\n  width: min(378px, calc(100vw - 24px));\n  height: min(610px, calc(100vh - 88px));\n  border-radius: 16px;\n  border: 1px solid #dbe4f5;\n  overflow: hidden;\n  box-shadow: 0 28px 56px rgba(15, 23, 42, 0.24);\n  background: #f8fbff;\n  display: flex;\n  flex-direction: column;\n  opacity: 0;\n  visibility: hidden;\n  pointer-events: none;\n  transform: translateY(10px) scale(0.98);\n  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;\n}\n\n.chatbot-widget-root.right .chatbot-panel {\n  right: 0;\n  transform-origin: bottom right;\n}\n\n.chatbot-widget-root.left .chatbot-panel {\n  left: 0;\n  transform-origin: bottom left;\n}\n\n.chatbot-widget-root.open .chatbot-panel {\n  opacity: 1;\n  visibility: visible;\n  pointer-events: auto;\n  transform: translateY(0) scale(1);\n}\n\n.chatbot-header {\n  background: linear-gradient(135deg, var(--chatbot-primary), #1d4ed8);\n  color: #ffffff;\n  padding: 12px;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 10px;\n}\n\n.chatbot-header-left {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n}\n\n.chatbot-avatar {\n  width: 38px;\n  height: 38px;\n  border-radius: 9999px;\n  background: #ffffff;\n  color: var(--chatbot-primary);\n  border: 1px solid rgba(255, 255, 255, 0.84);\n  display: grid;\n  place-items: center;\n  font-size: 14px;\n  font-weight: 700;\n}\n\n.chatbot-avatar svg {\n  width: 18px;\n  height: 18px;\n}\n\n.chatbot-header-info h2 {\n  margin: 0;\n  font-size: 15px;\n  line-height: 1.15;\n  font-weight: 700;\n}\n\n.chatbot-status {\n  margin-top: 3px;\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  font-size: 12px;\n  font-weight: 500;\n  opacity: 0.95;\n}\n\n.chatbot-status-dot {\n  width: 8px;\n  height: 8px;\n  border-radius: 9999px;\n  background: #22c55e;\n}\n\n.chatbot-controls {\n  display: flex;\n  align-items: center;\n  margin-left: auto;\n  gap: 6px;\n}\n\n.chatbot-controls button {\n  width: 34px;\n  height: 34px;\n  border-radius: 8px;\n  border: 1px solid rgba(255, 255, 255, 0.42);\n  background: rgba(255, 255, 255, 0.24);\n  color: #ffffff;\n  cursor: pointer;\n  line-height: 0;\n  display: grid;\n  place-items: center;\n  font-size: 14px;\n  transition: background 0.2s ease, transform 0.2s ease;\n}\n\n.chatbot-controls button svg {\n  width: 16px;\n  height: 16px;\n  stroke-width: 2.25;\n}\n\n.chatbot-controls button:hover {\n  background: rgba(255, 255, 255, 0.36);\n  transform: translateY(-1px);\n}\n\n.chatbot-body {\n  flex: 1;\n  overflow-y: auto;\n  padding: 14px 12px 10px;\n  background: linear-gradient(180deg, #f8fbff 0%, #f1f6ff 100%);\n}\n\n.chatbot-body::-webkit-scrollbar {\n  width: 8px;\n}\n\n.chatbot-body::-webkit-scrollbar-thumb {\n  background: #bfdbfe;\n  border-radius: 999px;\n}\n\n.chatbot-body-content {\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n}\n\n.chatbot-intro {\n  text-align: center;\n  color: #334155;\n  border: 1px solid #dbe4f5;\n  background: rgba(255, 255, 255, 0.72);\n  border-radius: 14px;\n  padding: 16px 12px;\n}\n\n.chatbot-intro-icon {\n  width: 44px;\n  height: 44px;\n  border-radius: 9999px;\n  background: #dbeafe;\n  color: #1d4ed8;\n  display: grid;\n  place-items: center;\n  font-size: 22px;\n  font-weight: 700;\n  margin: 0 auto 12px;\n}\n\n.chatbot-intro h3 {\n  margin: 0;\n  font-size: 25px;\n  color: #0f172a;\n}\n\n.chatbot-intro p {\n  margin: 10px auto 0;\n  max-width: 290px;\n  font-size: 13px;\n  line-height: 1.45;\n  color: #475569;\n}\n\n.chatbot-intro .chatbot-human-note {\n  margin-top: 12px;\n  font-style: italic;\n  font-size: 12px;\n  color: #6b7a92;\n}\n\n.chatbot-messages {\n  display: none;\n  flex-direction: column;\n  gap: 8px;\n}\n\n.chatbot-body.has-messages .chatbot-intro {\n  display: none;\n}\n\n.chatbot-body.has-messages .chatbot-messages {\n  display: flex;\n}\n.chatbot-body.human-mode .chatbot-intro {\n  display: none;\n}\n.chatbot-human-hero {\n  display: none;\n  text-align: center;\n  color: #0f172a;\n  border: 1px solid #dbe4f5;\n  background: rgba(255, 255, 255, 0.88);\n  border-radius: 14px;\n  padding: 18px 14px;\n}\n.chatbot-body.human-mode .chatbot-human-hero {\n  display: block;\n}\n.chatbot-human-hero h3 {\n  margin: 0;\n  font-size: 22px;\n  font-weight: 700;\n}\n.chatbot-human-hero p {\n  margin: 8px 0 0;\n  font-size: 13px;\n  color: #475569;\n}\n.chatbot-history-label {\n  margin-top: 14px;\n  font-size: 11px;\n  font-weight: 700;\n  letter-spacing: 0.12em;\n  text-transform: uppercase;\n  color: #94a3b8;\n  text-align: center;\n}\n.chatbot-divider {\n  display: none;\n  align-items: center;\n  gap: 10px;\n  margin: 16px 0 10px;\n  color: #94a3b8;\n  font-size: 11px;\n  font-weight: 700;\n  letter-spacing: 0.14em;\n  text-transform: uppercase;\n}\n.chatbot-divider::before,\n.chatbot-divider::after {\n  content: \"\";\n  flex: 1;\n  height: 1px;\n  background: #e2e8f0;\n}\n.chatbot-body.human-mode .chatbot-divider {\n  display: flex;\n}\n\n.chatbot-recent-history {\n  display: flex;\n  flex-direction: column;\n  gap: 8px;\n}\n\n.chatbot-recent-label {\n  text-align: center;\n  font-size: 10px;\n  font-weight: 700;\n  letter-spacing: 0.18em;\n  text-transform: uppercase;\n  color: #94a3b8;\n}\n\n\n.chatbot-bubble {\n  position: relative;\n  max-width: 84%;\n  border-radius: 14px;\n  padding: 8px 10px;\n  line-height: 1.42;\n  font-size: 12.5px;\n  white-space: pre-wrap;\n  word-break: break-word;\n  animation: chatbot-bubble-in 0.22s ease;\n}\n\n.chatbot-bubble.user {\n  align-self: flex-end;\n  background: linear-gradient(145deg, var(--chatbot-primary), #1d4ed8);\n  color: #ffffff;\n  border: 1px solid rgba(255, 255, 255, 0.2);\n  border-bottom-right-radius: 6px;\n  box-shadow: 0 10px 26px rgba(37, 99, 235, 0.28);\n}\n\n.chatbot-bubble.user::after {\n  content: \"\";\n  position: absolute;\n  right: -6px;\n  bottom: 8px;\n  width: 12px;\n  height: 12px;\n  background: #1d4ed8;\n  border-radius: 2px 0 10px 0;\n  transform: rotate(35deg);\n}\n\n.chatbot-bubble.bot {\n  align-self: flex-start;\n  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);\n  color: #0f172a;\n  border: 1px solid #d7e3f8;\n  border-bottom-left-radius: 6px;\n  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);\n}\n\n.chatbot-bubble.bot::after {\n  content: \"\";\n  position: absolute;\n  left: -6px;\n  bottom: 8px;\n  width: 12px;\n  height: 12px;\n  background: #ffffff;\n  border-left: 1px solid #d7e3f8;\n  border-bottom: 1px solid #d7e3f8;\n  border-radius: 0 0 0 9px;\n  transform: rotate(35deg);\n}\n\n.chatbot-bubble.system {\n  align-self: center;\n  text-transform: uppercase;\n  letter-spacing: 0.18em;\n  font-weight: 700;\n  font-size: 10px;\n  padding: 6px 12px;\n  border-radius: 999px;\n  background: #dbeafe;\n  color: #1e3a8a;\n}\n\n.chatbot-bubble.typing {\n  min-width: 52px;\n  padding: 6px 10px;\n  background: linear-gradient(180deg, #ffffff 0%, #f1f5ff 100%);\n  border: 1px solid #dbeafe;\n  box-shadow: 0 10px 22px rgba(30, 64, 175, 0.12);\n}\n\n.chatbot-bubble.typing .chatbot-typing {\n  justify-content: center;\n}\n\n.chatbot-bubble p,\n.chatbot-bubble ul,\n.chatbot-bubble ol,\n.chatbot-bubble pre {\n  margin: 0;\n}\n\n.chatbot-bubble ul,\n.chatbot-bubble ol {\n  padding-left: 18px;\n  margin-top: 6px;\n}\n\n.chatbot-bubble li + li {\n  margin-top: 3px;\n}\n\n.chatbot-bubble.user a {\n  color: #dbeafe;\n}\n\n.chatbot-md-h1 {\n  font-size: 16px;\n  font-weight: 700;\n  margin: 0 0 6px;\n}\n.chatbot-md-h2 {\n  font-size: 15px;\n  font-weight: 700;\n  margin: 0 0 6px;\n}\n.chatbot-md-h3 {\n  font-size: 14px;\n  font-weight: 700;\n  margin: 0 0 6px;\n}\n.chatbot-bubble a {\n  color: #2563eb;\n  text-decoration: underline;\n}\n.chatbot-bubble code {\n  font-family: \"SFMono-Regular\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,\n    \"Liberation Mono\", \"Courier New\", monospace;\n  font-size: 12px;\n  background: #eff6ff;\n  padding: 2px 4px;\n  border-radius: 6px;\n}\n.chatbot-bubble pre {\n  background: #eff6ff;\n  border-radius: 10px;\n  padding: 8px;\n  overflow-x: auto;\n  margin-top: 6px;\n}\n\n.chatbot-typing {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  font-size: 11px;\n  color: #475569;\n  font-weight: 500;\n}\n\n.chatbot-typing span {\n  width: 6px;\n  height: 6px;\n  border-radius: 999px;\n  background: linear-gradient(135deg, #1d4ed8, #60a5fa);\n  animation: typing-bounce 1.05s infinite ease-in-out;\n}\n\n.chatbot-typing span:nth-child(2) {\n  animation-delay: 0.2s;\n}\n\n.chatbot-typing span:nth-child(3) {\n  animation-delay: 0.4s;\n}\n\n@keyframes typing-bounce {\n  0%,\n  100% {\n    transform: translateY(0) scale(0.9);\n    opacity: 0.7;\n  }\n  50% {\n    transform: translateY(-5px) scale(1);\n    opacity: 1;\n  }\n}\n\n@keyframes chatbot-bubble-in {\n  from {\n    opacity: 0;\n    transform: translateY(4px);\n  }\n  to {\n    opacity: 1;\n    transform: translateY(0);\n  }\n}\n\n\n.chatbot-ref-chips {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 6px;\n  margin-top: 8px;\n}\n\n.chatbot-ref-chip {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  padding: 2px 8px;\n  font-size: 10px;\n  font-weight: 600;\n  border-radius: 999px;\n  background: #eef2ff;\n  color: #1e40af;\n  text-decoration: none;\n  border: 1px solid #e0e7ff;\n}\n\n.chatbot-ref-chip:hover {\n  background: #e0e7ff;\n}\n\n.chatbot-image {\n  display: block;\n  max-width: 100%;\n  height: auto;\n  border-radius: 10px;\n  margin-top: 6px;\n  border: 1px solid #e2e8f0;\n}\n\n.chatbot-md-p {\n  margin: 0;\n  font-size: 13px;\n  line-height: 1.55;\n  color: inherit;\n}\n\n.chatbot-md-spacer {\n  height: 8px;\n}\n\n.chatbot-md-list {\n  margin: 6px 0 0;\n  padding-left: 18px;\n  font-size: 13px;\n  line-height: 1.5;\n}\n\n.chatbot-md-list li + li {\n  margin-top: 4px;\n}\n\n.chatbot-footer {\n  border-top: 1px solid #dbe4f5;\n  padding: 12px;\n  background: #ffffff;\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n}\n\n.chatbot-loading-row {\n  display: none;\n  align-items: center;\n  justify-content: center;\n  gap: 8px;\n  padding: 6px 10px;\n  border-radius: 999px;\n  background: #f1f5ff;\n  border: 1px solid #dbeafe;\n  color: #1e40af;\n  font-size: 11px;\n  font-weight: 600;\n  letter-spacing: 0.08em;\n  text-transform: uppercase;\n}\n\n.chatbot-loading-dots {\n  display: inline-flex;\n  gap: 4px;\n}\n\n.chatbot-loading-dots span {\n  width: 6px;\n  height: 6px;\n  border-radius: 999px;\n  background: #1d4ed8;\n  animation: chatbot-loading-pulse 1.2s infinite ease-in-out;\n}\n\n.chatbot-loading-dots span:nth-child(2) {\n  animation-delay: 0.2s;\n}\n\n.chatbot-loading-dots span:nth-child(3) {\n  animation-delay: 0.4s;\n}\n\n@keyframes chatbot-loading-pulse {\n  0%,\n  100% {\n    transform: translateY(0);\n    opacity: 0.5;\n  }\n  50% {\n    transform: translateY(-3px);\n    opacity: 1;\n  }\n}\n\n.chatbot-input-row {\n  display: flex;\n  gap: 8px;\n}\n\n.chatbot-input {\n  flex: 1;\n  border-radius: 12px;\n  border: 1px solid #dbe4f5;\n  padding: 10px 12px;\n  font-size: 13px;\n  resize: none;\n  min-height: 44px;\n  max-height: 110px;\n  font-family: \"Segoe UI\", -apple-system, BlinkMacSystemFont, sans-serif;\n  line-height: 1.4;\n  color: #0f172a;\n  transition: border 0.2s ease;\n}\n\n.chatbot-input:focus {\n  outline: none;\n  border-color: var(--chatbot-primary);\n  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);\n}\n\n.chatbot-input::placeholder {\n  color: #94a3b8;\n}\n\n.chatbot-attach-input {\n  display: none;\n}\n\n.chatbot-attach {\n  width: 44px;\n  height: 44px;\n  border-radius: 12px;\n  border: 1px solid #e2e8f0;\n  background: #ffffff;\n  color: #0f172a;\n  display: grid;\n  place-items: center;\n  cursor: pointer;\n  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;\n}\n\n.chatbot-attach svg {\n  width: 18px;\n  height: 18px;\n}\n\n.chatbot-attach:hover {\n  transform: translateY(-1px);\n  border-color: #cbd5f0;\n  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);\n}\n\n.chatbot-send {\n  width: 44px;\n  height: 44px;\n  border-radius: 12px;\n  border: 0;\n  background: var(--chatbot-primary);\n  color: #ffffff;\n  display: grid;\n  place-items: center;\n  cursor: pointer;\n  transition: transform 0.18s ease, box-shadow 0.18s ease;\n}\n\n.chatbot-send svg {\n  width: 18px;\n  height: 18px;\n}\n\n.chatbot-send:hover {\n  transform: translateY(-1px);\n  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.32);\n}\n\n.chatbot-footer .chatbot-human-button {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  gap: 10px;\n  background: #eff6ff;\n  border: 1px solid #dbeafe;\n  color: #1d4ed8;\n  font-weight: 600;\n  border-radius: 12px;\n  padding: 10px 12px;\n  cursor: pointer;\n  transition: background 0.2s ease, border 0.2s ease;\n}\n\n.chatbot-footer .chatbot-human-button:hover {\n  background: #dbeafe;\n}\n\n.chatbot-footer .chatbot-human-button svg {\n  width: 16px;\n  height: 16px;\n}\n\n.chatbot-powered {\n  margin: 0;\n  font-size: 10px;\n  color: #94a3b8;\n  text-align: center;\n}\n\n.chatbot-widget-root.show-human-form .chatbot-body,\n.chatbot-widget-root.show-human-form .chatbot-footer {\n  display: none;\n}\n\n.chatbot-widget-root.show-human-form .chatbot-human-container {\n  display: flex;\n}\n\n.chatbot-human-container {\n  flex: 1;\n  display: none;\n  flex-direction: column;\n  padding: 18px 14px;\n  gap: 16px;\n  overflow: auto;\n  background: #f8fbff;\n}\n\n.chatbot-human-header {\n  background: #ffffff;\n  border: 1px solid #dbe4f5;\n  border-radius: 14px;\n  padding: 14px;\n  text-align: center;\n}\n\n.chatbot-human-header h3 {\n  margin: 0;\n  font-size: 18px;\n  font-weight: 700;\n  color: #0f172a;\n}\n\n.chatbot-human-header p {\n  margin: 6px 0 0;\n  font-size: 13px;\n  color: #64748b;\n}\n\n.chatbot-human-form {\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n}\n\n.chatbot-form-group {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  font-size: 12px;\n  font-weight: 600;\n  color: #334155;\n}\n\n.chatbot-form-group input,\n.chatbot-form-group textarea {\n  border-radius: 10px;\n  border: 1px solid #dbe4f5;\n  padding: 10px 12px;\n  font-size: 13px;\n  font-family: \"Segoe UI\", -apple-system, BlinkMacSystemFont, sans-serif;\n  color: #0f172a;\n  background: #ffffff;\n}\n\n.chatbot-form-group input:focus,\n.chatbot-form-group textarea:focus {\n  outline: none;\n  border-color: var(--chatbot-primary);\n  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);\n}\n\n.chatbot-form-group textarea {\n  min-height: 110px;\n  resize: vertical;\n}\n\n.chatbot-form-actions {\n  display: flex;\n  gap: 10px;\n  justify-content: space-between;\n}\n\n.chatbot-btn-primary {\n  flex: 1;\n  border-radius: 12px;\n  border: 0;\n  background: var(--chatbot-primary);\n  color: #ffffff;\n  font-weight: 600;\n  padding: 10px 12px;\n  cursor: pointer;\n}\n\n.chatbot-btn-secondary {\n  flex: 1;\n  border-radius: 12px;\n  border: 1px solid #dbe4f5;\n  background: #ffffff;\n  color: #334155;\n  font-weight: 600;\n  padding: 10px 12px;\n  cursor: pointer;\n}\n\n.chatbot-human-success {\n  display: none;\n  flex-direction: column;\n  align-items: center;\n  text-align: center;\n  gap: 12px;\n  padding: 24px 16px;\n  border-radius: 14px;\n  border: 1px solid #dbe4f5;\n  background: #ffffff;\n}\n\n.chatbot-widget-root.show-human-success .chatbot-body,\n.chatbot-widget-root.show-human-success .chatbot-footer {\n  display: none;\n}\n\n.chatbot-widget-root.show-human-success .chatbot-human-container {\n  display: flex;\n}\n\n.chatbot-widget-root.show-human-success .chatbot-human-form {\n  display: none;\n}\n\n.chatbot-widget-root.show-human-success .chatbot-human-success {\n  display: flex;\n}\n\n.chatbot-success-icon {\n  width: 54px;\n  height: 54px;\n  border-radius: 999px;\n  background: #dcfce7;\n  color: #16a34a;\n  display: grid;\n  place-items: center;\n  font-size: 26px;\n}\n\n.chatbot-human-success h3 {\n  margin: 0;\n  font-size: 18px;\n  font-weight: 700;\n  color: #0f172a;\n}\n\n.chatbot-human-success p {\n  margin: 0;\n  font-size: 13px;\n  color: #64748b;\n}\n\n.chatbot-widget-root.show-human-form .chatbot-footer,\n.chatbot-widget-root.show-human-success .chatbot-footer {\n  display: none;\n}\n\n.chatbot-error {\n  color: #dc2626;\n  font-size: 12px;\n  text-align: center;\n}\n\n.chatbot-loading {\n  text-align: center;\n  font-size: 12px;\n  color: #64748b;\n}\n\n.chatbot-human-note {\n  font-size: 12px;\n  color: #475569;\n  text-align: center;\n}\n\n.chatbot-human-note span {\n  font-weight: 600;\n}\n\n@media (max-width: 520px) {\n  .chatbot-panel {\n    height: min(560px, calc(100vh - 80px));\n    width: min(360px, calc(100vw - 20px));\n  }\n\n  .chatbot-widget-root.right,\n  .chatbot-widget-root.left {\n    right: 10px;\n    left: 10px;\n  }\n\n  .chatbot-widget-root {\n    bottom: 10px;\n  }\n\n  .chatbot-panel {\n    width: min(360px, calc(100vw - 20px));\n    height: min(520px, calc(100vh - 70px));\n  }\n\n  .chatbot-intro h3 {\n    font-size: 22px;\n  }\n}\n", $e = () => {
+}, Xe = "\n.chatbot-widget-root {\n  position: fixed;\n  bottom: 16px;\n  font-family: \"Segoe UI\", -apple-system, BlinkMacSystemFont, sans-serif;\n}\n\n.chatbot-widget-root.right {\n  right: 16px;\n}\n\n.chatbot-widget-root.left {\n  left: 16px;\n}\n\n.chatbot-launcher {\n  width: 56px;\n  height: 56px;\n  border-radius: 9999px;\n  border: 0;\n  background: linear-gradient(135deg, var(--chatbot-primary), #1d4ed8);\n  color: #ffffff;\n  box-shadow: 0 16px 30px rgba(37, 99, 235, 0.35);\n  cursor: pointer;\n  display: grid;\n  place-items: center;\n  font-size: 12px;\n  font-weight: 700;\n  letter-spacing: 0.2px;\n  transition: transform 0.18s ease, box-shadow 0.18s ease;\n}\n\n.chatbot-launcher svg {\n  width: 20px;\n  height: 20px;\n}\n\n.chatbot-launcher:hover {\n  transform: translateY(-2px);\n  box-shadow: 0 20px 34px rgba(37, 99, 235, 0.42);\n}\n\n.chatbot-panel {\n  position: absolute;\n  bottom: 66px;\n  width: min(378px, calc(100vw - 24px));\n  height: min(610px, calc(100vh - 88px));\n  border-radius: 16px;\n  border: 1px solid #dbe4f5;\n  overflow: hidden;\n  box-shadow: 0 28px 56px rgba(15, 23, 42, 0.24);\n  background: #f8fbff;\n  display: flex;\n  flex-direction: column;\n  opacity: 0;\n  visibility: hidden;\n  pointer-events: none;\n  transform: translateY(10px) scale(0.98);\n  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;\n}\n\n.chatbot-widget-root.right .chatbot-panel {\n  right: 0;\n  transform-origin: bottom right;\n}\n\n.chatbot-widget-root.left .chatbot-panel {\n  left: 0;\n  transform-origin: bottom left;\n}\n\n.chatbot-widget-root.open .chatbot-panel {\n  opacity: 1;\n  visibility: visible;\n  pointer-events: auto;\n  transform: translateY(0) scale(1);\n}\n\n.chatbot-header {\n  background: linear-gradient(135deg, var(--chatbot-primary), #1d4ed8);\n  color: #ffffff;\n  padding: 12px;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 10px;\n}\n\n.chatbot-header-left {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n}\n\n.chatbot-avatar {\n  width: 38px;\n  height: 38px;\n  border-radius: 9999px;\n  background: #ffffff;\n  color: var(--chatbot-primary);\n  border: 1px solid rgba(255, 255, 255, 0.84);\n  display: grid;\n  place-items: center;\n  font-size: 14px;\n  font-weight: 700;\n}\n\n.chatbot-avatar svg {\n  width: 18px;\n  height: 18px;\n}\n\n.chatbot-header-info h2 {\n  margin: 0;\n  font-size: 15px;\n  line-height: 1.15;\n  font-weight: 700;\n}\n\n.chatbot-status {\n  margin-top: 3px;\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  font-size: 12px;\n  font-weight: 500;\n  opacity: 0.95;\n}\n\n.chatbot-status-dot {\n  width: 8px;\n  height: 8px;\n  border-radius: 9999px;\n  background: #22c55e;\n}\n\n.chatbot-controls {\n  display: flex;\n  align-items: center;\n  margin-left: auto;\n  gap: 6px;\n}\n\n.chatbot-controls button {\n  width: 34px;\n  height: 34px;\n  border-radius: 8px;\n  border: 1px solid rgba(255, 255, 255, 0.42);\n  background: rgba(255, 255, 255, 0.24);\n  color: #ffffff;\n  cursor: pointer;\n  line-height: 0;\n  display: grid;\n  place-items: center;\n  font-size: 14px;\n  transition: background 0.2s ease, transform 0.2s ease;\n}\n\n.chatbot-controls button svg {\n  width: 16px;\n  height: 16px;\n  stroke-width: 2.25;\n}\n\n.chatbot-controls button:hover {\n  background: rgba(255, 255, 255, 0.36);\n  transform: translateY(-1px);\n}\n\n.chatbot-body {\n  flex: 1;\n  overflow-y: auto;\n  padding: 14px 12px 10px;\n  background: linear-gradient(180deg, #f8fbff 0%, #f1f6ff 100%);\n}\n\n.chatbot-body::-webkit-scrollbar {\n  width: 8px;\n}\n\n.chatbot-body::-webkit-scrollbar-thumb {\n  background: #bfdbfe;\n  border-radius: 999px;\n}\n\n.chatbot-body-content {\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n}\n\n.chatbot-intro {\n  text-align: center;\n  color: #334155;\n  border: 1px solid #dbe4f5;\n  background: rgba(255, 255, 255, 0.72);\n  border-radius: 14px;\n  padding: 16px 12px;\n}\n\n.chatbot-intro-icon {\n  width: 44px;\n  height: 44px;\n  border-radius: 9999px;\n  background: #dbeafe;\n  color: #1d4ed8;\n  display: grid;\n  place-items: center;\n  font-size: 22px;\n  font-weight: 700;\n  margin: 0 auto 12px;\n}\n\n.chatbot-intro h3 {\n  margin: 0;\n  font-size: 25px;\n  color: #0f172a;\n}\n\n.chatbot-intro p {\n  margin: 10px auto 0;\n  max-width: 290px;\n  font-size: 13px;\n  line-height: 1.45;\n  color: #475569;\n}\n\n.chatbot-intro .chatbot-human-note {\n  margin-top: 12px;\n  font-style: italic;\n  font-size: 12px;\n  color: #6b7a92;\n}\n\n.chatbot-messages {\n  display: none;\n  flex-direction: column;\n  gap: 8px;\n}\n\n.chatbot-body.has-messages .chatbot-intro {\n  display: none;\n}\n\n.chatbot-body.has-messages .chatbot-messages {\n  display: flex;\n}\n.chatbot-body.human-mode .chatbot-intro {\n  display: none;\n}\n.chatbot-human-hero {\n  display: none;\n  text-align: center;\n  color: #0f172a;\n  border: 1px solid #dbe4f5;\n  background: rgba(255, 255, 255, 0.88);\n  border-radius: 14px;\n  padding: 18px 14px;\n}\n.chatbot-body.human-mode .chatbot-human-hero {\n  display: block;\n}\n.chatbot-human-hero h3 {\n  margin: 0;\n  font-size: 22px;\n  font-weight: 700;\n}\n.chatbot-human-hero p {\n  margin: 8px 0 0;\n  font-size: 13px;\n  color: #475569;\n}\n.chatbot-history-label {\n  margin-top: 14px;\n  font-size: 11px;\n  font-weight: 700;\n  letter-spacing: 0.12em;\n  text-transform: uppercase;\n  color: #94a3b8;\n  text-align: center;\n}\n.chatbot-divider {\n  display: none;\n  align-items: center;\n  gap: 10px;\n  margin: 16px 0 10px;\n  color: #94a3b8;\n  font-size: 11px;\n  font-weight: 700;\n  letter-spacing: 0.14em;\n  text-transform: uppercase;\n}\n.chatbot-divider::before,\n.chatbot-divider::after {\n  content: \"\";\n  flex: 1;\n  height: 1px;\n  background: #e2e8f0;\n}\n.chatbot-body.human-mode .chatbot-divider {\n  display: flex;\n}\n\n.chatbot-recent-history {\n  display: flex;\n  flex-direction: column;\n  gap: 8px;\n}\n\n.chatbot-recent-label {\n  text-align: center;\n  font-size: 10px;\n  font-weight: 700;\n  letter-spacing: 0.18em;\n  text-transform: uppercase;\n  color: #94a3b8;\n}\n\n\n.chatbot-bubble {\n  position: relative;\n  max-width: 84%;\n  border-radius: 14px;\n  padding: 8px 10px;\n  line-height: 1.42;\n  font-size: 12.5px;\n  white-space: pre-wrap;\n  word-break: break-word;\n  animation: chatbot-bubble-in 0.22s ease;\n}\n\n.chatbot-bubble.user {\n  align-self: flex-end;\n  background: linear-gradient(145deg, var(--chatbot-primary), #1d4ed8);\n  color: #ffffff;\n  border: 1px solid rgba(255, 255, 255, 0.2);\n  border-bottom-right-radius: 6px;\n  box-shadow: 0 10px 26px rgba(37, 99, 235, 0.28);\n}\n\n.chatbot-bubble.user::after {\n  content: \"\";\n  position: absolute;\n  right: -6px;\n  bottom: 8px;\n  width: 12px;\n  height: 12px;\n  background: #1d4ed8;\n  border-radius: 2px 0 10px 0;\n  transform: rotate(35deg);\n}\n\n.chatbot-bubble.bot {\n  align-self: flex-start;\n  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);\n  color: #0f172a;\n  border: 1px solid #d7e3f8;\n  border-bottom-left-radius: 6px;\n  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);\n}\n\n.chatbot-bubble.bot::after {\n  content: \"\";\n  position: absolute;\n  left: -6px;\n  bottom: 8px;\n  width: 12px;\n  height: 12px;\n  background: #ffffff;\n  border-left: 1px solid #d7e3f8;\n  border-bottom: 1px solid #d7e3f8;\n  border-radius: 0 0 0 9px;\n  transform: rotate(35deg);\n}\n\n.chatbot-bubble.system {\n  align-self: center;\n  text-transform: uppercase;\n  letter-spacing: 0.18em;\n  font-weight: 700;\n  font-size: 10px;\n  padding: 6px 12px;\n  border-radius: 999px;\n  background: #dbeafe;\n  color: #1e3a8a;\n}\n\n.chatbot-bubble.typing {\n  min-width: 52px;\n  padding: 6px 10px;\n  background: linear-gradient(180deg, #ffffff 0%, #f1f5ff 100%);\n  border: 1px solid #dbeafe;\n  box-shadow: 0 10px 22px rgba(30, 64, 175, 0.12);\n}\n\n.chatbot-bubble.typing .chatbot-typing {\n  justify-content: center;\n}\n\n.chatbot-bubble p,\n.chatbot-bubble ul,\n.chatbot-bubble ol,\n.chatbot-bubble pre {\n  margin: 0;\n}\n\n.chatbot-bubble ul,\n.chatbot-bubble ol {\n  padding-left: 18px;\n  margin-top: 6px;\n}\n\n.chatbot-bubble li + li {\n  margin-top: 3px;\n}\n\n.chatbot-bubble.user a {\n  color: #dbeafe;\n}\n\n.chatbot-md-h1 {\n  font-size: 16px;\n  font-weight: 700;\n  margin: 0 0 6px;\n}\n.chatbot-md-h2 {\n  font-size: 15px;\n  font-weight: 700;\n  margin: 0 0 6px;\n}\n.chatbot-md-h3 {\n  font-size: 14px;\n  font-weight: 700;\n  margin: 0 0 6px;\n}\n.chatbot-bubble a {\n  color: #2563eb;\n  text-decoration: underline;\n}\n.chatbot-bubble code {\n  font-family: \"SFMono-Regular\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,\n    \"Liberation Mono\", \"Courier New\", monospace;\n  font-size: 12px;\n  background: #eff6ff;\n  padding: 2px 4px;\n  border-radius: 6px;\n}\n.chatbot-bubble pre {\n  background: #eff6ff;\n  border-radius: 10px;\n  padding: 8px;\n  overflow-x: auto;\n  margin-top: 6px;\n}\n\n.chatbot-typing {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  font-size: 11px;\n  color: #475569;\n  font-weight: 500;\n}\n\n.chatbot-typing span {\n  width: 6px;\n  height: 6px;\n  border-radius: 999px;\n  background: linear-gradient(135deg, #1d4ed8, #60a5fa);\n  animation: typing-bounce 1.05s infinite ease-in-out;\n}\n\n.chatbot-typing span:nth-child(2) {\n  animation-delay: 0.2s;\n}\n\n.chatbot-typing span:nth-child(3) {\n  animation-delay: 0.4s;\n}\n\n@keyframes typing-bounce {\n  0%,\n  100% {\n    transform: translateY(0) scale(0.9);\n    opacity: 0.7;\n  }\n  50% {\n    transform: translateY(-5px) scale(1);\n    opacity: 1;\n  }\n}\n\n@keyframes chatbot-bubble-in {\n  from {\n    opacity: 0;\n    transform: translateY(4px);\n  }\n  to {\n    opacity: 1;\n    transform: translateY(0);\n  }\n}\n\n\n.chatbot-ref-chips {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 6px;\n  margin-top: 8px;\n}\n\n.chatbot-ref-chip {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  padding: 2px 8px;\n  font-size: 10px;\n  font-weight: 600;\n  border-radius: 999px;\n  background: #eef2ff;\n  color: #1e40af;\n  text-decoration: none;\n  border: 1px solid #e0e7ff;\n}\n\n.chatbot-ref-chip:hover {\n  background: #e0e7ff;\n}\n\n.chatbot-image {\n  display: block;\n  max-width: 100%;\n  height: auto;\n  border-radius: 10px;\n  margin-top: 6px;\n  border: 1px solid #e2e8f0;\n}\n\n.chatbot-md-p {\n  margin: 0;\n  font-size: 13px;\n  line-height: 1.55;\n  color: inherit;\n}\n\n.chatbot-md-spacer {\n  height: 8px;\n}\n\n.chatbot-md-list {\n  margin: 6px 0 0;\n  padding-left: 18px;\n  font-size: 13px;\n  line-height: 1.5;\n}\n\n.chatbot-md-list li + li {\n  margin-top: 4px;\n}\n\n.chatbot-footer {\n  border-top: 1px solid #dbe4f5;\n  padding: 12px;\n  background: #ffffff;\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n}\n\n.chatbot-loading-row {\n  display: none;\n  align-items: center;\n  justify-content: center;\n  gap: 8px;\n  padding: 6px 10px;\n  border-radius: 999px;\n  background: #f1f5ff;\n  border: 1px solid #dbeafe;\n  color: #1e40af;\n  font-size: 11px;\n  font-weight: 600;\n  letter-spacing: 0.08em;\n  text-transform: uppercase;\n}\n\n.chatbot-loading-dots {\n  display: inline-flex;\n  gap: 4px;\n}\n\n.chatbot-loading-dots span {\n  width: 6px;\n  height: 6px;\n  border-radius: 999px;\n  background: #1d4ed8;\n  animation: chatbot-loading-pulse 1.2s infinite ease-in-out;\n}\n\n.chatbot-loading-dots span:nth-child(2) {\n  animation-delay: 0.2s;\n}\n\n.chatbot-loading-dots span:nth-child(3) {\n  animation-delay: 0.4s;\n}\n\n@keyframes chatbot-loading-pulse {\n  0%,\n  100% {\n    transform: translateY(0);\n    opacity: 0.5;\n  }\n  50% {\n    transform: translateY(-3px);\n    opacity: 1;\n  }\n}\n\n.chatbot-input-row {\n  display: flex;\n  gap: 8px;\n}\n\n.chatbot-input {\n  flex: 1;\n  border-radius: 12px;\n  border: 1px solid #dbe4f5;\n  padding: 10px 12px;\n  font-size: 13px;\n  resize: none;\n  min-height: 44px;\n  max-height: 110px;\n  font-family: \"Segoe UI\", -apple-system, BlinkMacSystemFont, sans-serif;\n  line-height: 1.4;\n  color: #0f172a;\n  transition: border 0.2s ease;\n}\n\n.chatbot-input:focus {\n  outline: none;\n  border-color: var(--chatbot-primary);\n  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);\n}\n\n.chatbot-input::placeholder {\n  color: #94a3b8;\n}\n\n.chatbot-attach-input {\n  display: none;\n}\n\n.chatbot-attach {\n  width: 44px;\n  height: 44px;\n  border-radius: 12px;\n  border: 1px solid #e2e8f0;\n  background: #ffffff;\n  color: #0f172a;\n  display: grid;\n  place-items: center;\n  cursor: pointer;\n  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;\n}\n\n.chatbot-attach svg {\n  width: 18px;\n  height: 18px;\n}\n\n.chatbot-attach:hover {\n  transform: translateY(-1px);\n  border-color: #cbd5f0;\n  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);\n}\n\n.chatbot-send {\n  width: 44px;\n  height: 44px;\n  border-radius: 12px;\n  border: 0;\n  background: var(--chatbot-primary);\n  color: #ffffff;\n  display: grid;\n  place-items: center;\n  cursor: pointer;\n  transition: transform 0.18s ease, box-shadow 0.18s ease;\n}\n\n.chatbot-send svg {\n  width: 18px;\n  height: 18px;\n}\n\n.chatbot-send:hover {\n  transform: translateY(-1px);\n  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.32);\n}\n\n.chatbot-footer .chatbot-human-button {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  gap: 10px;\n  background: #eff6ff;\n  border: 1px solid #dbeafe;\n  color: #1d4ed8;\n  font-weight: 600;\n  border-radius: 12px;\n  padding: 10px 12px;\n  cursor: pointer;\n  transition: background 0.2s ease, border 0.2s ease;\n}\n\n.chatbot-footer .chatbot-human-button:hover {\n  background: #dbeafe;\n}\n\n.chatbot-footer .chatbot-human-button svg {\n  width: 16px;\n  height: 16px;\n}\n\n.chatbot-powered {\n  margin: 0;\n  font-size: 10px;\n  color: #94a3b8;\n  text-align: center;\n}\n\n.chatbot-widget-root.show-human-form .chatbot-body,\n.chatbot-widget-root.show-human-form .chatbot-footer {\n  display: none;\n}\n\n.chatbot-widget-root.show-human-form .chatbot-human-container {\n  display: flex;\n}\n\n.chatbot-human-container {\n  flex: 1;\n  display: none;\n  flex-direction: column;\n  padding: 18px 14px;\n  gap: 16px;\n  overflow: auto;\n  background: #f8fbff;\n}\n\n.chatbot-human-header {\n  background: #ffffff;\n  border: 1px solid #dbe4f5;\n  border-radius: 14px;\n  padding: 14px;\n  text-align: center;\n}\n\n.chatbot-human-header h3 {\n  margin: 0;\n  font-size: 18px;\n  font-weight: 700;\n  color: #0f172a;\n}\n\n.chatbot-human-header p {\n  margin: 6px 0 0;\n  font-size: 13px;\n  color: #64748b;\n}\n\n.chatbot-human-form {\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n}\n\n.chatbot-form-group {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  font-size: 12px;\n  font-weight: 600;\n  color: #334155;\n}\n\n.chatbot-form-group input,\n.chatbot-form-group textarea {\n  border-radius: 10px;\n  border: 1px solid #dbe4f5;\n  padding: 10px 12px;\n  font-size: 13px;\n  font-family: \"Segoe UI\", -apple-system, BlinkMacSystemFont, sans-serif;\n  color: #0f172a;\n  background: #ffffff;\n}\n\n.chatbot-form-group input:focus,\n.chatbot-form-group textarea:focus {\n  outline: none;\n  border-color: var(--chatbot-primary);\n  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);\n}\n\n.chatbot-form-group textarea {\n  min-height: 110px;\n  resize: vertical;\n}\n\n.chatbot-form-actions {\n  display: flex;\n  gap: 10px;\n  justify-content: space-between;\n}\n\n.chatbot-btn-primary {\n  flex: 1;\n  border-radius: 12px;\n  border: 0;\n  background: var(--chatbot-primary);\n  color: #ffffff;\n  font-weight: 600;\n  padding: 10px 12px;\n  cursor: pointer;\n}\n\n.chatbot-btn-secondary {\n  flex: 1;\n  border-radius: 12px;\n  border: 1px solid #dbe4f5;\n  background: #ffffff;\n  color: #334155;\n  font-weight: 600;\n  padding: 10px 12px;\n  cursor: pointer;\n}\n\n.chatbot-human-success {\n  display: none;\n  flex-direction: column;\n  align-items: center;\n  text-align: center;\n  gap: 12px;\n  padding: 24px 16px;\n  border-radius: 14px;\n  border: 1px solid #dbe4f5;\n  background: #ffffff;\n}\n\n.chatbot-widget-root.show-human-success .chatbot-body,\n.chatbot-widget-root.show-human-success .chatbot-footer {\n  display: none;\n}\n\n.chatbot-widget-root.show-human-success .chatbot-human-container {\n  display: flex;\n}\n\n.chatbot-widget-root.show-human-success .chatbot-human-form {\n  display: none;\n}\n\n.chatbot-widget-root.show-human-success .chatbot-human-success {\n  display: flex;\n}\n\n.chatbot-success-icon {\n  width: 54px;\n  height: 54px;\n  border-radius: 999px;\n  background: #dcfce7;\n  color: #16a34a;\n  display: grid;\n  place-items: center;\n  font-size: 26px;\n}\n\n.chatbot-human-success h3 {\n  margin: 0;\n  font-size: 18px;\n  font-weight: 700;\n  color: #0f172a;\n}\n\n.chatbot-human-success p {\n  margin: 0;\n  font-size: 13px;\n  color: #64748b;\n}\n\n.chatbot-widget-root.show-human-form .chatbot-footer,\n.chatbot-widget-root.show-human-success .chatbot-footer {\n  display: none;\n}\n\n.chatbot-error {\n  color: #dc2626;\n  font-size: 12px;\n  text-align: center;\n}\n\n.chatbot-loading {\n  text-align: center;\n  font-size: 12px;\n  color: #64748b;\n}\n\n.chatbot-human-note {\n  font-size: 12px;\n  color: #475569;\n  text-align: center;\n}\n\n.chatbot-human-note span {\n  font-weight: 600;\n}\n\n@media (max-width: 520px) {\n  .chatbot-panel {\n    height: min(560px, calc(100vh - 80px));\n    width: min(360px, calc(100vw - 20px));\n  }\n\n  .chatbot-widget-root.right,\n  .chatbot-widget-root.left {\n    right: 10px;\n    left: 10px;\n  }\n\n  .chatbot-widget-root {\n    bottom: 10px;\n  }\n\n  .chatbot-panel {\n    width: min(360px, calc(100vw - 20px));\n    height: min(520px, calc(100vh - 70px));\n  }\n\n  .chatbot-intro h3 {\n    font-size: 22px;\n  }\n}\n", Ze = () => {
 	if (document.getElementById("chatbot-package-styles")) return;
 	let e = document.createElement("style");
-	e.id = Xe, e.textContent = Qe, document.head.appendChild(e);
-}, et = {
+	e.id = Je, e.textContent = Xe, document.head.appendChild(e);
+}, Qe = {
 	xmlns: "http://www.w3.org/2000/svg",
 	width: 24,
 	height: 24,
@@ -1451,43 +1451,43 @@ var Xe = "chatbot-package-styles", Ze = {
 	"stroke-width": 2,
 	"stroke-linecap": "round",
 	"stroke-linejoin": "round"
-}, tt = ([e, t, n]) => {
+}, $e = ([e, t, n]) => {
 	let r = document.createElementNS("http://www.w3.org/2000/svg", e);
 	return Object.keys(t).forEach((e) => {
 		r.setAttribute(e, String(t[e]));
 	}), n?.length && n.forEach((e) => {
-		let t = tt(e);
+		let t = $e(e);
 		r.appendChild(t);
 	}), r;
-}, nt = (e, t = {}) => tt([
+}, et = (e, t = {}) => $e([
 	"svg",
 	{
-		...et,
+		...Qe,
 		...t
 	},
 	e
-]), rt = (e) => {
+]), tt = (e) => {
 	for (let t in e) if (t.startsWith("aria-") || t === "role" || t === "title") return !0;
 	return !1;
-}, it = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) === t).join(" ").trim(), at = (e) => e.replace(/^([A-Z])|[\s-_]+(\w)/g, (e, t, n) => n ? n.toUpperCase() : t.toLowerCase()), ot = (e) => {
-	let t = at(e);
+}, nt = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) === t).join(" ").trim(), rt = (e) => e.replace(/^([A-Z])|[\s-_]+(\w)/g, (e, t, n) => n ? n.toUpperCase() : t.toLowerCase()), it = (e) => {
+	let t = rt(e);
 	return t.charAt(0).toUpperCase() + t.slice(1);
-}, st = (e) => Array.from(e.attributes).reduce((e, t) => (e[t.name] = t.value, e), {}), ct = (e) => typeof e == "string" ? e : !e || !e.class ? "" : e.class && typeof e.class == "string" ? e.class.split(" ") : e.class && Array.isArray(e.class) ? e.class : "", lt = (e, { nameAttr: t, icons: n, attrs: r }) => {
+}, at = (e) => Array.from(e.attributes).reduce((e, t) => (e[t.name] = t.value, e), {}), ot = (e) => typeof e == "string" ? e : !e || !e.class ? "" : e.class && typeof e.class == "string" ? e.class.split(" ") : e.class && Array.isArray(e.class) ? e.class : "", st = (e, { nameAttr: t, icons: n, attrs: r }) => {
 	let i = e.getAttribute(t);
 	if (i == null) return;
-	let a = n[ot(i)];
+	let a = n[it(i)];
 	if (!a) return console.warn(`${e.outerHTML} icon name was not found in the provided icons object.`);
-	let o = st(e), s = rt(o) ? {} : { "aria-hidden": "true" }, c = {
-		...et,
+	let o = at(e), s = tt(o) ? {} : { "aria-hidden": "true" }, c = {
+		...Qe,
 		"data-lucide": i,
 		...s,
 		...r,
 		...o
-	}, l = ct(o), u = ct(r), d = it("lucide", `lucide-${i}`, ...l, ...u);
+	}, l = ot(o), u = ot(r), d = nt("lucide", `lucide-${i}`, ...l, ...u);
 	d && Object.assign(c, { class: d });
-	let f = nt(a, c);
+	let f = et(a, c);
 	return e.parentNode?.replaceChild(f, e);
-}, ut = [["path", { d: "m12 19-7-7 7-7" }], ["path", { d: "M19 12H5" }]], dt = [
+}, ct = [["path", { d: "m12 19-7-7 7-7" }], ["path", { d: "M19 12H5" }]], lt = [
 	["path", { d: "M12 8V4H8" }],
 	["rect", {
 		width: "16",
@@ -1500,18 +1500,18 @@ var Xe = "chatbot-package-styles", Ze = {
 	["path", { d: "M20 14h2" }],
 	["path", { d: "M15 13v2" }],
 	["path", { d: "M9 13v2" }]
-], ft = [["path", { d: "M21.801 10A10 10 0 1 1 17 3.335" }], ["path", { d: "m9 11 3 3L22 4" }]], pt = [["path", { d: "M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719" }]], mt = [["path", { d: "M5 12h14" }], ["path", { d: "M12 5v14" }]], ht = [["path", { d: "M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z" }], ["path", { d: "M6 12h16" }]], gt = [["circle", {
+], ut = [["path", { d: "M21.801 10A10 10 0 1 1 17 3.335" }], ["path", { d: "m9 11 3 3L22 4" }]], dt = [["path", { d: "M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719" }]], ft = [["path", { d: "M5 12h14" }], ["path", { d: "M12 5v14" }]], pt = [["path", { d: "M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z" }], ["path", { d: "M6 12h16" }]], mt = [["circle", {
 	cx: "12",
 	cy: "8",
 	r: "5"
-}], ["path", { d: "M20 21a8 8 0 0 0-16 0" }]], _t = [["path", { d: "M18 6 6 18" }], ["path", { d: "m6 6 12 12" }]], vt = ({ icons: e = {}, nameAttr: t = "data-lucide", attrs: n = {}, root: r = document, inTemplates: i } = {}) => {
+}], ["path", { d: "M20 21a8 8 0 0 0-16 0" }]], ht = [["path", { d: "M18 6 6 18" }], ["path", { d: "m6 6 12 12" }]], gt = ({ icons: e = {}, nameAttr: t = "data-lucide", attrs: n = {}, root: r = document, inTemplates: i } = {}) => {
 	if (!Object.values(e).length) throw Error("Please provide an icons object.\nIf you want to use all the icons you can import it like:\n `import { createIcons, icons } from 'lucide';\nlucide.createIcons({icons});`");
 	if (r === void 0) throw Error("`createIcons()` only works in a browser environment.");
-	if (Array.from(r.querySelectorAll(`[${t}]`)).forEach((r) => lt(r, {
+	if (Array.from(r.querySelectorAll(`[${t}]`)).forEach((r) => st(r, {
 		nameAttr: t,
 		icons: e,
 		attrs: n
-	})), i && Array.from(r.querySelectorAll("template")).forEach((r) => vt({
+	})), i && Array.from(r.querySelectorAll("template")).forEach((r) => gt({
 		icons: e,
 		nameAttr: t,
 		attrs: n,
@@ -1519,24 +1519,24 @@ var Xe = "chatbot-package-styles", Ze = {
 		inTemplates: i
 	})), t === "data-lucide") {
 		let t = r.querySelectorAll("[icon-name]");
-		t.length > 0 && (console.warn("[Lucide] Some icons were found with the now deprecated icon-name attribute. These will still be replaced for backwards compatibility, but will no longer be supported in v1.0 and you should switch to data-lucide"), Array.from(t).forEach((t) => lt(t, {
+		t.length > 0 && (console.warn("[Lucide] Some icons were found with the now deprecated icon-name attribute. These will still be replaced for backwards compatibility, but will no longer be supported in v1.0 and you should switch to data-lucide"), Array.from(t).forEach((t) => st(t, {
 			nameAttr: "icon-name",
 			icons: e,
 			attrs: n
 		})));
 	}
-}, X = () => {
-	vt({ icons: {
-		Bot: dt,
-		MessageCircle: pt,
-		SendHorizontal: ht,
-		UserRound: gt,
-		X: _t,
-		Plus: mt,
-		CheckCircle: ft,
-		ArrowLeft: ut
+}, _t = () => {
+	gt({ icons: {
+		Bot: lt,
+		MessageCircle: dt,
+		SendHorizontal: pt,
+		UserRound: mt,
+		X: ht,
+		Plus: ft,
+		CheckCircle: ut,
+		ArrowLeft: ct
 	} });
-}, Z = (e) => {
+}, vt = (e) => {
 	let t = String(e || "").trim().replace(/\/+$/, "");
 	return !t || /^https?:\/\//i.test(t) ? t : t.startsWith("/") ? `${window.location.origin}${t}` : t;
 }, yt = (e) => e.startsWith("/") ? e : `/${e}`, bt = (e) => e.replace(/\/api\/?$/i, ""), xt = (e) => e && typeof e == "object" && "data" in e ? e.data : e, St = (e) => {
@@ -1774,9 +1774,9 @@ var Xe = "chatbot-package-styles", Ze = {
 	};
 }, Rt = (e = {}) => {
 	if (typeof window > "u" || typeof document > "u") throw Error("chatbot-package can only run in a browser environment.");
-	$e();
+	Ze();
 	let t = {
-		...Ze,
+		...Ye,
 		...e
 	}, n = document.createElement("div");
 	n.className = `chatbot-widget-root ${t.position === "bottom-left" ? "left" : "right"}`, n.style.setProperty("--chatbot-primary", t.primaryColor), n.style.zIndex = String(t.zIndex);
@@ -1786,18 +1786,18 @@ var Xe = "chatbot-package-styles", Ze = {
 	i.className = "chatbot-panel", i.setAttribute("role", "dialog"), i.setAttribute("aria-label", t.title);
 	let { header: a, statusText: o } = Pt(t, () => {
 		n.classList.remove("open"), r.setAttribute("aria-expanded", "false");
-	}), { body: s, humanDivider: c, messages: l } = Ft(t), { footer: u, inputRow: d, input: f, humanButton: p, loadingRow: m, attachInput: h, attachButton: g } = It(t), _ = "<i data-lucide=\"user-round\" aria-hidden=\"true\"></i><span>Talk to a real human</span>", v = "<i data-lucide=\"bot\" aria-hidden=\"true\"></i><span>Talk to AI</span>";
+	}), { body: s, humanDivider: c, messages: l } = Ft(t), { footer: u, inputRow: d, input: f, humanButton: p, loadingRow: m, attachInput: h, attachButton: g } = It(t), _ = "<i data-lucide=\"user-round\" aria-hidden=\"true\"></i><span>Connect to real human</span>";
 	p.innerHTML = _;
-	let { humanContainer: ee, humanForm: te, cancelBtn: ne, successBackBtn: re } = Lt(), y = St(e), b = Ct(y), x = [], S = [], C = !0, w = Math.max(b.length - 30, 0), T = !1, E = () => l.contains(c) ? c.nextSibling : l.firstChild, D = () => {
+	let { humanContainer: ee, humanForm: te, cancelBtn: ne, successBackBtn: re } = Lt(), v = St(e), y = Ct(v), b = [], x = [], S = !0, C = Math.max(y.length - 30, 0), w = !1, ie = () => l.contains(c) ? c.nextSibling : l.firstChild, T = () => {
 		l.innerHTML = "";
-		let e = b.slice(w);
+		let e = y.slice(C);
 		e.length !== 0 && (s.classList.add("has-messages"), e.forEach((e) => {
 			l.appendChild($(e.text, e.role, e.role === "bot"));
 		}), s.scrollTop = s.scrollHeight);
-	}, ie = () => {
-		if (l.innerHTML = "", x.length === 0) {
-			let e = S.length > 0 ? S[S.length - 1] : [];
-			if (e.length === 0 || !C) {
+	}, E = () => {
+		if (l.innerHTML = "", b.length === 0) {
+			let e = x.length > 0 ? x[x.length - 1] : [];
+			if (e.length === 0 || !S) {
 				s.classList.remove("has-messages");
 				return;
 			}
@@ -1811,37 +1811,37 @@ var Xe = "chatbot-package-styles", Ze = {
 			}), l.appendChild(t), s.scrollTop = s.scrollHeight;
 			return;
 		}
-		s.classList.add("has-messages"), x.forEach((e) => {
+		s.classList.add("has-messages"), b.forEach((e) => {
 			l.appendChild($(e.text, e.role, e.markdown ?? !1));
 		}), s.scrollTop = s.scrollHeight;
 	}, ae = () => {
-		if (T || w === 0) return;
-		T = !0;
-		let e = Math.max(w - 30, 0), t = b.slice(e, w);
+		if (w || C === 0) return;
+		w = !0;
+		let e = Math.max(C - 30, 0), t = y.slice(e, C);
 		if (t.length === 0) {
-			T = !1;
+			w = !1;
 			return;
 		}
-		let n = s.scrollHeight, r = s.scrollTop, i = E();
+		let n = s.scrollHeight, r = s.scrollTop, i = ie();
 		t.forEach((e) => {
 			l.insertBefore($(e.text, e.role, e.role === "bot"), i);
-		}), w = e, s.scrollTop = r + (s.scrollHeight - n), T = !1;
+		}), C = e, s.scrollTop = r + (s.scrollHeight - n), w = !1;
 	}, oe = () => {
-		w !== 0 && s.scrollTop <= 12 && ae();
+		C !== 0 && s.scrollTop <= 12 && ae();
 	};
-	b.length > 0 && D(), s.addEventListener("scroll", oe), i.append(a, s, u, ee), n.append(i, r), document.body.appendChild(n), X();
-	let O = !1, k = !1, A = !1, j = !1, se = !1, M = !1, N = !1, P = null, F = null, I = null, ce = /* @__PURE__ */ new Set(), L = (e, t) => {
-		e.trim() && (s.classList.add("has-messages"), l.appendChild($(e.trim(), "bot", t?.markdown ?? !0)), s.scrollTop = s.scrollHeight, t?.store && !A && !N && Tt(y, b, {
+	y.length > 0 && T(), s.addEventListener("scroll", oe), i.append(a, s, u, ee), n.append(i, r), document.body.appendChild(n), _t();
+	let D = !1, O = !1, k = !1, A = !1, j = !1, M = !1, N = !1, P = !1, F = null, I = null, L = null, se = /* @__PURE__ */ new Set(), R = (e, t) => {
+		e.trim() && (s.classList.add("has-messages"), l.appendChild($(e.trim(), "bot", t?.markdown ?? !0)), s.scrollTop = s.scrollHeight, t?.store && !k && !P && Tt(v, y, {
 			role: "bot",
 			text: e.trim()
 		}));
-	}, R = (e, t, n) => {
-		e.trim() && (s.classList.add("has-messages"), x.push({
+	}, z = (e, t, n) => {
+		e.trim() && (s.classList.add("has-messages"), b.push({
 			role: t,
 			text: e.trim(),
 			markdown: n?.markdown ?? !1
 		}), l.appendChild($(e.trim(), t, n?.markdown ?? !1)), s.scrollTop = s.scrollHeight);
-	}, z = (e, t) => {
+	}, B = (e, t) => {
 		if (m) {
 			if (t) {
 				let e = m.querySelector(".chatbot-loading-label");
@@ -1849,17 +1849,17 @@ var Xe = "chatbot-package-styles", Ze = {
 			}
 			m.style.display = e ? "flex" : "none";
 		}
-	}, B = () => {
+	}, V = () => {
 		if (!g) return;
-		let e = A && !N;
+		let e = k && !P;
 		g.style.display = e ? "grid" : "none";
-	}, V = (e) => new Promise((t, n) => {
+	}, H = (e) => new Promise((t, n) => {
 		let r = new FileReader();
 		r.onload = () => t(String(r.result || "")), r.onerror = () => n(/* @__PURE__ */ Error("Unable to read file.")), r.readAsDataURL(e);
-	}), le = async () => {
+	}), ce = async () => {
 		if (t.humanSupport?.widgetKey) return t.humanSupport.widgetKey;
 		if (e.aiSupport?.apiKey && t.humanSupport?.apiBaseUrl) {
-			let n = Z(t.humanSupport.apiBaseUrl), r = /\/api$/i.test(n) ? `${n}/widget/key` : `${n}/api/widget/key`, i = await fetch(r, {
+			let n = vt(t.humanSupport.apiBaseUrl), r = /\/api$/i.test(n) ? `${n}/widget/key` : `${n}/api/widget/key`, i = await fetch(r, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ apiKey: e.aiSupport.apiKey })
@@ -1869,10 +1869,10 @@ var Xe = "chatbot-package-styles", Ze = {
 			if (a?.widgetKey) return t.humanSupport.widgetKey = a.widgetKey, a.widgetKey;
 		}
 		return null;
-	}, ue = async (n) => {
-		let r = await le();
+	}, le = async (n) => {
+		let r = await ce();
 		if (!r) throw Error("Widget key is required for uploads.");
-		let i = Z(t.humanSupport?.apiBaseUrl || e.aiSupport?.apiBaseUrl || ""), a = /\/api$/i.test(i) ? `${i}/uploads/chat-image` : `${i}/api/uploads/chat-image`, o = await V(n), s = await fetch(a, {
+		let i = vt(t.humanSupport?.apiBaseUrl || e.aiSupport?.apiBaseUrl || ""), a = /\/api$/i.test(i) ? `${i}/uploads/chat-image` : `${i}/api/uploads/chat-image`, o = await H(n), s = await fetch(a, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
@@ -1888,154 +1888,185 @@ var Xe = "chatbot-package-styles", Ze = {
 		let c = xt(await s.json());
 		if (!c?.url) throw Error("Upload succeeded but no URL was returned.");
 		return c.url;
-	}, H = null, U = (e) => {
-		s.classList.toggle("human-mode", e), e ? (l.contains(c) || l.insertBefore(c, l.firstChild), p.innerHTML = v) : (l.contains(c) && c.remove(), p.innerHTML = _), X(), B();
-	}, W = a.querySelector(".chatbot-controls");
-	if (W) {
+	}, U = null, W = () => {
+		j ? p.innerHTML = "<i data-lucide=\"rotate-ccw\" aria-hidden=\"true\"></i><span>Restart chat</span>" : k ? p.innerHTML = "<i data-lucide=\"clock-3\" aria-hidden=\"true\"></i><span>Waiting for real human</span>" : p.innerHTML = _, _t();
+	}, G = (e) => {
+		s.classList.toggle("human-mode", e), e ? l.contains(c) || l.insertBefore(c, l.firstChild) : l.contains(c) && c.remove(), W(), V();
+	}, ue = a.querySelector(".chatbot-controls");
+	if (ue) {
 		let e = document.createElement("button");
-		e.type = "button", e.setAttribute("aria-label", "Clear AI chat"), e.innerHTML = "<i data-lucide=\"x\" aria-hidden=\"true\"></i>", W.appendChild(e);
+		e.type = "button", e.setAttribute("aria-label", "Clear AI chat"), e.innerHTML = "<i data-lucide=\"x\" aria-hidden=\"true\"></i>", ue.appendChild(e);
 		let n = document.createElement("button");
-		n.type = "button", n.setAttribute("aria-label", "Start new human session"), n.innerHTML = "<i data-lucide=\"plus\" aria-hidden=\"true\"></i>", W.appendChild(n);
+		n.type = "button", n.setAttribute("aria-label", "Start new human session"), n.innerHTML = "<i data-lucide=\"plus\" aria-hidden=\"true\"></i>", ue.appendChild(n);
 		let r = (t) => {
 			e.style.display = t ? "none" : "grid", n.style.display = t ? "grid" : "none";
 		};
-		r(!1), e.addEventListener("click", () => {
-			A || (Et(y, b), w = Math.max(b.length - 30, 0), l.innerHTML = "", s.classList.remove("has-messages"), l.appendChild($(t.welcomeMessage, "bot", !0)), s.scrollTop = s.scrollHeight);
-		}), n.addEventListener("click", () => {
-			x.length > 0 && S.push([...x]), P &&= (P.close(), null), F = null, I = null, A = !1, j = !1, M = !1, N = !0, x.splice(0, x.length), C = !1, U(!0), ie(), R("Please describe the issue you are facing.", "bot"), p.innerHTML = v, X();
-		});
-		let i = U;
-		U = (e) => {
-			i(e), r(e), e ? (C = !0, ie()) : b.length > 0 ? (w = Math.max(b.length - 30, 0), D()) : (l.innerHTML = "", s.classList.remove("has-messages"), l.appendChild($(t.welcomeMessage, "bot", !0)));
+		r(!1);
+		let i = () => {
+			k || (Et(v, y), C = Math.max(y.length - 30, 0), l.innerHTML = "", s.classList.remove("has-messages"), l.appendChild($(t.welcomeMessage, "bot", !0)), s.scrollTop = s.scrollHeight);
+		}, a = () => {
+			F &&= (F.close(), null), I = null, L = null, k = !1, A = !1, j = !1, N = !1, P = !1, U = null, S = !1, b.splice(0, b.length), x.splice(0, x.length), B(!1), o.textContent = t.subtitle, f.value = "", Et(v, y), C = Math.max(y.length - 30, 0), l.innerHTML = "", s.classList.remove("has-messages"), l.appendChild($(t.welcomeMessage, "bot", !0)), G(!1), W();
 		};
+		e.addEventListener("click", i), n.addEventListener("click", () => {
+			b.length > 0 && x.push([...b]), F &&= (F.close(), null), I = null, L = null, k = !1, A = !1, j = !1, N = !1, P = !0, b.splice(0, b.length), S = !1, G(!0), E(), z("Please describe the issue you are facing.", "bot"), W();
+		});
+		let c = G;
+		G = (e) => {
+			c(e), r(e), e ? (S = !0, E()) : y.length > 0 ? (C = Math.max(y.length - 30, 0), T()) : (l.innerHTML = "", s.classList.remove("has-messages"), l.appendChild($(t.welcomeMessage, "bot", !0))), W();
+		}, p.__resetWidgetState = a;
 	}
-	let G = (e) => {
-		k || (O = e, n.classList.toggle("open", O), r.setAttribute("aria-expanded", String(O)), O && window.setTimeout(() => f.focus(), 0));
+	let K = (e) => {
+		O || (D = e, n.classList.toggle("open", D), r.setAttribute("aria-expanded", String(D)), D && window.setTimeout(() => f.focus(), 0));
 	}, de = async (n) => {
-		if (A && P) {
-			P.emit("widget:message", { text: n });
+		if (k && F) {
+			F.emit("widget:message", { text: n });
 			return;
 		}
 		if (e.onUserMessage) {
 			let t = await e.onUserMessage(n);
-			typeof t == "string" && t.trim() && L(t, { store: !0 });
+			typeof t == "string" && t.trim() && R(t, { store: !0 });
 			return;
 		}
 		if (e.aiSupport) {
 			try {
-				let t = Z(e.aiSupport.apiBaseUrl), r = yt(e.aiSupport.chatPath || "/rag/chat"), i = await fetch(`${t}${r}`, {
+				let t = vt(e.aiSupport.apiBaseUrl), r = yt(e.aiSupport.chatPath || "/rag/chat"), i = await fetch(`${t}${r}`, {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
 						"x-api-key": e.aiSupport.apiKey
 					},
-					body: JSON.stringify({ query: n })
+					body: JSON.stringify({
+						query: n,
+						customerName: "Website Visitor",
+						chatHistory: y
+					})
 				});
 				if (!i.ok) throw Error("Unable to fetch chatbot response right now.");
 				let a = xt(await i.json());
-				if (L(typeof a?.answer == "string" && a.answer || typeof a?.response == "string" && a.response || typeof a?.message == "string" && a.message || "I processed your question, but no answer text was returned.", {
+				if (R(typeof a?.answer == "string" && a.answer || typeof a?.response == "string" && a.response || typeof a?.message == "string" && a.message || "I processed your question, but no answer text was returned.", {
 					markdown: !0,
 					store: !0
 				}), a?.raise_ticket && a?.ticket_payload) {
-					let e = a.ticket_payload, t = a?.ticket?._id || a?.ticketId || a?.ticket_id;
-					L([
-						"### Ticket Details",
-						e?.summary ? `- Summary: ${e.summary}` : null,
-						e?.priority ? `- Priority: ${String(e.priority).toUpperCase()}` : null,
-						e?.urgency ? `- Urgency: ${String(e.urgency).toUpperCase()}` : null,
-						t ? `- Ticket ID: ${t}` : null,
-						"- Status: Pending"
+					let e = a.human_handoff, t = a.ticket_payload, r = a?.ticket?._id || a?.ticketId || a?.ticket_id;
+					R([
+						"### Ticket Raised",
+						t?.summary ? `- Summary: ${t.summary}` : null,
+						t?.priority ? `- Priority: ${String(t.priority).toUpperCase()}` : null,
+						t?.urgency ? `- Urgency: ${String(t.urgency).toUpperCase()}` : null,
+						r ? `- Ticket ID: ${r}` : null,
+						"- Status: Pending human acceptance"
 					].filter(Boolean).join("\n"), {
 						markdown: !0,
 						store: !0
-					});
+					}), e?.sessionId && e?.ticketId && e?.chatToken && (await pe({
+						name: "Website Visitor",
+						email: "",
+						issue: n
+					}, {
+						sessionId: e.sessionId,
+						ticketId: e.ticketId,
+						chatToken: e.chatToken
+					}), z("Wait, we are connecting you to a real human.", "bot"), B(!0, "Waiting for real human"));
 				}
 			} catch (e) {
 				let t = e instanceof Error ? e.message : "Sorry, I am having trouble connecting right now.";
-				L(t.includes("Failed to fetch") ? "Unable to reach the AI server. Please try again." : t);
+				R(t.includes("Failed to fetch") ? "Unable to reach the AI server. Please try again." : t);
 			}
 			return;
 		}
-		L(`Thanks! ${t.botName} received: "${n}"`, { store: !0 });
-	}, fe = async (e) => {
-		if (!t.humanSupport) {
-			R("Human support is not configured for this widget yet.", "bot");
-			return;
-		}
-		let n = await le();
-		if (!n) throw Error("Human support requires a widget key or aiSupport.apiKey.");
-		let r = Z(t.humanSupport.apiBaseUrl), i = /\/api$/i.test(r) ? `${r}/widget/session` : `${r}/api/widget/session`, a = await fetch(i, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
-				widgetKey: n,
-				visitorName: e.name,
-				visitorEmail: e.email,
-				issue: e.issue,
-				chatHistory: b
-			})
-		});
-		if (!a.ok) {
-			let e = await a.json().catch(() => null), t = e?.message || e?.error || "Unable to connect to human support right now.";
-			throw Error(t);
-		}
-		let s = xt(await a.json());
-		F = s.sessionId, I = s.ticketId, A = !0, U(!0);
-		let c = Ye(bt(r), {
+		R(`Thanks! ${t.botName} received: "${n}"`, { store: !0 });
+	}, fe = async (e, t, n) => {
+		I = t.sessionId, L = t.ticketId, k = !0, j = !1, G(!0), W();
+		let r = qe(bt(n), {
 			path: "/socket.io",
 			transports: ["websocket"],
-			auth: { token: s.chatToken }
+			auth: { token: t.chatToken }
 		});
-		P = c, c.on("connect", () => {
+		F = r, r.on("connect", () => {
 			o.textContent = "Connecting to a human agent...";
-		}), c.on("disconnect", () => {
-			A && (o.textContent = "Reconnecting to human support...");
-		}), c.on("chat:message", (e) => {
-			e.sessionId === F && (e._id && ce.has(e._id) || (e._id && ce.add(e._id), e.sender === "agent" && typeof e.text == "string" && (j || (R("You are now connected to a human agent.", "bot"), R("AGENT JOINED THE SESSION", "system"), M = !0), z(!1), R(e.text, "bot", { markdown: !0 }), j = !0)));
-		}), c.on("chat:ticket_status", (e) => {
-			if (e.sessionId && e.sessionId === F || e.ticketId && e.ticketId === I) {
+		}), r.on("disconnect", () => {
+			k && (o.textContent = "Reconnecting to human support...");
+		}), r.on("chat:message", (e) => {
+			e.sessionId === I && (e._id && se.has(e._id) || (e._id && se.add(e._id), e.sender === "agent" && typeof e.text == "string" && (A || (z("You are now connected to a human agent.", "bot"), z("AGENT JOINED THE SESSION", "system"), N = !0), B(!1), z(e.text, "bot", { markdown: !0 }), A = !0)));
+		}), r.on("chat:ticket_status", (e) => {
+			if (e.sessionId && e.sessionId === I || e.ticketId && e.ticketId === L) {
 				if (e.status === "assigned") {
-					j || R("A human agent has accepted your chat. You are now connected.", "bot"), j = !0, z(!1), M ||= (R("AGENT JOINED THE SESSION", "system"), !0), o.textContent = "Connected with human support";
+					A || z("A human agent has accepted your chat. You are now connected.", "bot"), A = !0, j = !1, B(!1), N ||= (z("AGENT JOINED THE SESSION", "system"), !0), o.textContent = "Connected with human support";
 					return;
 				}
-				e.status === "pending" && (o.textContent = "Connecting to a human agent...");
+				if (e.status === "pending") {
+					o.textContent = "Waiting for a real human...", W();
+					return;
+				}
+				e.status === "resolved" && (b.length > 0 && x.push([...b]), k = !1, A = !1, j = !0, P = !1, B(!1), o.textContent = "Your query was resolved", F &&= (F.close(), null), I = null, L = null, G(!1), R("Your query was resolved. Tap restart chat if you need more help."), W());
 			}
-		}), c.on("chat:error", (e) => {
-			R(e.message || "Support connection error. Please try again.", "bot");
-		}), c.emit("widget:request_human", {
+		}), r.on("chat:error", (e) => {
+			z(e.message || "Support connection error. Please try again.", "bot");
+		}), r.emit("widget:request_human", {
 			name: e.name,
 			email: e.email,
 			issue: e.issue
-		}), o.textContent = "Connecting to a human agent...", z(!0, "Connecting to support");
-	}, pe = async (e) => {
-		let t = e.trim(), n = H;
-		if (!t && !n || k) {
-			n && (H = n);
+		}), o.textContent = "Waiting for a real human...", B(!0, "Waiting for real human");
+	}, pe = async (e, n) => {
+		if (!t.humanSupport) {
+			z("Human support is not configured for this widget yet.", "bot");
 			return;
 		}
-		n && (H = null);
+		let r = vt(t.humanSupport.apiBaseUrl), i = n;
+		if (!i) {
+			let t = await ce();
+			if (!t) throw Error("Human support requires a widget key or aiSupport.apiKey.");
+			let n = /\/api$/i.test(r) ? `${r}/widget/session` : `${r}/api/widget/session`, a = await fetch(n, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					widgetKey: t,
+					visitorName: e.name,
+					visitorEmail: e.email,
+					issue: e.issue,
+					chatHistory: y
+				})
+			});
+			if (!a.ok) {
+				let e = await a.json().catch(() => null), t = e?.message || e?.error || "Unable to connect to human support right now.";
+				throw Error(t);
+			}
+			i = xt(await a.json());
+		}
+		await fe(e, i, r);
+	}, q = async (e) => {
+		if (j) {
+			f.value = "", R("Your previous query is closed. Tap restart chat to begin a new conversation.");
+			return;
+		}
+		let t = e.trim(), n = U;
+		if (!t && !n || O) {
+			n && (U = n);
+			return;
+		}
+		n && (U = null);
 		let r = n ? `${t || "Attached image:"}\n\n![Uploaded image](${n})` : t;
-		if (N) {
-			s.classList.add("has-messages"), U(!0), R(r, "user", { markdown: !0 }), !A && !N && Tt(y, b, {
+		if (P) {
+			s.classList.add("has-messages"), G(!0), z(r, "user", { markdown: !0 }), !k && !P && Tt(v, y, {
 				role: "user",
 				text: r
-			}), f.value = "", s.scrollTop = s.scrollHeight, N = !1, B();
+			}), f.value = "", s.scrollTop = s.scrollHeight, P = !1, V();
 			try {
-				await fe({
+				await pe({
 					name: "Website Visitor",
 					email: "",
 					issue: r
-				}), R("You're now connected to a support agent. Please wait...", "bot"), z(!0, "Waiting for support"), p.innerHTML = v, X();
+				}), z("Wait, we are connecting you to a real human.", "bot"), B(!0, "Waiting for real human"), W();
 			} catch (e) {
-				R(e instanceof Error ? e.message : "Unable to connect to support right now.", "bot"), z(!1), N = !0;
+				z(e instanceof Error ? e.message : "Unable to connect to support right now.", "bot"), B(!1), P = !0;
 			}
 			return;
 		}
-		s.classList.add("has-messages"), U(A), A ? (R(r, "user", { markdown: !!n }), z(!0, "Waiting for support")) : l.appendChild($(r, "user", !!n)), B(), !A && !N && Tt(y, b, {
+		s.classList.add("has-messages"), G(k), k ? (z(r, "user", { markdown: !!n }), B(!0, "Waiting for real human")) : l.appendChild($(r, "user", !!n)), V(), !k && !P && Tt(v, y, {
 			role: "user",
 			text: r
 		}), f.value = "", s.scrollTop = s.scrollHeight;
-		let i = A ? null : Mt();
+		let i = k ? null : Mt();
 		i && (l.appendChild(i), s.scrollTop = s.scrollHeight);
 		try {
 			await de(r);
@@ -2044,57 +2075,58 @@ var Xe = "chatbot-package-styles", Ze = {
 		}
 	};
 	return r.addEventListener("click", () => {
-		G(!O);
+		K(!D);
 	}), d.addEventListener("submit", async (e) => {
-		e.preventDefault(), await pe(f.value);
+		e.preventDefault(), await q(f.value);
 	}), g.addEventListener("click", () => {
 		h.click();
 	}), h.addEventListener("change", async () => {
 		let e = h.files?.[0];
 		if (h.value = "", e) {
-			if (!A && !N) {
-				L("Image uploads are available in human support chat.");
+			if (!k && !P) {
+				R("Image uploads are available in human support chat.");
 				return;
 			}
 			try {
-				H = await ue(e), R("Image attached. Please include it with your message.", "system"), B();
+				U = await le(e), z("Image attached. Please include it with your message.", "system"), V();
 			} catch (e) {
-				R(e instanceof Error ? e.message : "Unable to upload image right now.", "bot");
+				z(e instanceof Error ? e.message : "Unable to upload image right now.", "bot");
 			}
 		}
 	}), f.addEventListener("keydown", async (e) => {
-		e.key === "Enter" && !e.shiftKey && (e.preventDefault(), await pe(f.value));
+		e.key === "Enter" && !e.shiftKey && (e.preventDefault(), await q(f.value));
 	}), p.addEventListener("click", async () => {
-		if (!A && N) {
-			N = !1, U(!1), z(!1), p.innerHTML = _, X();
+		let e = p.__resetWidgetState;
+		if (j) {
+			e?.();
 			return;
 		}
-		if (A) {
-			x.length > 0 && (S.push([...x]), x.splice(0, x.length)), A = !1, j = !1, z(!1), N = !1, U(!1), L("You are now chatting with AI again."), p.innerHTML = _, X();
+		if (!k && P) {
+			P = !1, j = !1, G(!1), B(!1), W();
 			return;
 		}
-		if (!se) {
-			se = !0, U(!0), N || (R("Please describe the issue you are facing.", "bot"), N = !0, B());
+		if (!k && !M) {
+			M = !0, G(!0), P || (z("Please describe the issue you are facing.", "bot"), P = !0, V());
 			try {
-				p.innerHTML = v, X();
+				W();
 			} catch (e) {
 				let t = e instanceof Error ? e.message : "Unable to connect to support right now.";
-				L(t.includes("Failed to fetch") ? "Unable to reach support server. Please try again." : t), A = !1, j = !1, z(!1), N = !1, U(!1), p.innerHTML = _, X();
+				R(t.includes("Failed to fetch") ? "Unable to reach support server. Please try again." : t), k = !1, A = !1, B(!1), P = !1, G(!1), W();
 			} finally {
-				se = !1;
+				M = !1;
 			}
 		}
 	}), ne.addEventListener("click", () => {}), te.addEventListener("submit", async (e) => {
 		e.preventDefault();
 	}), re.addEventListener("click", () => {
-		n.classList.remove("show-human-form"), n.classList.remove("show-human-success"), te.reset(), s.classList.add("has-messages"), l.appendChild($(A && I ? j ? `You are now connected with our support team (ticket ${I.slice(-6)}).` : `Your ticket ${I.slice(-6)} is waiting for an available human agent.` : "Your issue has been submitted. A human agent will contact you soon.", "bot")), s.scrollTop = s.scrollHeight;
+		n.classList.remove("show-human-form"), n.classList.remove("show-human-success"), te.reset(), s.classList.add("has-messages"), l.appendChild($(k && L ? A ? `You are now connected with our support team (ticket ${L.slice(-6)}).` : `Your ticket ${L.slice(-6)} is waiting for an available human agent.` : "Your issue has been submitted. A human agent will contact you soon.", "bot")), s.scrollTop = s.scrollHeight;
 	}), {
-		open: () => G(!0),
-		close: () => G(!1),
-		toggle: () => G(!O),
-		sendMessage: pe,
+		open: () => K(!0),
+		close: () => K(!1),
+		toggle: () => K(!D),
+		sendMessage: q,
 		destroy: () => {
-			k || (k = !0, s.removeEventListener("scroll", oe), P &&= (P.close(), null), n.remove());
+			O || (O = !0, s.removeEventListener("scroll", oe), F &&= (F.close(), null), n.remove());
 		}
 	};
 };
