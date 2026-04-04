@@ -317,7 +317,7 @@ createChatbotWidget({
   title: "Support AI",
   aiSupport: {
     apiBaseUrl: "${window.location.origin}/api",
-    apiKey: "${widgetConfig?.widgetKey || apiKeys[0]?.key || 'YOUR_WIDGET_API_KEY'}"
+    apiKey: "${apiKeys[0]?.key || 'YOUR_WIDGET_API_KEY'}"
   },
   humanSupport: {
     apiBaseUrl: "${window.location.origin}/api"
@@ -810,7 +810,27 @@ createChatbotWidget({
                                 <p className="text-xs text-slate-500">Copy this code into your website's HEAD or BODY</p>
                             </div>
                         </div>
-                        <div className="p-6">
+                        <div className="p-6 space-y-6">
+                            <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+                                <p className="font-semibold">Widget Key</p>
+                                <p className="mt-1 text-xs text-emerald-700">
+                                    The widget key is generated automatically from your API key.
+                                </p>
+                                <div className="mt-3 flex flex-wrap items-center gap-3">
+                                    <span className="rounded-lg border border-emerald-200 bg-white px-3 py-1 text-xs font-mono text-emerald-900">
+                                        {widgetConfig?.widgetKey || 'Fetch a widget key by creating an API key.'}
+                                    </span>
+                                    {widgetConfig?.widgetKey && (
+                                        <button
+                                            onClick={() => copyToClipboard(widgetConfig.widgetKey)}
+                                            className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
+                                        >
+                                            <Copy size={14} /> Copy Widget Key
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
                             <div className="relative">
                                 <pre className="bg-slate-900 text-slate-300 p-6 rounded-xl text-xs overflow-x-auto leading-relaxed font-mono">
                                     {widgetSnippet}

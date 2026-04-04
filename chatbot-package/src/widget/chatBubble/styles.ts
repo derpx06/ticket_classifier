@@ -68,8 +68,8 @@ export const CHAT_BUBBLE_CSS = `
 }
 
 .chatbot-bubble.typing {
-  min-width: 56px;
-  padding: 8px 12px;
+  min-width: 52px;
+  padding: 6px 10px;
   background: linear-gradient(180deg, #ffffff 0%, #f1f5ff 100%);
   border: 1px solid #dbeafe;
   box-shadow: 0 10px 22px rgba(30, 64, 175, 0.12);
@@ -139,14 +139,14 @@ export const CHAT_BUBBLE_CSS = `
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
+  font-size: 11px;
   color: #475569;
   font-weight: 500;
 }
 
 .chatbot-typing span {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 999px;
   background: linear-gradient(135deg, #1d4ed8, #60a5fa);
   animation: typing-bounce 1.05s infinite ease-in-out;

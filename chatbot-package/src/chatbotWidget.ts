@@ -220,6 +220,12 @@ export const createChatbotWidget = (
     loadingRow.style.display = active ? 'flex' : 'none'
   }
 
+  const updateAttachmentVisibility = (): void => {
+    if (!attachButton) return
+    const shouldShow = isHumanChatActive && !awaitingHumanIssue
+    attachButton.style.display = shouldShow ? 'grid' : 'none'
+  }
+
   const readFileAsDataUrl = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
       const reader = new FileReader()
@@ -228,16 +234,45 @@ export const createChatbotWidget = (
       reader.readAsDataURL(file)
     })
 
+  const resolveWidgetKey = async (): Promise<string | null> => {
+    if (config.humanSupport?.widgetKey) {
+      return config.humanSupport.widgetKey
+    }
+    if (options.aiSupport?.apiKey && config.humanSupport?.apiBaseUrl) {
+      const apiBaseUrl = resolveApiBase(config.humanSupport.apiBaseUrl)
+      const keyUrl = /\/api$/i.test(apiBaseUrl)
+        ? `${apiBaseUrl}/widget/key`
+        : `${apiBaseUrl}/api/widget/key`
+      const response = await fetch(keyUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey: options.aiSupport.apiKey }),
+      })
+      if (!response.ok) {
+        return null
+      }
+      const payload = unwrapResponseData<{ widgetKey?: string }>(await response.json())
+      if (payload?.widgetKey) {
+        config.humanSupport.widgetKey = payload.widgetKey
+        return payload.widgetKey
+      }
+    }
+    return null
+  }
+
   const uploadImage = async (file: File): Promise<string> => {
-    const widgetKey = config.humanSupport?.widgetKey || options.aiSupport?.apiKey
+    const widgetKey = await resolveWidgetKey()
     if (!widgetKey) {
       throw new Error('Widget key is required for uploads.')
     }
     const apiBaseUrl = resolveApiBase(
       config.humanSupport?.apiBaseUrl || options.aiSupport?.apiBaseUrl || '',
     )
+    const uploadUrl = /\/api$/i.test(apiBaseUrl)
+      ? `${apiBaseUrl}/uploads/chat-image`
+      : `${apiBaseUrl}/api/uploads/chat-image`
     const dataUrl = await readFileAsDataUrl(file)
-    const response = await fetch(`${apiBaseUrl}/api/uploads/chat-image`, {
+    const response = await fetch(uploadUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -279,6 +314,7 @@ export const createChatbotWidget = (
       humanButton.innerHTML = humanButtonMarkup
     }
     hydrateIcons()
+    updateAttachmentVisibility()
   }
 
   const headerControls = header.querySelector('.chatbot-controls')
@@ -454,13 +490,16 @@ export const createChatbotWidget = (
       return
     }
 
-    const widgetKey = config.humanSupport.widgetKey || options.aiSupport?.apiKey
+    const widgetKey = await resolveWidgetKey()
     if (!widgetKey) {
       throw new Error('Human support requires a widget key or aiSupport.apiKey.')
     }
 
     const apiBaseUrl = resolveApiBase(config.humanSupport.apiBaseUrl)
-    const response = await fetch(`${apiBaseUrl}/widget/session`, {
+    const sessionUrl = /\/api$/i.test(apiBaseUrl)
+      ? `${apiBaseUrl}/widget/session`
+      : `${apiBaseUrl}/api/widget/session`
+    const response = await fetch(sessionUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -601,6 +640,7 @@ export const createChatbotWidget = (
       input.value = ''
       body.scrollTop = body.scrollHeight
       awaitingHumanIssue = false
+      updateAttachmentVisibility()
       try {
         await connectHumanSupport({
           name: 'Website Visitor',
@@ -629,6 +669,7 @@ export const createChatbotWidget = (
     } else {
       messages.appendChild(createBubble(finalMessage, 'user', !!attachmentUrl))
     }
+    updateAttachmentVisibility()
     if (!isHumanChatActive && !awaitingHumanIssue) {
       pushHistory(historyStorageKey, messageHistory, { role: 'user', text: finalMessage })
     }
@@ -675,6 +716,7 @@ export const createChatbotWidget = (
       const url = await uploadImage(file)
       pendingImageUrl = url
       appendHumanBubble('Image attached. Please include it with your message.', 'system')
+      updateAttachmentVisibility()
     } catch (error) {
       const msg =
         error instanceof Error ? error.message : 'Unable to upload image right now.'
@@ -723,6 +765,7 @@ export const createChatbotWidget = (
     if (!awaitingHumanIssue) {
       appendHumanBubble('Please describe the issue you are facing.', 'bot')
       awaitingHumanIssue = true
+      updateAttachmentVisibility()
     }
     try {
       humanButton.innerHTML = aiButtonMarkup

@@ -355,6 +355,28 @@ ${CHAT_BUBBLE_CSS}
   border: 1px solid #e2e8f0;
 }
 
+.chatbot-md-p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: inherit;
+}
+
+.chatbot-md-spacer {
+  height: 8px;
+}
+
+.chatbot-md-list {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.chatbot-md-list li + li {
+  margin-top: 4px;
+}
+
 .chatbot-footer {
   border-top: 1px solid #dbe4f5;
   padding: 12px;
@@ -451,9 +473,9 @@ ${CHAT_BUBBLE_CSS}
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  border: 1px solid #dbe4f5;
-  background: #f1f5ff;
-  color: #1e40af;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #0f172a;
   display: grid;
   place-items: center;
   cursor: pointer;
@@ -467,8 +489,8 @@ ${CHAT_BUBBLE_CSS}
 
 .chatbot-attach:hover {
   transform: translateY(-1px);
-  border-color: #c7d2fe;
-  box-shadow: 0 8px 18px rgba(30, 64, 175, 0.18);
+  border-color: #cbd5f0;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
 }
 
 .chatbot-send {

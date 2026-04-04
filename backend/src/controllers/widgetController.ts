@@ -71,6 +71,60 @@ export async function getOrCreateWidgetKey(req: Request, res: Response): Promise
   }
 }
 
+export async function getWidgetKeyFromApiKey(req: Request, res: Response): Promise<void> {
+  try {
+    const apiKey = normalizeString(req.body?.apiKey || req.headers["x-api-key"]);
+    if (!apiKey) {
+      res.status(400).json({ message: "apiKey is required." });
+      return;
+    }
+
+    const { apiKeys } = await getCollections();
+    const apiKeyDoc = await apiKeys.findOne({ key: apiKey, isActive: true });
+    if (!apiKeyDoc) {
+      res.status(401).json({ message: "Invalid api key." });
+      return;
+    }
+
+    const existingKey = await apiKeys.findOne({
+      companyId: apiKeyDoc.companyId,
+      label: "Website Chatbot Key",
+      isActive: true,
+    });
+
+    if (existingKey) {
+      res.json({
+        data: {
+          widgetKey: existingKey.key,
+          label: existingKey.label,
+        },
+      });
+      return;
+    }
+
+    const id = await nextSequence("api_keys");
+    const generatedKey = `${randomUUID().replace(/-/g, "")}${randomUUID().replace(/-/g, "")}`;
+    const newApiKey: ApiKeyDoc = {
+      id,
+      companyId: apiKeyDoc.companyId,
+      key: generatedKey,
+      label: "Website Chatbot Key",
+      isActive: true,
+      createdAt: new Date(),
+    };
+    await apiKeys.insertOne(newApiKey);
+    res.json({
+      data: {
+        widgetKey: newApiKey.key,
+        label: newApiKey.label,
+      },
+    });
+  } catch (error) {
+    console.error("getWidgetKeyFromApiKey error", error);
+    res.status(500).json({ message: "Failed to resolve widget key." });
+  }
+}
+
 export async function createWidgetSession(req: Request, res: Response): Promise<void> {
   try {
     const widgetKey = normalizeString(req.body?.widgetKey || req.headers["x-api-key"]);
