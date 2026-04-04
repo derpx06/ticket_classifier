@@ -34,6 +34,41 @@ const formatSlotWithDate = (timestamp) =>
     hour12: false,
   });
 
+const parseFiniteNumber = (value) => {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+};
+
+const getDurationMinutesFromTicket = (ticket) => {
+  const createdAtMs = new Date(ticket?.createdAt || '').getTime();
+  const updatedAtMs = new Date(ticket?.updatedAt || '').getTime();
+  if (!Number.isFinite(createdAtMs) || !Number.isFinite(updatedAtMs)) return null;
+  if (updatedAtMs < createdAtMs) return null;
+  return Number(((updatedAtMs - createdAtMs) / (1000 * 60)).toFixed(1));
+};
+
+const getTicketResponseMinutes = (ticket) => {
+  const explicit =
+    parseFiniteNumber(ticket?.firstResponseMinutes) ??
+    parseFiniteNumber(ticket?.firstResponseTimeMinutes) ??
+    parseFiniteNumber(ticket?.responseMinutes);
+
+  if (explicit !== null) return explicit;
+  return getDurationMinutesFromTicket(ticket);
+};
+
+const getTicketResolutionMinutes = (ticket) => {
+  const explicitMinutes = parseFiniteNumber(ticket?.resolutionMinutes);
+  if (explicitMinutes !== null) return explicitMinutes;
+
+  const explicitHours = parseFiniteNumber(ticket?.resolutionHours);
+  if (explicitHours !== null) return Number((explicitHours * 60).toFixed(1));
+
+  const normalizedStatus = String(ticket?.status || '').toLowerCase();
+  if (!['resolved', 'escalated'].includes(normalizedStatus)) return null;
+  return getDurationMinutesFromTicket(ticket);
+};
+
 const RoleBasedDashboard = () => {
   const { role } = useAuth();
   const navigate = useNavigate();
@@ -170,17 +205,17 @@ const RoleBasedDashboard = () => {
     }, {});
 
     const responseValues = tickets
-      .map((ticket) => Number(ticket.firstResponseMinutes))
+      .map((ticket) => getTicketResponseMinutes(ticket))
       .filter((value) => Number.isFinite(value));
     const avgFirstResponse = responseValues.length
       ? Math.round(responseValues.reduce((sum, value) => sum + value, 0) / responseValues.length)
       : 0;
 
-    const resolutionHourValues = tickets
-      .map((ticket) => Number(ticket.resolutionHours))
+    const resolutionMinuteValues = tickets
+      .map((ticket) => getTicketResolutionMinutes(ticket))
       .filter((value) => Number.isFinite(value));
-    const avgResolutionHours = resolutionHourValues.length
-      ? (resolutionHourValues.reduce((sum, value) => sum + value, 0) / resolutionHourValues.length).toFixed(1)
+    const avgResolutionHours = resolutionMinuteValues.length
+      ? (resolutionMinuteValues.reduce((sum, value) => sum + value, 0) / resolutionMinuteValues.length / 60).toFixed(1)
       : '0.0';
 
     const resolutionRate = total ? Math.round((statusCount.resolved / total) * 100) : 0;
@@ -214,10 +249,10 @@ const RoleBasedDashboard = () => {
       );
 
       const slotResponseMinutes = slotTickets
-        .map((ticket) => Number(ticket.firstResponseMinutes))
+        .map((ticket) => getTicketResponseMinutes(ticket))
         .filter((value) => Number.isFinite(value));
-      const slotResolutionHours = slotTickets
-        .map((ticket) => Number(ticket.resolutionHours))
+      const slotResolutionMinutes = slotTickets
+        .map((ticket) => getTicketResolutionMinutes(ticket))
         .filter((value) => Number.isFinite(value));
 
       return {
@@ -233,12 +268,11 @@ const RoleBasedDashboard = () => {
               ).toFixed(1)
             )
           : null,
-        avgResolutionMinutes: slotResolutionHours.length
+        avgResolutionMinutes: slotResolutionMinutes.length
           ? Number(
               (
-                (slotResolutionHours.reduce((sum, value) => sum + value, 0) /
-                  slotResolutionHours.length) *
-                60
+                slotResolutionMinutes.reduce((sum, value) => sum + value, 0) /
+                slotResolutionMinutes.length
               ).toFixed(1)
             )
           : null,
@@ -263,6 +297,52 @@ const RoleBasedDashboard = () => {
       peakSlot,
     };
   }, [tickets]);
+
+  const employeeLatencySeries = adminAnalytics.threeHourTrend;
+  const employeeLatencyChartWidth = 720;
+  const employeeLatencyChartHeight = 300;
+  const employeeLatencyChartPadding = { top: 22, right: 24, bottom: 44, left: 48 };
+  const employeeLatencyPlotWidth =
+    employeeLatencyChartWidth - employeeLatencyChartPadding.left - employeeLatencyChartPadding.right;
+  const employeeLatencyPlotHeight =
+    employeeLatencyChartHeight - employeeLatencyChartPadding.top - employeeLatencyChartPadding.bottom;
+  const employeeLatencyMaxMetric = Math.max(
+    ...employeeLatencySeries.flatMap((point) => [
+      point.avgResponseMinutes ?? 0,
+      point.avgResolutionMinutes ?? 0,
+    ]),
+    1
+  );
+  const employeeLatencyHasData = employeeLatencySeries.some(
+    (point) => typeof point.avgResponseMinutes === 'number' || typeof point.avgResolutionMinutes === 'number'
+  );
+  const employeeLatencyXStep =
+    employeeLatencySeries.length > 1 ? employeeLatencyPlotWidth / (employeeLatencySeries.length - 1) : 0;
+  const toEmployeeLatencyX = (index) => employeeLatencyChartPadding.left + index * employeeLatencyXStep;
+  const toEmployeeLatencyY = (value) =>
+    employeeLatencyChartPadding.top + (1 - value / employeeLatencyMaxMetric) * employeeLatencyPlotHeight;
+  const buildEmployeeLatencyPath = (key) => {
+    let path = '';
+    let isSegmentOpen = false;
+
+    employeeLatencySeries.forEach((point, index) => {
+      const value = point[key];
+      if (typeof value !== 'number') {
+        isSegmentOpen = false;
+        return;
+      }
+
+      path += `${isSegmentOpen ? ' L ' : ' M '}${toEmployeeLatencyX(index)} ${toEmployeeLatencyY(value)}`;
+      isSegmentOpen = true;
+    });
+
+    return path.trim();
+  };
+  const employeeResponsePath = buildEmployeeLatencyPath('avgResponseMinutes');
+  const employeeResolutionPath = buildEmployeeLatencyPath('avgResolutionMinutes');
+  const employeeLatencyYAxisTicks = [1, 0.75, 0.5, 0.25, 0].map((ratio) =>
+    Math.round(employeeLatencyMaxMetric * ratio)
+  );
 
   if (isAdmin) {
     const maxCategoryCount = Math.max(...Object.values(adminAnalytics.categoryCount), 1);
@@ -807,6 +887,133 @@ const RoleBasedDashboard = () => {
 
       <section className="grid grid-cols-1 gap-5 xl:grid-cols-12">
         <div className="space-y-5 xl:col-span-8">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">Average Response & Resolution Time</h2>
+                <p className="text-xs text-slate-500">Last 24 hours in 3-hour intervals (minutes)</p>
+              </div>
+              <div className="flex items-center gap-4 text-xs text-slate-600">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-full bg-blue-600" />
+                  Response
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-600" />
+                  Resolution
+                </span>
+              </div>
+            </div>
+
+            {employeeLatencyHasData ? (
+              <div className="mt-4 overflow-x-auto">
+                <svg
+                  viewBox={`0 0 ${employeeLatencyChartWidth} ${employeeLatencyChartHeight}`}
+                  className="h-64 w-full min-w-[640px]"
+                  role="img"
+                  aria-label="Average response and resolution time in 3-hour intervals"
+                >
+                  {employeeLatencyYAxisTicks.map((tick) => {
+                    const y = toEmployeeLatencyY(tick);
+                    return (
+                      <g key={`employee-grid-${tick}`}>
+                        <line
+                          x1={employeeLatencyChartPadding.left}
+                          y1={y}
+                          x2={employeeLatencyChartWidth - employeeLatencyChartPadding.right}
+                          y2={y}
+                          stroke="#e2e8f0"
+                          strokeDasharray="3 5"
+                        />
+                        <text
+                          x={employeeLatencyChartPadding.left - 10}
+                          y={y + 4}
+                          textAnchor="end"
+                          className="fill-slate-400 text-[11px]"
+                        >
+                          {tick}
+                        </text>
+                      </g>
+                    );
+                  })}
+
+                  <line
+                    x1={employeeLatencyChartPadding.left}
+                    y1={employeeLatencyChartPadding.top}
+                    x2={employeeLatencyChartPadding.left}
+                    y2={employeeLatencyChartHeight - employeeLatencyChartPadding.bottom}
+                    stroke="#cbd5e1"
+                  />
+                  <line
+                    x1={employeeLatencyChartPadding.left}
+                    y1={employeeLatencyChartHeight - employeeLatencyChartPadding.bottom}
+                    x2={employeeLatencyChartWidth - employeeLatencyChartPadding.right}
+                    y2={employeeLatencyChartHeight - employeeLatencyChartPadding.bottom}
+                    stroke="#cbd5e1"
+                  />
+
+                  {employeeResponsePath ? (
+                    <path
+                      d={employeeResponsePath}
+                      fill="none"
+                      stroke="#2563eb"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                    />
+                  ) : null}
+                  {employeeResolutionPath ? (
+                    <path
+                      d={employeeResolutionPath}
+                      fill="none"
+                      stroke="#16a34a"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                    />
+                  ) : null}
+
+                  {employeeLatencySeries.map((point, index) =>
+                    typeof point.avgResponseMinutes === 'number' ? (
+                      <circle
+                        key={`employee-response-dot-${point.key}`}
+                        cx={toEmployeeLatencyX(index)}
+                        cy={toEmployeeLatencyY(point.avgResponseMinutes)}
+                        r="4"
+                        fill="#2563eb"
+                      />
+                    ) : null
+                  )}
+                  {employeeLatencySeries.map((point, index) =>
+                    typeof point.avgResolutionMinutes === 'number' ? (
+                      <circle
+                        key={`employee-resolution-dot-${point.key}`}
+                        cx={toEmployeeLatencyX(index)}
+                        cy={toEmployeeLatencyY(point.avgResolutionMinutes)}
+                        r="4"
+                        fill="#16a34a"
+                      />
+                    ) : null
+                  )}
+
+                  {employeeLatencySeries.map((point, index) => (
+                    <text
+                      key={`employee-x-label-${point.key}`}
+                      x={toEmployeeLatencyX(index)}
+                      y={employeeLatencyChartHeight - 16}
+                      textAnchor="middle"
+                      className="fill-slate-500 text-[11px]"
+                    >
+                      {point.label}
+                    </text>
+                  ))}
+                </svg>
+              </div>
+            ) : (
+              <p className="mt-4 text-sm text-slate-500">
+                Timing data will appear after replies and ticket status updates are recorded.
+              </p>
+            )}
+          </div>
+
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-200 bg-[linear-gradient(180deg,_#ffffff_0%,_#f8fafc_100%)] px-5 py-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
