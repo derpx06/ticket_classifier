@@ -417,27 +417,7 @@ const Teams = () => {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 border-t border-slate-200 bg-slate-50 px-5 py-3 sm:px-6">
-          <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
-            <Building2 size={14} />
-            Company UUID
-          </span>
-          <code className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700">
-            {companyUuid}
-          </code>
-          <button
-            type="button"
-            onClick={copyCompanyId}
-            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-100"
-          >
-            <Copy size={13} />
-            Copy
-          </button>
-          <span className="ml-auto inline-flex items-center gap-1 text-xs text-slate-500">
-            <Mail size={13} />
-            Use onboarding emails when adding new members.
-          </span>
-        </div>
+        
       </section>
 
       <SectionShell

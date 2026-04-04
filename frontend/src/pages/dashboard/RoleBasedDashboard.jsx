@@ -92,6 +92,53 @@ const RoleBasedDashboard = () => {
     ];
   }, [tickets]);
 
+  const assignedCount = statCards[0]?.value ?? 0;
+  const pendingCount = statCards[1]?.value ?? 0;
+  const resolvedCount = statCards[2]?.value ?? 0;
+  const escalatedCount = statCards[3]?.value ?? 0;
+  const employeeOpenLoad = assignedCount + pendingCount + escalatedCount;
+  const employeeResolvedShare = tickets.length ? Math.round((resolvedCount / tickets.length) * 100) : 0;
+  const employeeUrgentTickets = useMemo(
+    () =>
+      tickets.filter((ticket) => {
+        const priority = typeof ticket.priority === 'string' ? ticket.priority.toLowerCase() : '';
+        const status = typeof ticket.status === 'string' ? ticket.status.toLowerCase() : '';
+        return (priority === 'high' || priority === 'critical') && status !== 'resolved';
+      }),
+    [tickets]
+  );
+
+  const employeeStatCards = [
+    {
+      label: 'Assigned',
+      value: assignedCount,
+      subtitle: 'Actively owned tickets',
+      icon: Layers3,
+      palette: 'border-blue-200 bg-blue-50/70 text-blue-700',
+    },
+    {
+      label: 'Pending',
+      value: pendingCount,
+      subtitle: 'Awaiting your action',
+      icon: Clock3,
+      palette: 'border-amber-200 bg-amber-50/70 text-amber-700',
+    },
+    {
+      label: 'Resolved',
+      value: resolvedCount,
+      subtitle: 'Completed successfully',
+      icon: CheckCircle2,
+      palette: 'border-emerald-200 bg-emerald-50/70 text-emerald-700',
+    },
+    {
+      label: 'Escalated',
+      value: escalatedCount,
+      subtitle: 'Forwarded for support',
+      icon: CircleAlert,
+      palette: 'border-rose-200 bg-rose-50/70 text-rose-700',
+    },
+  ];
+
   const recentTickets = useMemo(() => {
     return [...tickets]
       .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
@@ -688,132 +735,224 @@ const RoleBasedDashboard = () => {
   }
 
   return (
-    <div className="space-y-5 font-sans">
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h1 className="text-xl font-semibold text-slate-900">Support Workspace</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          AI-powered employee console for monitoring and resolving customer tickets.
-        </p>
-      </div>
+    <div className="space-y-6 font-sans">
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="relative overflow-hidden bg-[linear-gradient(120deg,_rgba(15,23,42,1)_0%,_rgba(30,64,175,1)_58%,_rgba(2,132,199,1)_100%)] px-5 py-6 text-white sm:px-6">
+          <span className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
+          <span className="pointer-events-none absolute -bottom-16 left-20 h-40 w-40 rounded-full bg-cyan-300/25 blur-2xl" />
 
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {statCards.map((card) => (
-          <article
-            key={card.label}
-            className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
-          >
-            <p className="text-sm font-medium text-slate-600">{card.label}</p>
-            <p className="mt-2 text-4xl font-bold text-primary">{card.value}</p>
-            <p className="mt-1 text-sm text-slate-500">{card.subtitle}</p>
-          </article>
-        ))}
-      </section>
-
-      <section className="grid grid-cols-1 gap-6 lg:grid-cols-10">
-        <div className="space-y-6 lg:col-span-7">
-          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-200 px-5 py-4">
-              <h2 className="text-xl font-semibold text-slate-900">Recent Queries</h2>
+          <div className="relative flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100">Employee Console</p>
+              <h1 className="mt-2 text-2xl font-semibold md:text-3xl">Support Execution Dashboard</h1>
+              <p className="mt-1 max-w-2xl text-sm text-blue-100">
+                Keep queue movement steady, focus on urgent customer issues, and close tickets with confidence.
+              </p>
             </div>
-
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Ticket ID
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Message
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Category
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Priority
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
-                  {recentTickets.map((ticket) => (
-                    <tr
-                      key={ticket._id || ticket.id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => setSelectedTicketId(ticket._id || ticket.id)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          setSelectedTicketId(ticket._id || ticket.id);
-                        }
-                      }}
-                      className={`cursor-pointer transition-colors hover:bg-blue-50 ${
-                        selectedTicketId === (ticket._id || ticket.id) ? 'bg-blue-50/70' : ''
-                      }`}
-                    >
-                      <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-blue-700">
-                        {ticket.ticketCode || ticket._id || ticket.id}
-                      </td>
-                      <td className="max-w-[220px] truncate px-4 py-3 text-sm text-slate-700">
-                        {ticket.message}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-700">{formatLabel(ticket.category)}</td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                            priorityStyles[ticket.priority] || 'bg-slate-100 text-slate-700'
-                          }`}
-                        >
-                          {formatLabel(ticket.priority)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                            statusStyles[ticket.status] || 'bg-slate-100 text-slate-700'
-                          }`}
-                        >
-                          {formatLabel(ticket.status)}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="grid grid-cols-1 gap-2 text-xs font-medium text-slate-100 sm:grid-cols-2">
+              <span className="rounded-full border border-white/25 bg-white/10 px-3 py-1.5">
+                Live tickets: {tickets.length}
+              </span>
+              <span className="rounded-full border border-white/25 bg-white/10 px-3 py-1.5">
+                Open workload: {employeeOpenLoad}
+              </span>
             </div>
           </div>
 
+          <div className="relative mt-5 grid grid-cols-2 gap-2 text-xs font-semibold sm:grid-cols-4">
+            {employeeStatCards.map((card) => {
+              const Icon = card.icon;
+              return (
+                <article key={card.label} className="rounded-xl border border-white/20 bg-white/10 px-3 py-2.5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-blue-100">{card.label}</p>
+                    <Icon size={14} className="text-blue-100" />
+                  </div>
+                  <p className="mt-0.5 text-lg text-white">{card.value}</p>
+                  <p className="text-[11px] text-blue-100/90">{card.subtitle}</p>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {employeeStatCards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <article
+              key={`${card.label}-summary`}
+              className={`rounded-2xl border p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md ${card.palette}`}
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wide">{card.label}</p>
+                <span className="inline-flex rounded-lg bg-white/60 p-2">
+                  <Icon size={16} />
+                </span>
+              </div>
+              <p className="mt-2 text-3xl font-bold">{card.value}</p>
+              <p className="mt-1 text-xs">{card.subtitle}</p>
+            </article>
+          );
+        })}
+      </section>
+
+      <section className="grid grid-cols-1 gap-5 xl:grid-cols-12">
+        <div className="space-y-5 xl:col-span-8">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="border-b border-slate-200 bg-[linear-gradient(180deg,_#ffffff_0%,_#f8fafc_100%)] px-5 py-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">Recent Ticket Stream</h2>
+                  <p className="text-xs text-slate-500">Latest customer conversations and assignment updates</p>
+                </div>
+                <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
+                  <BarChart3 size={13} />
+                  {recentTickets.length} of {tickets.length} shown
+                </span>
+              </div>
+            </div>
+
+            <div className="divide-y divide-slate-100">
+              {isLoading ? (
+                <p className="px-5 py-6 text-sm text-slate-500">Loading ticket activity...</p>
+              ) : recentTickets.length === 0 ? (
+                <p className="px-5 py-6 text-sm text-slate-500">No recent tickets available.</p>
+              ) : (
+                recentTickets.map((ticket) => (
+                  <button
+                    key={ticket._id || ticket.id}
+                    type="button"
+                    onClick={() => setSelectedTicketId(ticket._id || ticket.id)}
+                    className={`group w-full px-5 py-4 text-left transition hover:bg-blue-50/60 ${
+                      selectedTicketId === (ticket._id || ticket.id)
+                        ? 'bg-blue-50/70 ring-1 ring-inset ring-blue-200'
+                        : ''
+                    }`}
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-blue-700">
+                          {ticket.ticketCode || ticket._id || ticket.id}
+                        </p>
+                        <p className="mt-1 line-clamp-2 text-sm text-slate-700">{ticket.message}</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                            {formatLabel(ticket.category)}
+                          </span>
+                          <span
+                            className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                              priorityStyles[ticket.priority] || 'bg-slate-100 text-slate-700'
+                            }`}
+                          >
+                            {formatLabel(ticket.priority)}
+                          </span>
+                          <span
+                            className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                              statusStyles[ticket.status] || 'bg-slate-100 text-slate-700'
+                            }`}
+                          >
+                            {formatLabel(ticket.status)}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-xs font-medium text-slate-500">
+                        {ticket.createdAt ? formatSlotWithDate(ticket.createdAt) : 'Unknown time'}
+                      </p>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
         </div>
 
-        <aside className="space-y-4 lg:col-span-3">
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900">Action Center</h2>
-
-            <div className="mt-4 space-y-4">
-              <div className="rounded-lg bg-blue-50 p-4">
-                <p className="text-sm font-semibold text-blue-800">
-                  Pending Tickets: {statCards[1].value}
+        <aside className="space-y-5 xl:col-span-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 className="text-lg font-semibold text-slate-900">Focused Ticket</h2>
+            {selectedTicket ? (
+              <div className="mt-3 rounded-xl border border-blue-100 bg-blue-50/40 p-4">
+                <p className="text-sm font-semibold text-blue-700">
+                  {selectedTicket.ticketCode || selectedTicket._id || selectedTicket.id}
                 </p>
-                <p className="mt-1 text-sm text-blue-700">
-                  {isLoading
-                    ? 'Loading tickets...'
-                    : `You have ${statCards[1].value} tickets awaiting response`}
+                <p className="mt-1 text-sm text-slate-700">{selectedTicket.message}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span
+                    className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                      priorityStyles[selectedTicket.priority] || 'bg-slate-100 text-slate-700'
+                    }`}
+                  >
+                    {formatLabel(selectedTicket.priority)}
+                  </span>
+                  <span
+                    className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                      statusStyles[selectedTicket.status] || 'bg-slate-100 text-slate-700'
+                    }`}
+                  >
+                    {formatLabel(selectedTicket.status)}
+                  </span>
+                </div>
+                <p className="mt-3 text-xs text-slate-500">
+                  Customer: {selectedTicket.customer || 'Unknown customer'}
                 </p>
               </div>
+            ) : (
+              <p className="mt-3 text-sm text-slate-500">Select a ticket from the stream to view details.</p>
+            )}
+          </div>
 
-              <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-                <p className="text-sm font-semibold text-red-700">High Priority Alerts</p>
-                <ul className="mt-2 space-y-2 text-sm text-red-700">
-                  <li>Payment gateway errors detected for 2 users.</li>
-                  <li>Repeated login failures from enterprise account.</li>
-                </ul>
+          <div className="rounded-2xl border border-rose-200 bg-rose-50/60 p-5 shadow-sm">
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={17} className="text-rose-700" />
+              <h2 className="text-lg font-semibold text-rose-700">Priority Radar</h2>
+            </div>
+            <p className="mt-1 text-sm text-rose-700">
+              High-priority unresolved tickets: {employeeUrgentTickets.length}
+            </p>
+            {employeeUrgentTickets.length === 0 ? (
+              <p className="mt-3 text-sm text-rose-600/90">No active high-priority tickets right now.</p>
+            ) : (
+              <ul className="mt-3 space-y-2">
+                {employeeUrgentTickets.slice(0, 4).map((ticket) => (
+                  <li key={ticket._id || ticket.id}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTicketId(ticket._id || ticket.id)}
+                      className="w-full rounded-lg border border-rose-200 bg-white px-3 py-2 text-left transition hover:bg-rose-50"
+                    >
+                      <p className="text-sm font-semibold text-rose-700">
+                        {ticket.ticketCode || ticket._id || ticket.id}
+                      </p>
+                      <p className="truncate text-xs text-slate-600">{ticket.message}</p>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 className="text-lg font-semibold text-slate-900">Shift Insights</h2>
+            <div className="mt-3 space-y-3">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="text-xs font-medium text-slate-500">Open Workload</p>
+                <p className="mt-1 text-xl font-semibold text-slate-900">{employeeOpenLoad} tickets</p>
               </div>
-
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <p className="text-sm font-semibold text-slate-800">AI Suggestions Available</p>
-                <p className="mt-1 text-sm text-slate-600">Use AI to reply faster</p>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="text-xs font-medium text-slate-500">Resolution Share</p>
+                <p className="mt-1 text-xl font-semibold text-slate-900">{employeeResolvedShare}%</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="text-xs font-medium text-slate-500">Queue Health</p>
+                <p className="mt-1 text-sm font-semibold text-slate-700">
+                  {pendingCount > resolvedCount ? 'Backlog building' : 'Healthy processing pace'}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {pendingCount > resolvedCount
+                    ? 'Prioritize pending tickets to reduce spillover.'
+                    : 'Current response and resolution pace is stable.'}
+                </p>
               </div>
             </div>
           </div>
