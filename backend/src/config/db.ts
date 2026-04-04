@@ -143,6 +143,17 @@ async function ensureIndexes(database: Db): Promise<void> {
     knowledgeSites.createIndex({ id: 1 }, { unique: true }),
     knowledgeSites.createIndex({ companyId: 1, baseUrl: 1 }, { unique: true }),
     knowledgeSites.createIndex({ companyId: 1 }),
+    (async () => {
+      try {
+        const existing = await sitemaps.indexes();
+        const legacy = existing.find((idx) => idx.name === "companyId_1");
+        if (legacy) {
+          await sitemaps.dropIndex("companyId_1");
+        }
+      } catch (error) {
+        console.warn("[DB] Unable to drop legacy sitemaps index:", error);
+      }
+    })(),
     sitemaps.createIndex({ companyId: 1, websiteId: 1 }, { unique: true }),
     tickets.createIndex({ companyId: 1, createdAt: -1 }),
     tickets.createIndex({ companyId: 1, status: 1, updatedAt: -1 }),

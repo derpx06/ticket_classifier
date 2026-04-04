@@ -1,9 +1,10 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { crawlerService } from '../services/Crawler';
+import { fetchSitemapUrls } from '../utils/sitemap';
 import { advancedCrawler } from '../services/AdvancedCrawler';
 import { indexerService } from '../services/Indexer';
 import { getCollections, nextSequence, ApiKeyDoc } from '../config/db';
-import { qdrant, COLLECTION_NAME } from '../config/qdrant';
+import { qdrant, COLLECTION_NAME, getKnowledgeCollectionName } from '../config/qdrant';
 import { ragEngine } from '../services/RAGEngine';
 import { emitTicketUpdateFromHttp } from '../services/chatSocketServer';
 import { createRouteMap, routeMapToSitemapPages, summarizeRouteMap } from '../utils/mapNextRoutes';
@@ -71,6 +72,7 @@ const resolveChatCompany = async (req: Request, res: Response, next: NextFunctio
             }
             (req as any).chatCompanyId = keyDoc.companyId;
             (req as any).chatWebsiteId = keyDoc.websiteId ?? null;
+            (req as any).chatFromApiKey = true;
             return next();
         } catch {
             return res.status(500).json({ error: 'Auth error' });
@@ -84,6 +86,7 @@ const resolveChatCompany = async (req: Request, res: Response, next: NextFunctio
             const decoded = jwt.verify(token, env.jwtSecret) as { companyId?: number };
             if (typeof decoded.companyId === 'number') {
                 (req as any).chatCompanyId = decoded.companyId;
+                (req as any).chatFromApiKey = false;
                 return next();
             }
         } catch {
@@ -99,9 +102,11 @@ const resolveChatCompany = async (req: Request, res: Response, next: NextFunctio
  * POST /api/rag/chat
  */
 router.post('/chat', resolveChatCompany, async (req: Request, res: Response) => {
-    const { query, sessionId } = req.body;
+    const { query, sessionId, websiteId: websiteIdInput } = req.body;
     const companyId = Number((req as any).chatCompanyId);
-    const websiteId = (req as any).chatWebsiteId ?? null;
+    const fromApiKey = Boolean((req as any).chatFromApiKey);
+    const requestedWebsiteId = Number.isFinite(Number(websiteIdInput)) ? Number(websiteIdInput) : null;
+    const websiteId = fromApiKey ? (req as any).chatWebsiteId ?? null : requestedWebsiteId ?? (req as any).chatWebsiteId ?? null;
     if (!Number.isFinite(companyId) || companyId <= 0) {
         return res.status(401).json({ error: 'Unable to resolve company context.' });
     }
@@ -204,39 +209,48 @@ router.get('/knowledge-base', requireAuth, async (req: Request, res: Response) =
         const sites = await knowledgeSites.find({ companyId }).toArray();
         const sitemapDocs = await sitemaps.find({ companyId }).toArray();
 
-        let vectorCount = 0;
-        try {
-            const info = await qdrant.getCollection(COLLECTION_NAME);
-            vectorCount = Number((info as any)?.points_count ?? 0);
-        } catch (err) {
-            console.error('[KnowledgeBase] Qdrant info fetch failed:', err);
-        }
+        const fetchVectorCount = async (companyId: number, websiteId?: number | null) => {
+            const collectionName = getKnowledgeCollectionName(companyId, websiteId ?? null);
+            try {
+                const info = await qdrant.getCollection(collectionName);
+                return Number((info as any)?.points_count ?? 0);
+            } catch (err) {
+                console.error('[KnowledgeBase] Qdrant info fetch failed:', err);
+                return 0;
+            }
+        };
 
-        const sitePayloads = sites.map((site) => {
+        const sitePayloads = await Promise.all(sites.map(async (site) => {
             const siteSitemap = sitemapDocs.find((doc) => doc.websiteId === site.id);
             const pages = Array.isArray(siteSitemap?.pages) ? siteSitemap.pages : [];
+            const vectorCount = await fetchVectorCount(companyId, site.id);
             return {
                 id: site.id,
                 label: site.label,
                 baseUrl: site.baseUrl,
                 totalPages: pages.length,
                 pages,
+                vectorCount,
             };
-        });
+        }));
 
         if (sitePayloads.length === 0) {
             const fallbackSitemap = sitemapDocs.find((doc) => doc.websiteId == null);
             const pages = Array.isArray(fallbackSitemap?.pages) ? fallbackSitemap.pages : [];
             if (pages.length > 0) {
+                const vectorCount = await fetchVectorCount(companyId, null);
                 sitePayloads.push({
                     id: null,
                     label: fallbackSitemap?.baseUrl || 'Default',
                     baseUrl: fallbackSitemap?.baseUrl || '',
                     totalPages: pages.length,
                     pages,
+                    vectorCount,
                 });
             }
         }
+
+        const vectorCount = sitePayloads.reduce((sum, site) => sum + Number(site.vectorCount || 0), 0);
 
         return res.status(200).json({
             vectorCount,
@@ -257,12 +271,14 @@ router.post('/crawl', requireAuth, async (req: Request, res: Response) => {
         url,
         maxPages,
         depthLimit,
+        ignoreDepth,
         useAdvanced,
         useAI,
         auth,
         excludePatterns,
         privacyPatterns,
         seedUrls,
+        useSitemap,
         websiteId,
         websiteLabel,
     } = req.body;
@@ -274,20 +290,37 @@ router.post('/crawl', requireAuth, async (req: Request, res: Response) => {
     try {
         console.log(`Starting crawl for ${url}...`);
         let pages;
+        let autoSeedUrls: string[] = [];
+        if (useSitemap) {
+            try {
+                const sitemap = await fetchSitemapUrls(url, { maxUrls: maxPages || 2000 });
+                autoSeedUrls = sitemap.urls || [];
+                if (autoSeedUrls.length > 0) {
+                    console.log(`[Crawler] Loaded ${autoSeedUrls.length} URLs from sitemap.`);
+                }
+            } catch (error) {
+                console.warn('[Crawler] Sitemap discovery failed:', error instanceof Error ? error.message : String(error));
+            }
+        }
+
+        const mergedSeedUrls = Array.from(new Set([...(seedUrls || []), ...autoSeedUrls]));
+
+        const effectiveDepth =
+            ignoreDepth ? Number.MAX_SAFE_INTEGER : (depthLimit ?? 2);
 
         if (useAdvanced) {
-            pages = await advancedCrawler.crawl(url, maxPages || 10, depthLimit ?? 2, auth || {}, {
+            pages = await advancedCrawler.crawl(url, maxPages || 10, effectiveDepth, auth || {}, {
                 excludePatterns: excludePatterns || [],
                 privacyPatterns: privacyPatterns || [],
                 useAI: useAI || false,
-                seedUrls: seedUrls || []
+                seedUrls: mergedSeedUrls
             });
         } else {
-            pages = await crawlerService.crawl(url, maxPages || 20, depthLimit ?? 2, auth || {}, {
+            pages = await crawlerService.crawl(url, maxPages || 20, effectiveDepth, auth || {}, {
                 excludePatterns: excludePatterns || [],
                 privacyPatterns: privacyPatterns || [],
                 useAI: useAI || false,
-                seedUrls: seedUrls || []
+                seedUrls: mergedSeedUrls
             });
         }
 
@@ -389,7 +422,15 @@ router.post('/sitemap/codebase', requireAuth, async (req: Request, res: Response
  */
 router.delete('/knowledge-base', requireAuth, async (req: Request, res: Response) => {
     try {
-        await indexerService.deleteAll();
+        const companyId = req.auth?.companyId;
+        const websiteIdRaw = req.query?.websiteId;
+        const websiteId =
+            typeof websiteIdRaw === 'string' && websiteIdRaw.length > 0
+                ? Number(websiteIdRaw)
+                : websiteIdRaw === 'null'
+                    ? null
+                    : undefined;
+        await indexerService.deleteAll({ companyId, websiteId });
         return res.status(200).json({ message: 'Knowledge base fully cleared.' });
     } catch (error) {
         console.error('Delete knowledge error:', error);

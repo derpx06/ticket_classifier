@@ -43,58 +43,58 @@ async function createCollectionWithExpectedDim(name: string) {
     console.log(`[Qdrant] Created collection "${name}" (dim=${VECTOR_SIZE})`);
 }
 
+async function ensurePayloadIndexes(name: string) {
+    try {
+        await qdrant.createPayloadIndex(name, {
+            field_name: 'companyId',
+            field_schema: 'integer',
+        });
+        await qdrant.createPayloadIndex(name, {
+            field_name: 'websiteId',
+            field_schema: 'integer',
+        });
+    } catch {
+        // ignore index errors (already exists or cloud restrictions)
+    }
+}
+
 /**
  * Ensure the collection exists in Qdrant, creating it if not.
  */
-export async function ensureCollection(): Promise<void> {
+export const getKnowledgeCollectionName = (companyId?: number, websiteId?: number | null): string => {
+    const suffix = websiteId === null || websiteId === undefined ? 'default' : `w${websiteId}`;
+    const company = typeof companyId === 'number' ? `c${companyId}` : 'c0';
+    return `${COLLECTION_NAME}_${company}_${suffix}`;
+};
+
+export async function ensureCollection(name: string = COLLECTION_NAME): Promise<void> {
     const { collections } = await qdrant.getCollections();
-    const exists = collections.some(c => c.name === COLLECTION_NAME);
+    const exists = collections.some(c => c.name === name);
 
     if (!exists) {
-        await createCollectionWithExpectedDim(COLLECTION_NAME);
+        await createCollectionWithExpectedDim(name);
+        await ensurePayloadIndexes(name);
         return;
     }
 
-    const info = await qdrant.getCollection(COLLECTION_NAME);
+    const info = await qdrant.getCollection(name);
     const existingSize = extractVectorSize((info as any)?.config?.params?.vectors);
 
     if (existingSize === VECTOR_SIZE) {
-        try {
-            await qdrant.createPayloadIndex(COLLECTION_NAME, {
-                field_name: 'companyId',
-                field_schema: 'integer',
-            });
-            await qdrant.createPayloadIndex(COLLECTION_NAME, {
-                field_name: 'websiteId',
-                field_schema: 'integer',
-            });
-        } catch {
-            // ignore index errors (already exists or cloud restrictions)
-        }
-        console.log(`[Qdrant] Collection "${COLLECTION_NAME}" already exists (dim=${existingSize})`);
+        await ensurePayloadIndexes(name);
+        console.log(`[Qdrant] Collection "${name}" already exists (dim=${existingSize})`);
         return;
     }
 
-    const msg = `[Qdrant] Dimension mismatch for "${COLLECTION_NAME}": existing=${existingSize}, expected=${VECTOR_SIZE}`;
+    const msg = `[Qdrant] Dimension mismatch for "${name}": existing=${existingSize}, expected=${VECTOR_SIZE}`;
     if (!AUTO_RECREATE_ON_DIM_MISMATCH) {
         throw new Error(`${msg}. Set QDRANT_AUTO_RECREATE_ON_DIM_MISMATCH=true to auto-fix.`);
     }
 
     console.warn(`${msg}. Recreating collection...`);
-    await qdrant.deleteCollection(COLLECTION_NAME);
-    await createCollectionWithExpectedDim(COLLECTION_NAME);
-    try {
-        await qdrant.createPayloadIndex(COLLECTION_NAME, {
-            field_name: 'companyId',
-            field_schema: 'integer',
-        });
-        await qdrant.createPayloadIndex(COLLECTION_NAME, {
-            field_name: 'websiteId',
-            field_schema: 'integer',
-        });
-    } catch {
-        // ignore index errors
-    }
+    await qdrant.deleteCollection(name);
+    await createCollectionWithExpectedDim(name);
+    await ensurePayloadIndexes(name);
 }
 
 export async function ensureTicketsCollection(): Promise<void> {
@@ -103,6 +103,7 @@ export async function ensureTicketsCollection(): Promise<void> {
 
     if (!exists) {
         await createCollectionWithExpectedDim(TICKETS_COLLECTION_NAME);
+        await ensurePayloadIndexes(TICKETS_COLLECTION_NAME);
         return;
     }
 
@@ -122,4 +123,5 @@ export async function ensureTicketsCollection(): Promise<void> {
     console.warn(`${msg}. Recreating collection...`);
     await qdrant.deleteCollection(TICKETS_COLLECTION_NAME);
     await createCollectionWithExpectedDim(TICKETS_COLLECTION_NAME);
+    await ensurePayloadIndexes(TICKETS_COLLECTION_NAME);
 }

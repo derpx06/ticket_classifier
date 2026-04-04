@@ -158,6 +158,7 @@ export class AdvancedCrawler {
 
         for (let depth = 0; depth <= maxDepth && this.pages.length < maxPages; depth++) {
             const currentLevel = [...(levels.get(depth) || [])];
+            if (currentLevel.length === 0) break;
             const nextLevelCounts = new Map<string, number>();
             const nextNextLevelCounts = new Map<string, number>();
             console.log(`[Advanced] Processing depth ${depth} (${currentLevel.length} urls)`);
@@ -205,12 +206,7 @@ export class AdvancedCrawler {
                         const links = await this.extractLinks(page, baseDomain);
                         for (const link of links) {
                             if (!this.visitedUrls.has(link) && link.startsWith(baseDomain) && this.isCrawlablePath(link)) {
-                                const deferToDepth2 = depth === 0 && this.isLikelyDetailPage(link);
-                                if (deferToDepth2 && depth + 2 <= maxDepth) {
-                                    nextNextLevelCounts.set(link, (nextNextLevelCounts.get(link) || 0) + 1);
-                                } else {
-                                    nextLevelCounts.set(link, (nextLevelCounts.get(link) || 0) + 1);
-                                }
+                                nextLevelCounts.set(link, (nextLevelCounts.get(link) || 0) + 1);
                             }
                         }
                     }
@@ -228,9 +224,6 @@ export class AdvancedCrawler {
                         .map(([url]) => url);
 
                 levels.set(depth + 1, rankMap(nextLevelCounts));
-                if (depth + 2 <= maxDepth) {
-                    levels.set(depth + 2, rankMap(nextNextLevelCounts));
-                }
             }
         }
 

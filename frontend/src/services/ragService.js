@@ -7,13 +7,14 @@ const ragService = {
     /**
      * Send a query to the RAG engine
      */
-    async chat(query, sessionId = 'default', companyId = null) {
+    async chat(query, sessionId = 'default', companyId = null, websiteId = null) {
         const response = await apiClient.post(
             '/rag/chat',
             {
                 query,
                 sessionId,
-                companyId
+                companyId,
+                websiteId
             },
             {
                 // RAG chat may take longer on first request (embedding/model warm-up).

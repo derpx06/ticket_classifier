@@ -446,6 +446,24 @@ export const createChatbotWidget = (
           (typeof data?.message === 'string' && data.message) ||
           'I processed your question, but no answer text was returned.'
         appendBotBubble(answer, { markdown: true, store: true })
+        const references =
+          (Array.isArray((data as any)?.sources) && (data as any).sources) ||
+          (Array.isArray((data as any)?.references) && (data as any).references) ||
+          []
+        if (references.length > 0) {
+          const items = references
+            .slice(0, 5)
+            .map((ref: any) => {
+              const url = ref?.url || ref?.link
+              if (!url) return null
+              const title = ref?.title || ref?.name || url
+              return `- [${title}](${url})`
+            })
+            .filter(Boolean)
+          if (items.length > 0) {
+            appendBotBubble(['### References', ...items].join('\n'), { markdown: true, store: true })
+          }
+        }
         if (data?.raise_ticket && data?.ticket_payload) {
           const payload = data.ticket_payload as {
             summary?: string

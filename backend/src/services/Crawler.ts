@@ -104,6 +104,7 @@ export class CrawlerService {
 
     for (let depth = 0; depth <= maxDepth && this.pages.length < maxPages; depth++) {
       const currentLevel = [...(levels.get(depth) || [])];
+      if (currentLevel.length === 0) break;
       const nextLevelCounts = new Map<string, number>();
       const nextNextLevelCounts = new Map<string, number>();
       console.log(`[Crawler] Processing depth ${depth} (${currentLevel.length} urls)`);
@@ -166,12 +167,7 @@ export class CrawlerService {
                 try {
                   const absoluteUrl = new URL(href, url).href.split('#')[0];
                   if (absoluteUrl.startsWith(baseUrl) && !this.visited.has(absoluteUrl) && this.isCrawlablePath(absoluteUrl)) {
-                    const deferToDepth2 = depth === 0 && this.isLikelyDetailPage(absoluteUrl);
-                    if (deferToDepth2 && depth + 2 <= maxDepth) {
-                      nextNextLevelCounts.set(absoluteUrl, (nextNextLevelCounts.get(absoluteUrl) || 0) + 1);
-                    } else {
-                      nextLevelCounts.set(absoluteUrl, (nextLevelCounts.get(absoluteUrl) || 0) + 1);
-                    }
+                    nextLevelCounts.set(absoluteUrl, (nextLevelCounts.get(absoluteUrl) || 0) + 1);
                   }
                 } catch (e) { /* ignore */ }
               }
@@ -188,23 +184,7 @@ export class CrawlerService {
             .sort((a, b) => this.scoreUrlPriority(a[0], a[1]) - this.scoreUrlPriority(b[0], b[1]))
             .map(([url]) => url);
 
-        // Hard partition after depth 0: keep hub/navigation pages at depth 1,
-        // push detail/article pages to depth 2.
-        if (depth === 0 && depth + 2 <= maxDepth) {
-          const depth1: string[] = [];
-          const depth2: string[] = rankMap(nextNextLevelCounts);
-          for (const candidate of rankMap(nextLevelCounts)) {
-            if (this.isLikelyDetailPage(candidate)) depth2.push(candidate);
-            else depth1.push(candidate);
-          }
-          levels.set(depth + 1, [...new Set(depth1)]);
-          levels.set(depth + 2, [...new Set(depth2)]);
-        } else {
-          levels.set(depth + 1, rankMap(nextLevelCounts));
-          if (depth + 2 <= maxDepth) {
-            levels.set(depth + 2, rankMap(nextNextLevelCounts));
-          }
-        }
+        levels.set(depth + 1, rankMap(nextLevelCounts));
       }
     }
 

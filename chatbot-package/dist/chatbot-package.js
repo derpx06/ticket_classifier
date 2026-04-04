@@ -1933,10 +1933,22 @@ var Xe = "chatbot-package-styles", Ze = {
 				});
 				if (!i.ok) throw Error("Unable to fetch chatbot response right now.");
 				let a = xt(await i.json());
-				if (L(typeof a?.answer == "string" && a.answer || typeof a?.response == "string" && a.response || typeof a?.message == "string" && a.message || "I processed your question, but no answer text was returned.", {
+				L(typeof a?.answer == "string" && a.answer || typeof a?.response == "string" && a.response || typeof a?.message == "string" && a.message || "I processed your question, but no answer text was returned.", {
 					markdown: !0,
 					store: !0
-				}), a?.raise_ticket && a?.ticket_payload) {
+				});
+				let o = Array.isArray(a?.sources) && a.sources || Array.isArray(a?.references) && a.references || [];
+				if (o.length > 0) {
+					let e = o.slice(0, 5).map((e) => {
+						let t = e?.url || e?.link;
+						return t ? `- [${e?.title || e?.name || t}](${t})` : null;
+					}).filter(Boolean);
+					e.length > 0 && L(["### References", ...e].join("\n"), {
+						markdown: !0,
+						store: !0
+					});
+				}
+				if (a?.raise_ticket && a?.ticket_payload) {
 					let e = a.ticket_payload, t = a?.ticket?._id || a?.ticketId || a?.ticket_id;
 					L([
 						"### Ticket Details",

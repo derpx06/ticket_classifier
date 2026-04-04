@@ -22,11 +22,14 @@ export default function App() {
   const [apiBaseUrl, setApiBaseUrl] = useState(() =>
     localStorage.getItem('demo_api_base_url') || defaultApiBase,
   )
-  const [widgetKey, setWidgetKey] = useState(() => localStorage.getItem('demo_widget_key') || '')
+  const [apiKey, setApiKey] = useState(() => {
+    const storedApiKey = localStorage.getItem('demo_api_key')
+    return storedApiKey || ''
+  })
   const [isWidgetEnabled, setIsWidgetEnabled] = useState(() => {
     return localStorage.getItem('demo_widget_enabled') === 'true'
   })
-  const [statusMessage, setStatusMessage] = useState('Configure API base URL and widget key, then enable chatbot.')
+  const [statusMessage, setStatusMessage] = useState('Configure API base URL and API key, then enable chatbot.')
   const widgetRef = useRef(null)
 
   useEffect(() => {
@@ -34,8 +37,16 @@ export default function App() {
   }, [apiBaseUrl])
 
   useEffect(() => {
-    localStorage.setItem('demo_widget_key', widgetKey)
-  }, [widgetKey])
+    localStorage.setItem('demo_api_key', apiKey)
+  }, [apiKey])
+
+  useEffect(() => {
+    const legacyWidgetKey = localStorage.getItem('demo_widget_key')
+    if (legacyWidgetKey && !apiKey) {
+      localStorage.removeItem('demo_widget_key')
+      setStatusMessage('Paste the API key (not the widget key) to use the correct knowledge base.')
+    }
+  }, [apiKey])
 
   useEffect(() => {
     localStorage.setItem('demo_widget_enabled', String(isWidgetEnabled))
@@ -51,8 +62,8 @@ export default function App() {
       return
     }
 
-    if (!apiBaseUrl.trim() || !widgetKey.trim()) {
-      setStatusMessage('Cannot enable chatbot: API base URL and widget key are required.')
+    if (!apiBaseUrl.trim() || !apiKey.trim()) {
+      setStatusMessage('Cannot enable chatbot: API base URL and API key are required.')
       return
     }
 
@@ -69,7 +80,7 @@ export default function App() {
       primaryColor: '#2563eb',
       aiSupport: {
         apiBaseUrl: apiBaseUrl.trim(),
-        apiKey: widgetKey.trim(),
+        apiKey: apiKey.trim(),
       },
       humanSupport: {
         apiBaseUrl: apiBaseUrl.trim(),
@@ -77,7 +88,7 @@ export default function App() {
     })
 
     widgetRef.current = widget
-    setStatusMessage('Chatbot enabled. AI answers use your key; human handoff creates a ticket/session for your company.')
+    setStatusMessage('Chatbot enabled. AI answers use your API key; human handoff creates a ticket/session for your company.')
 
     return () => {
       if (widgetRef.current) {
@@ -85,7 +96,7 @@ export default function App() {
         widgetRef.current = null
       }
     }
-  }, [apiBaseUrl, widgetKey, isWidgetEnabled])
+  }, [apiBaseUrl, apiKey, isWidgetEnabled])
 
   const toggleWidget = () => {
     setIsWidgetEnabled((prev) => !prev)
@@ -115,7 +126,7 @@ export default function App() {
         <section className="config-card">
           <h2>Widget Setup (Tenant Test)</h2>
           <p className="config-note">
-            Use the API base URL and widget key generated for the admin company. This simulates how customers
+            Use the API base URL and API key generated for the admin company. This simulates how customers
             install chatbot on their own website with their own key.
           </p>
           <div className="config-grid">
@@ -129,12 +140,12 @@ export default function App() {
               />
             </label>
             <label>
-              <span>Widget API Key</span>
+              <span>API Key</span>
               <input
                 type="text"
-                value={widgetKey}
-                onChange={(e) => setWidgetKey(e.target.value)}
-                placeholder="Paste key from Knowledge Base > Deployment"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="Paste API key from Knowledge Base > Deployment"
               />
             </label>
           </div>

@@ -86,6 +86,7 @@ const KnowledgeBase = () => {
     const [chatLoading, setChatLoading] = useState(false);
     const [chatError, setChatError] = useState('');
     const [chatSessionId, setChatSessionId] = useState(`demo-${Date.now()}`);
+    const [demoWebsiteId, setDemoWebsiteId] = useState('');
     const [chatMessages, setChatMessages] = useState([
         {
             id: `assistant-welcome-${Date.now()}`,
@@ -110,6 +111,15 @@ const KnowledgeBase = () => {
             setNewKeyWebsiteId(firstSite.id);
         }
     }, [knowledgeData, newKeyWebsiteId]);
+
+    React.useEffect(() => {
+        if (!knowledgeData) return;
+        if (demoWebsiteId) return;
+        const firstSite = (knowledgeData?.sites || [])[0];
+        if (firstSite?.id) {
+            setDemoWebsiteId(String(firstSite.id));
+        }
+    }, [knowledgeData, demoWebsiteId]);
 
     React.useEffect(() => {
         if (!knowledgeData) return;
@@ -340,7 +350,7 @@ createChatbotWidget({
         setChatLoading(true);
 
         try {
-            const res = await ragService.chat(trimmed, chatSessionId);
+            const res = await ragService.chat(trimmed, chatSessionId, null, demoWebsiteId || null);
             const answer =
                 res?.answer ||
                 res?.response ||
@@ -687,7 +697,7 @@ createChatbotWidget({
                                                     </div>
                                                     <div className="rounded-lg border border-slate-200 p-3">
                                                         <p className="text-slate-400">Vector Chunks</p>
-                                                        <p className="text-lg font-bold text-slate-900">{knowledgeData?.vectorCount ?? 0}</p>
+                                                        <p className="text-lg font-bold text-slate-900">{site?.vectorCount ?? 0}</p>
                                                     </div>
                                                 </div>
                                                 <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
@@ -873,8 +883,27 @@ createChatbotWidget({
                         </div>
 
                         <div className="p-6 space-y-4">
-                            <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
-                                Session ID: <span className="font-mono text-slate-700">{chatSessionId}</span>
+                            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
+                                <div>
+                                    Session ID: <span className="font-mono text-slate-700">{chatSessionId}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Knowledge Base</span>
+                                    <select
+                                        value={demoWebsiteId}
+                                        onChange={(e) => setDemoWebsiteId(e.target.value)}
+                                        className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
+                                    >
+                                        {(knowledgeData?.sites || []).length === 0 && (
+                                            <option value="">No websites yet</option>
+                                        )}
+                                        {(knowledgeData?.sites || []).map((site) => (
+                                            <option key={site.id} value={site.id}>
+                                                {site.label || site.baseUrl}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
 
                             <div className="h-[420px] overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 space-y-3">

@@ -3,7 +3,7 @@ import { LocalEmbeddings } from './LocalEmbeddings';
 
 import { Document as LangChainDocument } from '@langchain/core/documents';
 import { v4 as uuidv4 } from 'uuid';
-import { qdrant, COLLECTION_NAME, ensureCollection } from '../config/qdrant';
+import { qdrant, ensureCollection, getKnowledgeCollectionName } from '../config/qdrant';
 import { getCollections } from '../config/db';
 import dotenv from 'dotenv';
 
@@ -11,7 +11,7 @@ dotenv.config();
 
 export class IndexerService {
     private embeddings: LocalEmbeddings;
-    private ready: boolean = false;
+    private readyCollections: Set<string> = new Set();
 
     constructor() {
         this.embeddings = new LocalEmbeddings();
@@ -19,10 +19,10 @@ export class IndexerService {
 
 
     /** Lazily ensure the Qdrant collection is ready */
-    private async init() {
-        if (!this.ready) {
-            await ensureCollection();
-            this.ready = true;
+    private async init(collectionName: string) {
+        if (!this.readyCollections.has(collectionName)) {
+            await ensureCollection(collectionName);
+            this.readyCollections.add(collectionName);
         }
     }
 
@@ -31,7 +31,8 @@ export class IndexerService {
         options?: { companyId?: number; websiteId?: number | null; baseUrl?: string | null },
     ): Promise<number> {
         if (pages.length === 0) return 0;
-        await this.init();
+        const collectionName = getKnowledgeCollectionName(options?.companyId, options?.websiteId ?? null);
+        await this.init(collectionName);
 
         // 1. Store Sitemap in MongoDB for navigation awareness
         try {
@@ -39,18 +40,29 @@ export class IndexerService {
             const companyId = options?.companyId ?? 1;
             const websiteId = options?.websiteId ?? null;
             const baseUrl = options?.baseUrl ?? null;
+            const existing = await sitemaps.findOne({ companyId, websiteId });
+            const existingPages = Array.isArray(existing?.pages) ? existing!.pages : [];
+            const pageMap = new Map<string, { url: string; title: string }>();
+            existingPages.forEach((p) => {
+                if (p?.url) pageMap.set(p.url, { url: p.url, title: p.title || p.url });
+            });
+            pages.forEach((p) => {
+                if (p?.url) pageMap.set(p.url, { url: p.url, title: p.title || p.url });
+            });
+            const mergedPages = Array.from(pageMap.values());
+
             await sitemaps.updateOne(
                 { companyId, websiteId },
                 {
                     $set: {
-                        pages: pages.map(p => ({ url: p.url, title: p.title })),
+                        pages: mergedPages,
                         baseUrl,
                         updatedAt: new Date()
                     }
                 },
                 { upsert: true }
             );
-            console.log(`[Indexer] Sitemap updated for company ${companyId}`);
+            console.log(`[Indexer] Sitemap updated for company ${companyId} (${mergedPages.length} pages)`);
         } catch (err) {
             console.error("[Indexer] Failed to store sitemap:", err);
         }
@@ -95,7 +107,7 @@ export class IndexerService {
                     },
                 }));
 
-                await qdrant.upsert(COLLECTION_NAME, { points, wait: true });
+                await qdrant.upsert(collectionName, { points, wait: true });
             } catch (err: any) {
                 console.error(`[Indexer] Batch embedding error (offset ${i}):`, err.message);
                 if (err.response?.data) console.error("[Indexer] Error details:", err.response.data);
@@ -105,7 +117,7 @@ export class IndexerService {
             if (i + batchSize < docs.length) await new Promise(r => setTimeout(r, 500));
         }
 
-        console.log(`[Indexer] Upserted ${docs.length} chunks to Qdrant`);
+        console.log(`[Indexer] Upserted ${docs.length} chunks to Qdrant (${collectionName})`);
         return docs.length;
     }
 
@@ -114,24 +126,14 @@ export class IndexerService {
         k: number = 5,
         filter?: { companyId?: number; websiteId?: number | null },
     ): Promise<LangChainDocument[]> {
-        await this.init();
+        const collectionName = getKnowledgeCollectionName(filter?.companyId, filter?.websiteId ?? null);
+        await this.init(collectionName);
         const queryVector = await this.embeddings.embedQuery(query);
-        const results = await qdrant.search(COLLECTION_NAME, {
+        const results = await qdrant.search(collectionName, {
             vector: queryVector,
             limit: k,
             with_payload: true,
-            filter: filter?.companyId
-                ? {
-                    must: [
-                        { key: 'companyId', match: { value: filter.companyId } },
-                        ...(filter.websiteId !== undefined
-                            ? filter.websiteId === null
-                                ? [{ is_null: { key: 'websiteId' } }]
-                                : [{ key: 'websiteId', match: { value: filter.websiteId } }]
-                            : []),
-                    ],
-                }
-                : undefined,
+            // Collection is already scoped per company + website, so no extra filter needed.
         });
 
         return results.map(r => new LangChainDocument({
@@ -141,12 +143,13 @@ export class IndexerService {
     }
 
     /** Delete all indexed knowledge — drops the Qdrant collection and recreates it empty */
-    async deleteAll(): Promise<void> {
-        await qdrant.deleteCollection(COLLECTION_NAME);
-        console.log(`[Indexer] Deleted collection "${COLLECTION_NAME}"`);
-        this.ready = false;         // force re-init on next use
-        await this.init();          // recreate immediately
-        console.log(`[Indexer] Recreated empty collection "${COLLECTION_NAME}"`);
+    async deleteAll(options?: { companyId?: number; websiteId?: number | null }): Promise<void> {
+        const collectionName = getKnowledgeCollectionName(options?.companyId, options?.websiteId ?? null);
+        await qdrant.deleteCollection(collectionName);
+        console.log(`[Indexer] Deleted collection "${collectionName}"`);
+        this.readyCollections.delete(collectionName);         // force re-init on next use
+        await this.init(collectionName);          // recreate immediately
+        console.log(`[Indexer] Recreated empty collection "${collectionName}"`);
     }
 }
 
