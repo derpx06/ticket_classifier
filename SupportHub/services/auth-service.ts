@@ -1,14 +1,20 @@
 import api from './api';
 
+export interface CompanyRoleRef {
+  id: number;
+  name: string;
+  baseRole: string;
+}
+
 export interface User {
-  id: string;
+  id: string | number;
   name: string;
   email: string;
   role: string;
-  companyId?: string;
+  companyId?: string | number;
   companyUuid?: string;
-  company?: any;
-  companyRole?: string;
+  company?: unknown;
+  companyRole?: CompanyRoleRef | null;
 }
 
 export interface LoginResponse {

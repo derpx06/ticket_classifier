@@ -14,6 +14,10 @@ export interface Ticket {
   updatedAt: string;
   customerId?: string;
   agentId?: string;
+  /** Numeric assignee user id from API `assignedTo` (agent currently handling the ticket). */
+  assignedTo?: number | null;
+  /** Company role id this ticket was routed to (team). */
+  assignedRoleId?: number | null;
   /** From API `customerName` */
   customerName?: string;
   /** Set when API `urgency` differs from `priority`. */
@@ -52,6 +56,12 @@ export function formatTicketCardDetails(t: Ticket): string {
   return parts.join(' · ');
 }
 
+function parseIntOrNull(v: unknown): number | null {
+  if (v == null || v === '') return null;
+  const n = typeof v === 'number' ? v : Number(v);
+  return Number.isInteger(n) ? n : null;
+}
+
 function pickString(v: unknown): string {
   if (v == null) return '';
   if (typeof v === 'string') return v;
@@ -86,6 +96,9 @@ export function normalizeTicket(raw: unknown): Ticket {
   const urgencyParsed = PRIORITIES.includes(uRaw as TicketPriority) ? (uRaw as TicketPriority) : undefined;
   const urgency = urgencyParsed && urgencyParsed !== priority ? urgencyParsed : undefined;
 
+  const assignedTo = parseIntOrNull(o.assignedTo);
+  const assignedRoleId = parseIntOrNull(o.assignedRoleId);
+
   return {
     id,
     subject,
@@ -95,7 +108,12 @@ export function normalizeTicket(raw: unknown): Ticket {
     createdAt: toIsoDate(o.createdAt),
     updatedAt: toIsoDate(o.updatedAt),
     customerId: pickString(o.customerId) || undefined,
-    agentId: pickString(o.agentId) || pickString(o.assignedTo) || undefined,
+    assignedTo: assignedTo ?? null,
+    assignedRoleId: assignedRoleId ?? null,
+    agentId:
+      pickString(o.agentId) ||
+      (assignedTo != null ? String(assignedTo) : pickString(o.assignedTo)) ||
+      undefined,
     customerName: pickString(o.customerName).trim() || undefined,
     urgency,
     assignedRoleName: pickString(o.assignedRoleName).trim() || undefined,
@@ -152,7 +170,11 @@ export const acceptTicket = async (ticketId: string): Promise<Ticket> => {
 
 export const updateTicketConfig = async (
   ticketId: string,
-  payload: { status?: Ticket['status']; priority?: Ticket['priority'] }
+  payload: {
+    status?: Ticket['status'];
+    priority?: Ticket['priority'];
+    assignedTo?: number | null;
+  }
 ): Promise<Ticket> => {
   const response = await api.patch<{ data: unknown }>(`/tickets/${ticketId}`, payload);
   return normalizeTicket(response.data.data);

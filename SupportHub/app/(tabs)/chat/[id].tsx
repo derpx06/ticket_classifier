@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -10,13 +10,25 @@ import {
   Platform,
   ActivityIndicator,
   ListRenderItem,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { format, isToday, isYesterday } from 'date-fns';
-import { getTicketMessages, sendMessage, Message, normalizeMessage } from '@/services/ticket-service';
+import {
+  getTicketMessages,
+  getTickets,
+  getMyTickets,
+  sendMessage,
+  updateTicketConfig,
+  Message,
+  normalizeMessage,
+  type TicketStatus,
+} from '@/services/ticket-service';
 import { getSocket, joinTicket, leaveTicket } from '@/services/socket-service';
+import { EscalationMemberModal } from '@/components/escalation-member-modal';
+import { useAuth } from '@/context/AuthContext';
 import { Colors, Spacing, Radius, Palette } from '@/constants/theme';
 import { Font } from '@/constants/typography';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -53,12 +65,28 @@ function senderLabel(sender: Message['sender']): string {
   return 'Customer';
 }
 
+function isTicketStatus(s: unknown): s is TicketStatus {
+  return (
+    s === 'pending' ||
+    s === 'assigned' ||
+    s === 'resolved' ||
+    s === 'escalated' ||
+    s === 'closed'
+  );
+}
+
 export default function ChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const navigation = useNavigation();
+  const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
+  const [ticketStatus, setTicketStatus] = useState<TicketStatus | null>(null);
+  const [assignedToUserId, setAssignedToUserId] = useState<number | null>(null);
+  const [escalationVisible, setEscalationVisible] = useState(false);
+  const [statusBusy, setStatusBusy] = useState<'pending' | 'resolved' | null>(null);
+  const [assigningMemberId, setAssigningMemberId] = useState<number | null>(null);
   const [inputText, setInputText] = useState('');
   const flatListRef = useRef<FlatList<ChatRow>>(null);
 
@@ -70,6 +98,61 @@ export default function ChatScreen() {
       navigation.setOptions({ title: `Ticket #${ticketHeaderCode(id)}` });
     }
   }, [id, navigation]);
+
+  const refreshTicketStatus = useCallback(async () => {
+    if (!id || !user) return;
+    try {
+      const data = user.role === 'admin' ? await getTickets() : await getMyTickets();
+      const t = data.find((x) => x.id === id);
+      setTicketStatus(t?.status ?? null);
+      setAssignedToUserId(t?.assignedTo ?? null);
+    } catch (e) {
+      console.error('Failed to load ticket status', e);
+    }
+  }, [id, user]);
+
+  const isAdmin = String(user?.role ?? '').toLowerCase() === 'admin';
+  const currentUserId = Number(user?.id);
+  const isAssignedToAnotherAgent =
+    assignedToUserId != null && Number.isFinite(currentUserId) && assignedToUserId !== currentUserId;
+
+  /** Matches web Chat.jsx: lock when resolved or ticket is assigned to someone else (not merely `escalated`). */
+  const composerLocked =
+    ticketStatus === 'resolved' ||
+    ticketStatus === 'closed' ||
+    isAssignedToAnotherAgent;
+
+  const updateTicketStatus = async (next: 'pending' | 'resolved') => {
+    if (!id || statusBusy || composerLocked) return;
+    setStatusBusy(next);
+    try {
+      await updateTicketConfig(id, { status: next });
+      setTicketStatus(next);
+    } catch {
+      Alert.alert('Error', 'Could not update ticket status.');
+    } finally {
+      setStatusBusy(null);
+    }
+  };
+
+  const assignEscalation = async (memberId: number) => {
+    if (!id) return;
+    setAssigningMemberId(memberId);
+    try {
+      await updateTicketConfig(id, { status: 'escalated', assignedTo: memberId });
+      setTicketStatus('escalated');
+      setAssignedToUserId(memberId);
+      setEscalationVisible(false);
+    } catch {
+      Alert.alert('Error', 'Failed to assign ticket.');
+    } finally {
+      setAssigningMemberId(null);
+    }
+  };
+
+  useEffect(() => {
+    void refreshTicketStatus();
+  }, [refreshTicketStatus]);
 
   const rows = useMemo((): ChatRow[] => {
     const out: ChatRow[] = [];
@@ -88,12 +171,16 @@ export default function ChatScreen() {
   }, [messages]);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || !user) return;
 
     const fetchMessages = async () => {
       try {
         const data = await getTicketMessages(id);
         setMessages(dedupeMessagesById(data));
+        const list = user.role === 'admin' ? await getTickets() : await getMyTickets();
+        const t = list.find((x) => x.id === id);
+        setTicketStatus(t?.status ?? null);
+        setAssignedToUserId(t?.assignedTo ?? null);
       } catch (e) {
         console.error('Failed to fetch messages', e);
       } finally {
@@ -106,31 +193,46 @@ export default function ChatScreen() {
     const socket = getSocket();
     joinTicket(id);
 
-    if (socket) {
-      const handleNewMessage = (payload: unknown) => {
-        const msg = normalizeMessage(payload);
-        if (!msg.id || msg.ticketId !== id) return;
-        setMessages((prev) => {
-          if (prev.some((m) => m.id === msg.id)) return prev;
-          return dedupeMessagesById([...prev, msg]);
-        });
-      };
-
-      socket.on('chat:message', handleNewMessage);
-
-      socket.on('chat:ticket_status', (data) => {
-        console.log('Ticket status changed:', data);
+    const handleNewMessage = (payload: unknown) => {
+      const msg = normalizeMessage(payload);
+      if (!msg.id || msg.ticketId !== id) return;
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === msg.id)) return prev;
+        return dedupeMessagesById([...prev, msg]);
       });
+    };
 
-      return () => {
-        socket.off('chat:message', handleNewMessage);
-        leaveTicket(id);
-      };
+    const handleTicketStatus = (data: unknown) => {
+      if (!data || typeof data !== 'object') return;
+      const rec = data as { ticketId?: string; status?: unknown; assignedTo?: unknown };
+      if (rec.ticketId !== id) return;
+      if (isTicketStatus(rec.status)) setTicketStatus(rec.status);
+      if ('assignedTo' in rec) {
+        const raw = rec.assignedTo;
+        if (raw === null || raw === undefined) setAssignedToUserId(null);
+        else {
+          const n = typeof raw === 'number' ? raw : Number(raw);
+          setAssignedToUserId(Number.isInteger(n) ? n : null);
+        }
+      }
+    };
+
+    if (socket) {
+      socket.on('chat:message', handleNewMessage);
+      socket.on('chat:ticket_status', handleTicketStatus);
     }
-  }, [id]);
+
+    return () => {
+      if (socket) {
+        socket.off('chat:message', handleNewMessage);
+        socket.off('chat:ticket_status', handleTicketStatus);
+      }
+      leaveTicket(id);
+    };
+  }, [id, user]);
 
   const handleSend = async () => {
-    if (!inputText.trim() || !id) return;
+    if (composerLocked || !inputText.trim() || !id) return;
 
     const textToSend = inputText.trim();
     setInputText('');
@@ -249,7 +351,7 @@ export default function ChatScreen() {
     );
   }
 
-  const canSend = !!inputText.trim();
+  const canSend = !!inputText.trim() && !composerLocked;
   const kbOffset = Platform.OS === 'ios' ? 90 : 0;
 
   return (
@@ -263,6 +365,35 @@ export default function ChatScreen() {
         data={rows}
         keyExtractor={(item) => item.key}
         renderItem={renderItem}
+        ListHeaderComponent={
+          composerLocked ? (
+            <View
+              style={[
+                styles.lockCard,
+                {
+                  backgroundColor: isAssignedToAnotherAgent ? '#0f172a' : '#0f172a',
+                  borderColor: isAssignedToAnotherAgent ? '#334155' : '#334155',
+                },
+              ]}
+            >
+              <View style={styles.lockIconWrap}>
+                <Feather name="alert-circle" size={16} color="#fff" />
+              </View>
+              <View style={styles.lockCardText}>
+                <Text style={[styles.lockTitle, { fontFamily: Font.semibold }]}>
+                  {isAssignedToAnotherAgent
+                    ? 'This ticket has been handed off.'
+                    : 'This chat has been closed.'}
+                </Text>
+                <Text style={[styles.lockSub, { fontFamily: Font.regular }]}>
+                  {isAssignedToAnotherAgent
+                    ? 'This ticket is assigned to another team member, so only that teammate can continue the live chat.'
+                    : 'This ticket is resolved, so messaging and status changes are disabled for this conversation.'}
+                </Text>
+              </View>
+            </View>
+          ) : null
+        }
         contentContainerStyle={[
           styles.listContent,
           { paddingBottom: Spacing.lg + insets.bottom },
@@ -281,6 +412,45 @@ export default function ChatScreen() {
           </View>
         }
       />
+
+      {!composerLocked ? (
+        <View style={[styles.statusActions, { borderTopColor: c.border, backgroundColor: c.surface }]}>
+          <TouchableOpacity
+            style={[styles.statusBtn, { borderColor: c.border, backgroundColor: c.surface }]}
+            onPress={() => void updateTicketStatus('pending')}
+            disabled={statusBusy != null}
+            activeOpacity={0.85}
+          >
+            {statusBusy === 'pending' ? (
+              <ActivityIndicator size="small" color={c.text} />
+            ) : (
+              <Text style={[styles.statusBtnText, { color: c.text, fontFamily: Font.semibold }]}>Mark Pending</Text>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.statusBtnResolved]}
+            onPress={() => void updateTicketStatus('resolved')}
+            disabled={statusBusy != null}
+            activeOpacity={0.85}
+          >
+            {statusBusy === 'resolved' ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={[styles.statusBtnText, { color: '#fff', fontFamily: Font.semibold }]}>Mark as Resolved</Text>
+            )}
+          </TouchableOpacity>
+          {isAdmin ? (
+            <TouchableOpacity
+              style={[styles.statusBtnEscalate]}
+              onPress={() => setEscalationVisible(true)}
+              disabled={statusBusy != null || assigningMemberId != null}
+              activeOpacity={0.85}
+            >
+              <Text style={[styles.statusBtnText, { color: '#fff', fontFamily: Font.semibold }]}>Escalate</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      ) : null}
 
       <View
         style={[
@@ -302,13 +472,23 @@ export default function ChatScreen() {
           }),
         ]}
       >
-        <View style={[styles.inputInner, { backgroundColor: c.surfaceMuted, borderColor: c.border }]}>
+        <View
+          style={[
+            styles.inputInner,
+            {
+              backgroundColor: c.surfaceMuted,
+              borderColor: c.border,
+              opacity: composerLocked ? 0.55 : 1,
+            },
+          ]}
+        >
           <TextInput
             style={[styles.input, { color: c.text, fontFamily: Font.regular }]}
-            placeholder="Write a reply…"
+            placeholder={composerLocked ? 'This chat is closed.' : 'Type your reply…'}
             placeholderTextColor={c.icon}
             value={inputText}
             onChangeText={setInputText}
+            editable={!composerLocked}
             multiline
             maxLength={4000}
           />
@@ -329,6 +509,16 @@ export default function ChatScreen() {
           </TouchableOpacity>
         </View>
       </View>
+
+      <EscalationMemberModal
+        visible={escalationVisible}
+        onClose={() => {
+          if (assigningMemberId != null) return;
+          setEscalationVisible(false);
+        }}
+        busyMemberId={assigningMemberId}
+        onAssign={(memberId) => void assignEscalation(memberId)}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -448,6 +638,75 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     textAlign: 'center',
     maxWidth: 300,
+  },
+  lockCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.md,
+    padding: Spacing.md,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    marginBottom: Spacing.md,
+  },
+  lockIconWrap: {
+    marginTop: 2,
+    padding: 6,
+    borderRadius: Radius.pill,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+  },
+  lockCardText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  lockTitle: {
+    fontSize: 14,
+    color: '#fff',
+    lineHeight: 20,
+  },
+  lockSub: {
+    fontSize: 13,
+    color: 'rgba(241,245,249,0.78)',
+    lineHeight: 19,
+    marginTop: Spacing.xs,
+  },
+  statusActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  statusBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: Spacing.md,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    minWidth: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statusBtnResolved: {
+    paddingVertical: 10,
+    paddingHorizontal: Spacing.md,
+    borderRadius: Radius.md,
+    backgroundColor: Palette.success,
+    minWidth: 120,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statusBtnEscalate: {
+    paddingVertical: 10,
+    paddingHorizontal: Spacing.md,
+    borderRadius: Radius.md,
+    backgroundColor: Palette.danger,
+    minWidth: 88,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statusBtnText: {
+    fontSize: 12,
+    letterSpacing: -0.1,
   },
   inputShell: {
     borderTopWidth: StyleSheet.hairlineWidth,

@@ -15,26 +15,23 @@ import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import {
   getTickets,
-  formatTicketCardDetails,
+  acceptTicket,
+  updateTicketConfig,
   Ticket,
+  TicketStatus,
 } from '@/services/ticket-service';
+import { TicketDetailsModal } from '@/components/ticket-details-modal';
 import { useAuth } from '@/context/AuthContext';
 import { Colors, Spacing, Radius, Palette } from '@/constants/theme';
 import { Font } from '@/constants/typography';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-
-/** Matches reference dashboard: short public-style id */
-function displayTicketId(id: string): string {
-  const tail = id.replace(/\s/g, '').slice(-4);
-  return tail ? tail.toUpperCase() : 'XXXX';
-}
-
-function initials(name?: string | null): string {
-  if (!name?.trim()) return '?';
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-  return name.slice(0, 2).toUpperCase();
-}
+import {
+  buildTicketTags,
+  customerDisplayName,
+  nexusCardPresentation,
+  nexusTicketId,
+  tagChipColors,
+} from '@/utils/ticket-card-visuals';
 
 function elevatedCard(isDark: boolean): object {
   if (isDark) {
@@ -52,38 +49,21 @@ function elevatedCard(isDark: boolean): object {
   });
 }
 
-function assignedLabel(ticket: Ticket): string {
-  const role = ticket.assignedRoleName?.trim();
-  if (role) return role;
-  const customer = ticket.customerName?.trim();
-  if (customer) return customer;
-  return 'Unassigned';
-}
-
 type WorkspaceStatusKey = 'open' | 'escalated' | 'pending' | 'resolved';
 
-function workspaceStatusKey(status: Ticket['status']): WorkspaceStatusKey {
-  if (status === 'escalated') return 'escalated';
-  if (status === 'resolved') return 'resolved';
-  if (status === 'pending' || status === 'closed') return 'pending';
-  return 'open';
-}
-
-function workspacePillLabel(status: Ticket['status']): string {
-  switch (status) {
-    case 'assigned':
-      return 'OPEN';
-    case 'pending':
-      return 'PENDING';
-    case 'resolved':
-      return 'RESOLVED';
+function dashboardStatToQueryStatus(variant: WorkspaceStatusKey): TicketStatus {
+  switch (variant) {
+    case 'open':
+      return 'assigned';
     case 'escalated':
-      return 'ESCALATED';
-    case 'closed':
-      return 'CLOSED';
+      return 'escalated';
+    case 'pending':
+      return 'pending';
+    case 'resolved':
+      return 'resolved';
     default: {
-      const _x: never = status;
-      return String(_x).toUpperCase();
+      const _x: never = variant;
+      return _x;
     }
   }
 }
@@ -92,7 +72,8 @@ export default function DashboardScreen() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
-  const { user, signOut } = useAuth();
+  const [detailTicket, setDetailTicket] = useState<Ticket | null>(null);
+  const { signOut, user } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
@@ -100,7 +81,7 @@ export default function DashboardScreen() {
   const c = Colors[colorScheme ?? 'light'];
   const cardLift = elevatedCard(isDark);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       const data = await getTickets();
       if (__DEV__) {
@@ -111,17 +92,48 @@ export default function DashboardScreen() {
     } catch (e) {
       console.error('Error fetching tickets', e);
     }
-  };
+  }, []);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchDashboardData();
     setRefreshing(false);
-  }, []);
+  }, [fetchDashboardData]);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    void fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  const modalAccept = async (id: string) => {
+    await acceptTicket(id);
+    void fetchDashboardData();
+  };
+
+  const modalReject = async (id: string) => {
+    await updateTicketConfig(id, { status: 'escalated' });
+    void fetchDashboardData();
+  };
+
+  const modalResolve = async (id: string) => {
+    await updateTicketConfig(id, { status: 'resolved' });
+    void fetchDashboardData();
+  };
+
+  const modalEscalate = async (id: string, assigneeUserId: number) => {
+    await updateTicketConfig(id, { status: 'escalated', assignedTo: assigneeUserId });
+    void fetchDashboardData();
+  };
+
+  const isAdmin = String(user?.role ?? '').toLowerCase() === 'admin';
+  const userCompanyRoleId =
+    user?.companyRole != null && typeof user.companyRole === 'object' && typeof user.companyRole.id === 'number'
+      ? user.companyRole.id
+      : null;
+
+  const openQueriesFiltered = (variant: WorkspaceStatusKey) => {
+    const status = dashboardStatToQueryStatus(variant);
+    router.push(`/(tabs)/queries?status=${encodeURIComponent(status)}`);
+  };
 
   const pending = useMemo(() => tickets.filter((t) => t.status === 'pending'), [tickets]);
   const assigned = useMemo(() => tickets.filter((t) => t.status === 'assigned'), [tickets]);
@@ -149,6 +161,17 @@ export default function DashboardScreen() {
 
   return (
     <View style={[styles.screenRoot, { backgroundColor: c.background }]}>
+      <TicketDetailsModal
+        ticket={detailTicket}
+        visible={detailTicket != null}
+        onClose={() => setDetailTicket(null)}
+        onAccept={modalAccept}
+        onReject={modalReject}
+        onResolve={modalResolve}
+        onEscalate={modalEscalate}
+        isAdmin={isAdmin}
+        userCompanyRoleId={userCompanyRoleId}
+      />
       <View
         style={[
           styles.headerBar,
@@ -167,13 +190,6 @@ export default function DashboardScreen() {
             </Text>
           </View>
           <View style={styles.headerActions}>
-            <Pressable
-              style={({ pressed }) => [styles.headerIconBtn, { opacity: pressed ? 0.55 : 1 }]}
-              accessibilityRole="button"
-              accessibilityLabel="Notifications"
-            >
-              <Feather name="bell" size={22} color={titleBlue} />
-            </Pressable>
             <Pressable
               onPress={() => void signOut()}
               style={({ pressed }) => [
@@ -222,23 +238,39 @@ export default function DashboardScreen() {
 
         <View style={styles.statGrid}>
           <View style={styles.statRow}>
-            <TintedStatCard variant="open" count={openCount} label="OPEN" icon="layers" isDark={isDark} />
+            <TintedStatCard
+              variant="open"
+              count={openCount}
+              label="OPEN"
+              icon="layers"
+              isDark={isDark}
+              onPress={() => openQueriesFiltered('open')}
+            />
             <TintedStatCard
               variant="escalated"
               count={escalated.length}
               label="ESCALATED"
               icon="alert-triangle"
               isDark={isDark}
+              onPress={() => openQueriesFiltered('escalated')}
             />
           </View>
           <View style={styles.statRow}>
-            <TintedStatCard variant="pending" count={pending.length} label="PENDING" icon="clock" isDark={isDark} />
+            <TintedStatCard
+              variant="pending"
+              count={pending.length}
+              label="PENDING"
+              icon="clock"
+              isDark={isDark}
+              onPress={() => openQueriesFiltered('pending')}
+            />
             <TintedStatCard
               variant="resolved"
               count={resolved.length}
               label="RESOLVED"
               icon="check-circle"
               isDark={isDark}
+              onPress={() => openQueriesFiltered('resolved')}
             />
           </View>
         </View>
@@ -269,9 +301,7 @@ export default function DashboardScreen() {
                 borderColor={c.border}
                 textColor={c.text}
                 subtleText={subtleText}
-                mutedSurface={c.surfaceMuted}
-                onPress={() => router.push(`/(tabs)/chat/${ticket.id}`)}
-                cardLift={cardLift}
+                onPress={() => setDetailTicket(ticket)}
               />
             ))}
           </View>
@@ -297,23 +327,31 @@ function TintedStatCard({
   label,
   icon,
   isDark,
+  onPress,
 }: {
   variant: WorkspaceStatusKey;
   count: number;
   label: string;
   icon: keyof typeof Feather.glyphMap;
   isDark: boolean;
+  onPress: () => void;
 }) {
   const t = isDark ? DARK_TINTS[variant] : LIGHT_TINTS[variant];
 
   return (
-    <View style={[styles.tintedCard, { backgroundColor: t.bg }]}>
+    <TouchableOpacity
+      style={[styles.tintedCard, { backgroundColor: t.bg }]}
+      onPress={onPress}
+      activeOpacity={0.88}
+      accessibilityRole="button"
+      accessibilityLabel={`${label}: ${count}. Open tickets filtered by this status.`}
+    >
       <View style={[styles.tintedIconWrap, { backgroundColor: t.iconBg }]}>
         <Feather name={icon} size={22} color={t.iconFg} />
       </View>
       <Text style={[styles.tintedLabel, { color: t.labelColor, fontFamily: Font.semibold }]}>{label}</Text>
       <Text style={[styles.tintedCount, { color: t.countColor, fontFamily: Font.extraBold }]}>{count}</Text>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -400,9 +438,7 @@ function WorkspaceQueryCard({
   borderColor,
   textColor,
   subtleText,
-  mutedSurface,
   onPress,
-  cardLift,
 }: {
   ticket: Ticket;
   isDark: boolean;
@@ -410,114 +446,49 @@ function WorkspaceQueryCard({
   borderColor: string;
   textColor: string;
   subtleText: string;
-  mutedSurface: string;
   onPress: () => void;
-  cardLift: object;
 }) {
-  const key = workspaceStatusKey(ticket.status);
-  const stripe = isDark ? DARK_TINTS[key].leftBar : LIGHT_TINTS[key].leftBar;
-  const pill = workspacePillVisual(ticket.status, isDark);
-  const details = formatTicketCardDetails(ticket);
-  const assignee = assignedLabel(ticket);
-  const assigneeInitials = initials(assignee === 'Unassigned' ? null : assignee);
+  const vis = nexusCardPresentation(ticket.status, isDark);
+  const tags = buildTicketTags(ticket);
+  const customer = customerDisplayName(ticket);
 
   return (
     <TouchableOpacity
-      style={[styles.wqCard, { backgroundColor: surface, borderColor }, cardLift]}
+      style={[styles.wqCard, { backgroundColor: surface, borderColor }]}
       onPress={onPress}
       activeOpacity={0.72}
     >
-      <View style={[styles.wqStripe, { backgroundColor: stripe }]} />
+      <View style={[styles.wqStripe, { backgroundColor: vis.stripe }]} />
       <View style={styles.wqBody}>
         <View style={styles.wqTop}>
           <Text style={[styles.wqId, { color: subtleText, fontFamily: Font.medium }]} numberOfLines={1}>
-            ID: #NX-{displayTicketId(ticket.id)}
+            NX-{nexusTicketId(ticket.id)}
           </Text>
-          <View
-            style={[
-              styles.wqPill,
-              {
-                backgroundColor: pill.bg,
-                borderColor: pill.border,
-                borderWidth: pill.border === 'transparent' ? 0 : StyleSheet.hairlineWidth,
-              },
-            ]}
-          >
-            <Text style={[styles.wqPillText, { color: pill.fg, fontFamily: Font.bold }]}>{pill.label}</Text>
+          <View style={[styles.wqPill, { backgroundColor: vis.pillBg }]}>
+            <Text style={[styles.wqPillText, { color: vis.pillFg, fontFamily: Font.semibold }]}>{vis.label}</Text>
           </View>
         </View>
-        <Text style={[styles.wqTitle, { color: textColor, fontFamily: Font.bold }]} numberOfLines={2}>
+        <Text style={[styles.wqTitle, { color: textColor, fontFamily: Font.semibold }]} numberOfLines={2}>
           {ticket.subject}
         </Text>
-        {details ? (
-          <Text style={[styles.wqDesc, { color: subtleText, fontFamily: Font.regular }]} numberOfLines={3}>
-            {details}
-          </Text>
-        ) : null}
-        <View style={styles.wqAssignRow}>
-          <View style={[styles.wqAvatar, { backgroundColor: mutedSurface, borderColor }]}>
-            <Text style={[styles.wqAvatarText, { color: textColor, fontFamily: Font.semibold }]}>{assigneeInitials}</Text>
-          </View>
-          <Text style={[styles.wqAssignText, { color: subtleText, fontFamily: Font.regular }]} numberOfLines={1}>
-            Assigned: {assignee}
-          </Text>
+        <Text style={[styles.wqCustomer, { color: subtleText, fontFamily: Font.regular }]} numberOfLines={1}>
+          {customer}
+        </Text>
+        <View style={styles.wqTagRow}>
+          {tags.map((tag) => {
+            const chipColors = tagChipColors(tag, ticket, isDark);
+            return (
+              <View key={tag.key} style={[styles.wqMetaTag, { backgroundColor: chipColors.bg }]}>
+                <Text style={[styles.wqMetaTagText, { color: chipColors.fg, fontFamily: Font.semibold }]} numberOfLines={1}>
+                  {tag.text}
+                </Text>
+              </View>
+            );
+          })}
         </View>
       </View>
     </TouchableOpacity>
   );
-}
-
-function workspacePillVisual(
-  status: Ticket['status'],
-  isDark: boolean,
-): { label: string; bg: string; fg: string; border: string } {
-  const label = workspacePillLabel(status);
-  if (status === 'escalated') {
-    return {
-      label,
-      bg: isDark ? '#b91c1c' : '#dc2626',
-      fg: '#ffffff',
-      border: 'transparent',
-    };
-  }
-  if (status === 'assigned') {
-    return {
-      label: 'OPEN',
-      bg: isDark ? '#1e3a8a' : '#dbeafe',
-      fg: isDark ? '#bfdbfe' : '#1d4ed8',
-      border: isDark ? '#3b82f6' : '#93c5fd',
-    };
-  }
-  if (status === 'pending') {
-    return {
-      label: 'PENDING',
-      bg: isDark ? '#3f3f46' : '#f4f4f5',
-      fg: isDark ? '#e4e4e7' : '#52525b',
-      border: isDark ? '#52525b' : '#e4e4e7',
-    };
-  }
-  if (status === 'resolved') {
-    return {
-      label: 'RESOLVED',
-      bg: isDark ? '#065f46' : '#d1fae5',
-      fg: isDark ? '#a7f3d0' : '#047857',
-      border: isDark ? '#059669' : '#6ee7b7',
-    };
-  }
-  if (status === 'closed') {
-    return {
-      label: 'CLOSED',
-      bg: isDark ? '#334155' : '#f1f5f9',
-      fg: isDark ? '#94a3b8' : '#64748b',
-      border: isDark ? '#475569' : '#e2e8f0',
-    };
-  }
-  return {
-    label,
-    bg: isDark ? '#334155' : '#f4f4f5',
-    fg: isDark ? '#e2e8f0' : '#334155',
-    border: isDark ? '#475569' : '#e4e4e7',
-  };
 }
 
 const styles = StyleSheet.create({
@@ -645,21 +616,22 @@ const styles = StyleSheet.create({
     letterSpacing: -0.1,
   },
   recentList: {
-    gap: Spacing.lg,
+    gap: Spacing.md,
   },
   wqCard: {
     flexDirection: 'row',
-    borderRadius: Radius.xl,
-    borderWidth: 1,
+    borderRadius: Radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',
   },
   wqStripe: {
-    width: 4,
+    width: 3,
     alignSelf: 'stretch',
   },
   wqBody: {
     flex: 1,
-    padding: Spacing.lg,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
   },
   wqTop: {
     flexDirection: 'row',
@@ -669,50 +641,46 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   wqId: {
-    fontSize: 13,
+    fontSize: 14,
     flex: 1,
-    letterSpacing: 0.2,
+    letterSpacing: 0.15,
   },
   wqPill: {
-    paddingHorizontal: Spacing.md,
+    paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: Radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
+    flexShrink: 0,
   },
   wqPillText: {
-    fontSize: 10,
-    letterSpacing: 0.55,
+    fontSize: 11,
+    letterSpacing: 0.2,
   },
   wqTitle: {
     fontSize: 16,
     lineHeight: 22,
-    letterSpacing: -0.25,
+    letterSpacing: -0.2,
+    marginBottom: Spacing.xs,
+  },
+  wqCustomer: {
+    fontSize: 14,
+    lineHeight: 20,
+    letterSpacing: -0.1,
     marginBottom: Spacing.sm,
   },
-  wqDesc: {
-    fontSize: 13,
-    lineHeight: 19,
-    marginBottom: Spacing.lg,
-  },
-  wqAssignRow: {
+  wqTagRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
+    flexWrap: 'wrap',
+    gap: Spacing.xs,
   },
-  wqAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    alignItems: 'center',
-    justifyContent: 'center',
+  wqMetaTag: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 5,
+    borderRadius: Radius.pill,
+    maxWidth: '100%',
   },
-  wqAvatarText: {
+  wqMetaTagText: {
     fontSize: 11,
-  },
-  wqAssignText: {
-    fontSize: 13,
-    flex: 1,
+    letterSpacing: 0.2,
   },
   recentEmpty: {
     alignItems: 'center',

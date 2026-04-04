@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { Fragment, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { format, parseISO } from 'date-fns';
 import type { Ticket, TicketStatus } from '@/services/ticket-service';
+import { EscalationMemberModal } from '@/components/escalation-member-modal';
 import { Colors, Spacing, Radius, Palette } from '@/constants/theme';
 import { Font } from '@/constants/typography';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -55,11 +56,26 @@ function formatCreatedAt(iso: string): string {
 
 function assignedRoleLine(ticket: Ticket): string {
   if (ticket.assignedRoleName?.trim()) return ticket.assignedRoleName.trim();
+  if (ticket.assignedRoleId != null) return `Team role #${ticket.assignedRoleId}`;
   if (ticket.agentId) return `#${String(ticket.agentId)}`;
   return '—';
 }
 
 const TERMINAL: TicketStatus[] = ['resolved', 'escalated', 'closed'];
+
+/**
+ * Same rules as frontend `Queries.jsx` `isActionBlocked` for Accept/Reject on pending:
+ * — Admins are never blocked here.
+ * — Non-admins need both a company role on their account and `ticket.assignedRoleId`, and they must match.
+ * — If the ticket has no routed role (`assignedRoleId` missing), non-admins cannot accept/reject (team queue only).
+ */
+function queriesTicketActionsBlocked(ticket: Ticket, isAdmin: boolean, userCompanyRoleId: number | null): boolean {
+  if (isAdmin) return false;
+  const s = ticket.status;
+  if (s === 'assigned' || s === 'resolved') return true;
+  if (userCompanyRoleId == null || ticket.assignedRoleId == null) return true;
+  return Number(ticket.assignedRoleId) !== Number(userCompanyRoleId);
+}
 
 type Props = {
   ticket: Ticket | null;
@@ -68,7 +84,11 @@ type Props = {
   onAccept: (id: string) => Promise<void>;
   onReject: (id: string) => Promise<void>;
   onResolve: (id: string) => Promise<void>;
-  onEscalate: (id: string) => Promise<void>;
+  /** Admin escalation: same payload as web Chat — `status: escalated` + `assignedTo`. */
+  onEscalate: (id: string, assigneeUserId: number) => Promise<void>;
+  isAdmin: boolean;
+  /** Logged-in user's company role id (for team-scoped pending actions). */
+  userCompanyRoleId: number | null;
 };
 
 export function TicketDetailsModal({
@@ -79,18 +99,31 @@ export function TicketDetailsModal({
   onReject,
   onResolve,
   onEscalate,
+  isAdmin,
+  userCompanyRoleId,
 }: Props) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const c = Colors[colorScheme ?? 'light'];
   const { height: winH } = useWindowDimensions();
   const [busy, setBusy] = useState<'accept' | 'reject' | 'resolve' | 'escalate' | null>(null);
+  const [escalationVisible, setEscalationVisible] = useState(false);
+  const [assigningMemberId, setAssigningMemberId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!visible) {
+      setEscalationVisible(false);
+      setAssigningMemberId(null);
+      setBusy(null);
+    }
+  }, [visible]);
 
   if (!ticket) return null;
 
   const actionsBlocked = TERMINAL.includes(ticket.status);
   const isPending = ticket.status === 'pending';
   const isAssigned = ticket.status === 'assigned';
+  const pendingActionsBlocked = queriesTicketActionsBlocked(ticket, isAdmin, userCompanyRoleId);
 
   const run = async (kind: 'accept' | 'reject' | 'resolve' | 'escalate', fn: () => Promise<void>) => {
     setBusy(kind);
@@ -128,6 +161,7 @@ export function TicketDetailsModal({
   const sheetMaxH = Math.min(winH * 0.88, 640);
 
   return (
+    <Fragment>
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.modalRoot}>
         <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Dismiss" />
@@ -211,52 +245,59 @@ export function TicketDetailsModal({
                 <Text style={[styles.sectionKicker, { color: c.textSecondary, fontFamily: Font.medium }]}>
                   ACTIONS
                 </Text>
-                <View style={styles.actionRow}>
-                  {isPending && (
-                    <>
-                      <ModalActionButton
-                        label="Accept Ticket"
-                        icon="check-circle"
-                        variant="primary"
-                        disabled={false}
-                        loading={busy === 'accept'}
-                        onPress={() => run('accept', () => onAccept(ticket.id))}
-                        isDark={isDark}
-                      />
-                      <ModalActionButton
-                        label="Reject Ticket"
-                        icon="alert-triangle"
-                        variant="danger"
-                        disabled={false}
-                        loading={busy === 'reject'}
-                        onPress={() => run('reject', () => onReject(ticket.id))}
-                        isDark={isDark}
-                      />
-                    </>
-                  )}
-                  {isAssigned && (
-                    <>
-                      <ModalActionButton
-                        label="Resolve"
-                        icon="check-circle"
-                        variant="primary"
-                        disabled={false}
-                        loading={busy === 'resolve'}
-                        onPress={() => run('resolve', () => onResolve(ticket.id))}
-                        isDark={isDark}
-                      />
-                      <ModalActionButton
-                        label="Escalate"
-                        icon="alert-triangle"
-                        variant="danger"
-                        disabled={false}
-                        loading={busy === 'escalate'}
-                        onPress={() => run('escalate', () => onEscalate(ticket.id))}
-                        isDark={isDark}
-                      />
-                    </>
-                  )}
-                </View>
+                {isPending && (
+                  <View style={styles.actionRow}>
+                    <ModalActionButton
+                      label="Accept Ticket"
+                      icon="check-circle"
+                      variant="primary"
+                      disabled={pendingActionsBlocked}
+                      loading={busy === 'accept'}
+                      onPress={() => run('accept', () => onAccept(ticket.id))}
+                      isDark={isDark}
+                    />
+                    <ModalActionButton
+                      label="Reject Ticket"
+                      icon="alert-triangle"
+                      variant="danger"
+                      disabled={pendingActionsBlocked}
+                      loading={busy === 'reject'}
+                      onPress={() => run('reject', () => onReject(ticket.id))}
+                      isDark={isDark}
+                    />
+                  </View>
+                )}
+                {isAssigned && isAdmin && (
+                  <View style={styles.actionRow}>
+                    <ModalActionButton
+                      label="Resolve"
+                      icon="check-circle"
+                      variant="primary"
+                      disabled={false}
+                      loading={busy === 'resolve'}
+                      onPress={() => run('resolve', () => onResolve(ticket.id))}
+                      isDark={isDark}
+                    />
+                    <ModalActionButton
+                      label="Escalate"
+                      icon="alert-triangle"
+                      variant="danger"
+                      disabled={false}
+                      loading={busy === 'escalate'}
+                      onPress={() => setEscalationVisible(true)}
+                      isDark={isDark}
+                    />
+                  </View>
+                )}
+                {isAssigned && !isAdmin && (
+                  <View style={[styles.roleNote, { borderColor: c.border, backgroundColor: c.surfaceMuted }]}>
+                    <Feather name="info" size={18} color={c.textSecondary} style={styles.terminalNoteIcon} />
+                    <Text style={[styles.terminalNoteText, { color: c.textSecondary, fontFamily: Font.regular }]}>
+                      Only admins can change assigned tickets from here. Pending tickets for your team can be accepted
+                      or rejected.
+                    </Text>
+                  </View>
+                )}
               </>
             ) : (
               <View style={[styles.terminalNote, { borderColor: c.border, backgroundColor: c.surfaceMuted }]}>
@@ -269,7 +310,31 @@ export function TicketDetailsModal({
           </ScrollView>
         </View>
       </View>
+
     </Modal>
+    <EscalationMemberModal
+      visible={escalationVisible}
+      onClose={() => {
+        if (assigningMemberId != null || busy === 'escalate') return;
+        setEscalationVisible(false);
+      }}
+      busyMemberId={assigningMemberId}
+      onAssign={async (memberId) => {
+        setAssigningMemberId(memberId);
+        setBusy('escalate');
+        try {
+          await onEscalate(ticket.id, memberId);
+          setEscalationVisible(false);
+          onClose();
+        } catch {
+          Alert.alert('Error', 'Failed to assign ticket. Try again.');
+        } finally {
+          setBusy(null);
+          setAssigningMemberId(null);
+        }
+      }}
+    />
+    </Fragment>
   );
 }
 
@@ -470,6 +535,15 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     lineHeight: 19,
+  },
+  roleNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.sm,
+    borderWidth: 1,
+    borderRadius: Radius.md,
+    padding: Spacing.md,
+    marginTop: Spacing.xs,
   },
   modalBtn: {
     flex: 1,

@@ -134,6 +134,12 @@ export default function TabLayout() {
             />
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('chat', { screen: 'index' } as never);
+          },
+        })}
       />
     </Tabs>
   );
