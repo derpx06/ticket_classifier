@@ -1,9 +1,22 @@
 import api from './api';
 
-export interface CompanyRoleRef {
+/** Organization payload returned with login/register (`buildUserResponse` on the API). */
+export interface UserCompany {
+  uuid: string;
+  name: string;
+  countryCode: string | null;
+  about: string | null;
+  website: string | null;
+  industry: string | null;
+  phone: string | null;
+}
+
+/** Team role + permissions from `company_roles`. */
+export interface CompanyRoleDetail {
   id: number;
   name: string;
   baseRole: string;
+  permissions: Record<string, unknown>;
 }
 
 export interface User {
@@ -13,8 +26,8 @@ export interface User {
   role: string;
   companyId?: string | number;
   companyUuid?: string;
-  company?: unknown;
-  companyRole?: CompanyRoleRef | null;
+  company?: UserCompany;
+  companyRole?: CompanyRoleDetail | null;
 }
 
 export interface LoginResponse {

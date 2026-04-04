@@ -97,7 +97,18 @@ export function normalizeTicket(raw: unknown): Ticket {
   const urgency = urgencyParsed && urgencyParsed !== priority ? urgencyParsed : undefined;
 
   const assignedTo = parseIntOrNull(o.assignedTo);
-  const assignedRoleId = parseIntOrNull(o.assignedRoleId);
+  const nestedAr =
+    o.assignedRole != null && typeof o.assignedRole === 'object'
+      ? (o.assignedRole as Record<string, unknown>)
+      : null;
+  const assignedRoleId =
+    parseIntOrNull(o.assignedRoleId) ??
+    parseIntOrNull(o.assigned_role_id) ??
+    (nestedAr ? parseIntOrNull(nestedAr.id) : null);
+  const assignedRoleNameRaw =
+    pickString(o.assignedRoleName) ||
+    pickString(o.assigned_role_name) ||
+    (nestedAr ? pickString(nestedAr.name) : '');
 
   return {
     id,
@@ -116,7 +127,7 @@ export function normalizeTicket(raw: unknown): Ticket {
       undefined,
     customerName: pickString(o.customerName).trim() || undefined,
     urgency,
-    assignedRoleName: pickString(o.assignedRoleName).trim() || undefined,
+    assignedRoleName: assignedRoleNameRaw.trim() || undefined,
   };
 }
 

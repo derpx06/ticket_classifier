@@ -73,7 +73,7 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [detailTicket, setDetailTicket] = useState<Ticket | null>(null);
-  const { signOut, user } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
@@ -129,6 +129,11 @@ export default function DashboardScreen() {
     user?.companyRole != null && typeof user.companyRole === 'object' && typeof user.companyRole.id === 'number'
       ? user.companyRole.id
       : null;
+  const userDisplayName = user?.name?.trim() || null;
+  const userCompanyRoleName =
+    user?.companyRole != null && typeof user.companyRole === 'object' && typeof user.companyRole.name === 'string'
+      ? user.companyRole.name.trim() || null
+      : null;
 
   const openQueriesFiltered = (variant: WorkspaceStatusKey) => {
     const status = dashboardStatToQueryStatus(variant);
@@ -171,6 +176,8 @@ export default function DashboardScreen() {
         onEscalate={modalEscalate}
         isAdmin={isAdmin}
         userCompanyRoleId={userCompanyRoleId}
+        userDisplayName={userDisplayName}
+        userCompanyRoleName={userCompanyRoleName}
       />
       <View
         style={[
@@ -191,16 +198,16 @@ export default function DashboardScreen() {
           </View>
           <View style={styles.headerActions}>
             <Pressable
-              onPress={() => void signOut()}
+              onPress={() => router.push('/profile')}
               style={({ pressed }) => [
                 styles.headerIconBtn,
                 { opacity: pressed ? 0.55 : 1 },
               ]}
               accessibilityRole="button"
-              accessibilityLabel="Sign out"
+              accessibilityLabel="Open profile"
               hitSlop={8}
             >
-              <Feather name="log-out" size={20} color={c.icon} />
+              <Feather name="user" size={22} color={c.icon} />
             </Pressable>
           </View>
         </View>

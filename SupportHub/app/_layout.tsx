@@ -28,11 +28,18 @@ function RootLayoutNav() {
   useEffect(() => {
     if (isLoading) return;
 
-    const inAuthGroup = segments[0] === '(tabs)';
+    const first = segments[0];
+    const inTabs = first === '(tabs)';
+    const onLogin = first === 'login';
+    const onProfile = first === 'profile';
 
-    if (!token && inAuthGroup) {
-      router.replace('/login');
-    } else if (token && !inAuthGroup) {
+    if (!token) {
+      if (inTabs || onProfile) {
+        router.replace('/login');
+      }
+    } else if (onLogin) {
+      router.replace('/(tabs)');
+    } else if (!inTabs && !onProfile) {
       router.replace('/(tabs)');
     }
   }, [token, isLoading, segments, router]);
@@ -42,6 +49,7 @@ function RootLayoutNav() {
       <Stack>
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="profile" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

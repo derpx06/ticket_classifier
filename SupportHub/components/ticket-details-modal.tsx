@@ -54,8 +54,23 @@ function formatCreatedAt(iso: string): string {
   }
 }
 
-function assignedRoleLine(ticket: Ticket): string {
+function normKey(s: string | null | undefined): string {
+  return (s ?? '').trim().toLowerCase();
+}
+
+function assignedRoleLine(
+  ticket: Ticket,
+  ctx: { userCompanyRoleId: number | null; userCompanyRoleName: string | null },
+): string {
   if (ticket.assignedRoleName?.trim()) return ticket.assignedRoleName.trim();
+  if (
+    ctx.userCompanyRoleId != null &&
+    ticket.assignedRoleId != null &&
+    Number(ctx.userCompanyRoleId) === Number(ticket.assignedRoleId) &&
+    ctx.userCompanyRoleName?.trim()
+  ) {
+    return ctx.userCompanyRoleName.trim();
+  }
   if (ticket.assignedRoleId != null) return `Team role #${ticket.assignedRoleId}`;
   if (ticket.agentId) return `#${String(ticket.agentId)}`;
   return '—';
@@ -64,17 +79,29 @@ function assignedRoleLine(ticket: Ticket): string {
 const TERMINAL: TicketStatus[] = ['resolved', 'escalated', 'closed'];
 
 /**
- * Same rules as frontend `Queries.jsx` `isActionBlocked` for Accept/Reject on pending:
- * — Admins are never blocked here.
- * — Non-admins need both a company role on their account and `ticket.assignedRoleId`, and they must match.
- * — If the ticket has no routed role (`assignedRoleId` missing), non-admins cannot accept/reject (team queue only).
+ * Pending Accept / Reject (reject escalates without assignee):
+ * — Admins are never blocked.
+ * — Non-admins may act only if the ticket is routed to them: either `assignedRoleName` matches their
+ *   company role name or display name (case-insensitive), or legacy id match when role id aligns.
  */
-function queriesTicketActionsBlocked(ticket: Ticket, isAdmin: boolean, userCompanyRoleId: number | null): boolean {
+function pendingQueueActionsBlocked(
+  ticket: Ticket,
+  isAdmin: boolean,
+  userCompanyRoleId: number | null,
+  userDisplayName: string | null,
+  userCompanyRoleName: string | null,
+): boolean {
   if (isAdmin) return false;
-  const s = ticket.status;
-  if (s === 'assigned' || s === 'resolved') return true;
-  if (userCompanyRoleId == null || ticket.assignedRoleId == null) return true;
-  return Number(ticket.assignedRoleId) !== Number(userCompanyRoleId);
+  const ticketRole = normKey(ticket.assignedRoleName);
+  const idOk =
+    userCompanyRoleId != null &&
+    ticket.assignedRoleId != null &&
+    Number(ticket.assignedRoleId) === Number(userCompanyRoleId);
+  const nameOk =
+    ticketRole !== '' &&
+    (ticketRole === normKey(userCompanyRoleName) || ticketRole === normKey(userDisplayName));
+  if (nameOk || idOk) return false;
+  return true;
 }
 
 type Props = {
@@ -89,6 +116,10 @@ type Props = {
   isAdmin: boolean;
   /** Logged-in user's company role id (for team-scoped pending actions). */
   userCompanyRoleId: number | null;
+  /** Display name from profile (matched against `assignedRoleName` when relevant). */
+  userDisplayName: string | null;
+  /** Company team role label (matched against `assignedRoleName` when relevant). */
+  userCompanyRoleName: string | null;
 };
 
 export function TicketDetailsModal({
@@ -101,6 +132,8 @@ export function TicketDetailsModal({
   onEscalate,
   isAdmin,
   userCompanyRoleId,
+  userDisplayName,
+  userCompanyRoleName,
 }: Props) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -123,7 +156,14 @@ export function TicketDetailsModal({
   const actionsBlocked = TERMINAL.includes(ticket.status);
   const isPending = ticket.status === 'pending';
   const isAssigned = ticket.status === 'assigned';
-  const pendingActionsBlocked = queriesTicketActionsBlocked(ticket, isAdmin, userCompanyRoleId);
+  const roleCtx = { userCompanyRoleId, userCompanyRoleName };
+  const pendingActionsBlocked = pendingQueueActionsBlocked(
+    ticket,
+    isAdmin,
+    userCompanyRoleId,
+    userDisplayName,
+    userCompanyRoleName,
+  );
 
   const run = async (kind: 'accept' | 'reject' | 'resolve' | 'escalate', fn: () => Promise<void>) => {
     setBusy(kind);
@@ -235,7 +275,7 @@ export function TicketDetailsModal({
                   ASSIGNED ROLE
                 </Text>
                 <Text style={[styles.metaValue, { color: c.text, fontFamily: Font.semibold }]} numberOfLines={2}>
-                  {assignedRoleLine(ticket)}
+                  {assignedRoleLine(ticket, roleCtx)}
                 </Text>
               </View>
             </View>

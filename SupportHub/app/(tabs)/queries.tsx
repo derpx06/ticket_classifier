@@ -140,6 +140,11 @@ export default function QueriesScreen() {
     user?.companyRole != null && typeof user.companyRole === 'object' && typeof user.companyRole.id === 'number'
       ? user.companyRole.id
       : null;
+  const userDisplayName = user?.name?.trim() || null;
+  const userCompanyRoleName =
+    user?.companyRole != null && typeof user.companyRole === 'object' && typeof user.companyRole.name === 'string'
+      ? user.companyRole.name.trim() || null
+      : null;
 
   const filteredTickets = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -325,6 +330,8 @@ export default function QueriesScreen() {
         onEscalate={modalEscalate}
         isAdmin={isAdmin}
         userCompanyRoleId={userCompanyRoleId}
+        userDisplayName={userDisplayName}
+        userCompanyRoleName={userCompanyRoleName}
       />
 
       <Modal
