@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   AlertTriangle,
   ArrowUpDown,
@@ -64,6 +64,7 @@ const filterControlClass =
 
 const Queries = () => {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const userRoleId = user?.companyRole?.id ?? null;
   const [tickets, setTickets] = useState([]);
   const [searchText, setSearchText] = useState('');
@@ -228,6 +229,27 @@ const Queries = () => {
     window.addEventListener('keydown', onEscape);
     return () => window.removeEventListener('keydown', onEscape);
   }, []);
+
+  useEffect(() => {
+    const ticketIdFromUrl = searchParams.get('ticketId');
+    if (!ticketIdFromUrl || isLoading) return;
+
+    const matchedTicket = tickets.find(
+      (ticket) => String(ticket._id || ticket.id || '') === String(ticketIdFromUrl)
+    );
+
+    if (matchedTicket) {
+      const resolvedId = matchedTicket._id || matchedTicket.id;
+      setSelectedId(resolvedId);
+      setIsDetailsOpen(true);
+    }
+
+    setSearchParams((previousParams) => {
+      const nextParams = new URLSearchParams(previousParams);
+      nextParams.delete('ticketId');
+      return nextParams;
+    }, { replace: true });
+  }, [searchParams, setSearchParams, tickets, isLoading]);
 
   const updateTicketState = (ticketId, updates) => {
     setTickets((previous) =>
