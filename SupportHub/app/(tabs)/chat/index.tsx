@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Pressable } from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -25,7 +25,7 @@ function avatarLetter(name: string): string {
 export default function ChatListScreen() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
@@ -131,17 +131,6 @@ export default function ChatListScreen() {
               Conversations for your tickets
             </Text>
           </View>
-          <View style={styles.headerActions}>
-            <Pressable
-              onPress={() => void signOut()}
-              style={({ pressed }) => [styles.headerIconBtn, { opacity: pressed ? 0.55 : 1 }]}
-              accessibilityRole="button"
-              accessibilityLabel="Sign out"
-              hitSlop={8}
-            >
-              <Feather name="log-out" size={20} color={c.icon} />
-            </Pressable>
-          </View>
         </View>
       </View>
 
@@ -198,15 +187,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     marginTop: Spacing.xs,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-    paddingTop: 2,
-  },
-  headerIconBtn: {
-    padding: Spacing.sm,
   },
   listFlex: {
     flex: 1,

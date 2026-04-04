@@ -5,13 +5,16 @@ export type TicketStatus = 'pending' | 'assigned' | 'resolved' | 'escalated' | '
 
 export interface Ticket {
   id: string;
+  _id?: string;
   uuid?: string;
   subject: string;
+  message?: string;
   category: string;
   priority: TicketPriority;
   status: TicketStatus;
   createdAt: string;
   updatedAt: string;
+  companyId?: number | null;
   customerId?: string;
   agentId?: string;
   /** Numeric assignee user id from API `assignedTo` (agent currently handling the ticket). */
@@ -21,8 +24,12 @@ export interface Ticket {
   /** From API `customerName` */
   customerName?: string;
   /** Set when API `urgency` differs from `priority`. */
-  urgency?: TicketPriority;
+  urgency?: TicketPriority | string;
   assignedRoleName?: string;
+  sentiment?: string;
+  sentimentEmoji?: string;
+  source?: string;
+  vectorizedAt?: string;
 }
 
 export interface Message {
@@ -80,6 +87,27 @@ function toIsoDate(v: unknown): string {
   return String(v);
 }
 
+function unwrapData<T>(response: { data?: unknown }): T {
+  const payload = response?.data as
+    | { data?: T; tickets?: T; messages?: T; ticket?: T; message?: T }
+    | T
+    | undefined;
+  if (Array.isArray(payload)) return payload as T;
+  if (payload && typeof payload === 'object') {
+    if ('data' in payload && payload.data !== undefined) return payload.data as T;
+    if ('tickets' in payload && payload.tickets !== undefined) return payload.tickets as T;
+    if ('messages' in payload && payload.messages !== undefined) return payload.messages as T;
+    if ('ticket' in payload && payload.ticket !== undefined) return payload.ticket as T;
+    if ('message' in payload && payload.message !== undefined) return payload.message as T;
+  }
+  return payload as T;
+}
+
+function logTicketPayload(source: string, rawList: unknown[]): void {
+  if (!__DEV__) return;
+  console.log(`[TicketService] ${source} raw tickets`, JSON.stringify(rawList, null, 2));
+}
+
 /** Maps Mongo/API shape (`_id`, `message`) to app `Ticket` (`id`, `subject`). */
 export function normalizeTicket(raw: unknown): Ticket {
   const o = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
@@ -111,13 +139,17 @@ export function normalizeTicket(raw: unknown): Ticket {
     (nestedAr ? pickString(nestedAr.name) : '');
 
   return {
+    ...(o as Record<string, unknown>),
     id,
+    _id: pickString(o._id) || undefined,
     subject,
+    message: message || undefined,
     category: cat,
     priority,
     status,
     createdAt: toIsoDate(o.createdAt),
     updatedAt: toIsoDate(o.updatedAt),
+    companyId: parseIntOrNull(o.companyId),
     customerId: pickString(o.customerId) || undefined,
     assignedTo: assignedTo ?? null,
     assignedRoleId: assignedRoleId ?? null,
@@ -126,8 +158,12 @@ export function normalizeTicket(raw: unknown): Ticket {
       (assignedTo != null ? String(assignedTo) : pickString(o.assignedTo)) ||
       undefined,
     customerName: pickString(o.customerName).trim() || undefined,
-    urgency,
+    urgency: urgency ?? (pickString(o.urgency).trim() || undefined),
     assignedRoleName: assignedRoleNameRaw.trim() || undefined,
+    sentiment: pickString(o.sentiment).trim() || undefined,
+    sentimentEmoji: pickString(o.sentimentEmoji).trim() || undefined,
+    source: pickString(o.source).trim() || undefined,
+    vectorizedAt: pickString(o.vectorizedAt).trim() || undefined,
   };
 }
 
@@ -149,14 +185,18 @@ export function normalizeMessage(raw: unknown): Message {
 }
 
 export const getTickets = async (): Promise<Ticket[]> => {
-  const response = await api.get<{ data: unknown[] }>('/tickets');
-  const list = Array.isArray(response.data.data) ? response.data.data : [];
+  const response = await api.get('/tickets');
+  const payload = unwrapData<unknown[]>(response);
+  const list = Array.isArray(payload) ? payload : [];
+  logTicketPayload('getTickets', list);
   return list.map(normalizeTicket);
 };
 
 export const getMyTickets = async (): Promise<Ticket[]> => {
-  const response = await api.get<{ data: unknown[] }>('/tickets/my');
-  const list = Array.isArray(response.data.data) ? response.data.data : [];
+  const response = await api.get('/tickets/my');
+  const payload = unwrapData<unknown[]>(response);
+  const list = Array.isArray(payload) ? payload : [];
+  logTicketPayload('getMyTickets', list);
   return list.map(normalizeTicket);
 };
 

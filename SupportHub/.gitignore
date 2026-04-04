@@ -3,6 +3,9 @@
 # dependencies
 node_modules/
 
+# Icon generation temp SVGs
+scripts/.icon-gen-tmp/
+
 # Expo
 .expo/
 dist/

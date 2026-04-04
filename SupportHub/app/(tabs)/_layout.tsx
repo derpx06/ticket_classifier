@@ -1,14 +1,13 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { Colors, Spacing } from '@/constants/theme';
 import { Font } from '@/constants/typography';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useAuth } from '@/context/AuthContext';
 
 const TAB_ICON_SIZE = 24;
 
@@ -34,7 +33,6 @@ function TabBarIcon({
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  const { signOut } = useAuth();
   const colors = Colors[colorScheme ?? 'light'];
   const insets = useSafeAreaInsets();
   const tabPadBottom = Math.max(insets.bottom, Spacing.sm);
@@ -79,19 +77,6 @@ export default function TabLayout() {
         tabBarIconStyle: {
           marginTop: 0,
         },
-        headerRight: () => (
-          <Pressable
-            onPress={signOut}
-            style={({ pressed }) => [
-              styles.headerIconBtn,
-              { opacity: pressed ? 0.55 : 1 },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Sign out"
-          >
-            <Feather name="log-out" size={20} color={colors.icon} />
-          </Pressable>
-        ),
       }}
     >
       <Tabs.Screen
@@ -150,9 +135,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     height: TAB_ICON_SIZE + 2,
-  },
-  headerIconBtn: {
-    marginRight: Spacing.lg,
-    padding: Spacing.sm,
   },
 });

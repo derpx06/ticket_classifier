@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { BadgeCheck, Building2, ShieldCheck, Sparkles } from 'lucide-react';
+import { BadgeCheck, ShieldCheck, Sparkles, Ticket } from 'lucide-react';
 
 const AuthLayout = () => {
   const location = useLocation();
@@ -16,7 +16,7 @@ const AuthLayout = () => {
           <div>
             <Link to="/" className="inline-flex items-center gap-2 text-lg font-bold tracking-tight text-white">
               <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white text-slate-900">
-                <Building2 size={16} />
+                <Ticket size={16} />
               </span>
               Pvg Support Hub
             </Link>

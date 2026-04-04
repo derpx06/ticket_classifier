@@ -11,7 +11,12 @@ export function titleCaseWord(s: string): string {
   return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
 }
 
-export type TagKind = 'status' | 'category' | 'priority' | 'urgency';
+export type TagKind = 'status' | 'category' | 'priority' | 'sentiment';
+
+function normalizePriorityLike(value: string | undefined): TicketPriority | undefined {
+  if (value === 'low' || value === 'medium' || value === 'high' || value === 'critical') return value;
+  return undefined;
+}
 
 export function buildTicketTags(ticket: Ticket): { key: string; text: string; kind: TagKind; priority?: TicketPriority }[] {
   const out: { key: string; text: string; kind: TagKind; priority?: TicketPriority }[] = [];
@@ -20,16 +25,15 @@ export function buildTicketTags(ticket: Ticket): { key: string; text: string; ki
   }
   out.push({
     key: 'priority',
-    text: ticket.priority === 'low' ? 'Neutral' : titleCaseWord(ticket.priority),
+    text: `Priority ${titleCaseWord(ticket.priority)}`,
     kind: 'priority',
     priority: ticket.priority,
   });
-  if (ticket.urgency && ticket.urgency !== ticket.priority) {
+  if (ticket.sentiment?.trim()) {
     out.push({
-      key: 'urgency',
-      text: ticket.urgency === 'low' ? 'Neutral' : titleCaseWord(ticket.urgency),
-      kind: 'urgency',
-      priority: ticket.urgency,
+      key: 'sentiment',
+      text: titleCaseWord(ticket.sentiment),
+      kind: 'sentiment',
     });
   }
   return out;
@@ -61,6 +65,9 @@ export function tagChipColors(
   }
   if (tag.kind === 'category') {
     return isDark ? { bg: '#3b2f5c', fg: '#e9d5ff' } : { bg: '#ede9fe', fg: '#6d28d9' };
+  }
+  if (tag.kind === 'sentiment') {
+    return isDark ? { bg: '#16351f', fg: '#bbf7d0' } : { bg: '#dcfce7', fg: '#166534' };
   }
   const p = tag.priority ?? 'medium';
   if (p === 'low') {

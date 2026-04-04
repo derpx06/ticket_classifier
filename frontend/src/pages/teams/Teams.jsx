@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import {
   AlertTriangle,
-  Building2,
   Copy,
   Mail,
   Pencil,

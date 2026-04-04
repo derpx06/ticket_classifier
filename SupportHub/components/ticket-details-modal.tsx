@@ -25,6 +25,12 @@ function titleCase(s: string): string {
   return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
 }
 
+function displayValue(value: string | number | null | undefined): string {
+  if (value === null || value === undefined) return '—';
+  const text = String(value).trim();
+  return text ? text : '—';
+}
+
 function statusLabel(status: TicketStatus): string {
   switch (status) {
     case 'escalated':
@@ -38,12 +44,6 @@ function statusLabel(status: TicketStatus): string {
     default:
       return 'Pending';
   }
-}
-
-function triagePillLabel(priority: Ticket['priority']): string {
-  if (priority === 'low') return 'Low';
-  if (priority === 'medium') return 'Neutral';
-  return 'Urgent';
 }
 
 function formatCreatedAt(iso: string): string {
@@ -181,7 +181,7 @@ export function TicketDetailsModal({
 
   const categoryPill = { bg: isDark ? '#3b2f5c' : '#ede9fe', fg: isDark ? '#ddd6fe' : '#5b21b6' };
   const priorityPill = { bg: isDark ? '#4a3008' : '#ffedd5', fg: isDark ? '#fdba74' : '#c2410c' };
-  const triagePill = { bg: isDark ? '#374151' : '#f1f5f9', fg: isDark ? '#cbd5e1' : '#475569' };
+  const sentimentPill = { bg: isDark ? '#16351f' : '#dcfce7', fg: isDark ? '#bbf7d0' : '#166534' };
 
   const statusPill = (() => {
     switch (ticket.status) {
@@ -244,12 +244,12 @@ export function TicketDetailsModal({
               </View>
               <View style={[styles.pill, { backgroundColor: priorityPill.bg }]}>
                 <Text style={[styles.pillText, { color: priorityPill.fg, fontFamily: Font.semibold }]}>
-                  {titleCase(ticket.priority)}
+                  Priority {titleCase(ticket.priority)}
                 </Text>
               </View>
-              <View style={[styles.pill, { backgroundColor: triagePill.bg }]}>
-                <Text style={[styles.pillText, { color: triagePill.fg, fontFamily: Font.semibold }]}>
-                  {triagePillLabel(ticket.priority)}
+              <View style={[styles.pill, { backgroundColor: sentimentPill.bg }]}>
+                <Text style={[styles.pillText, { color: sentimentPill.fg, fontFamily: Font.semibold }]}>
+                  {titleCase(displayValue(ticket.sentiment))}
                 </Text>
               </View>
             </View>
@@ -276,6 +276,21 @@ export function TicketDetailsModal({
                 </Text>
                 <Text style={[styles.metaValue, { color: c.text, fontFamily: Font.semibold }]} numberOfLines={2}>
                   {assignedRoleLine(ticket, roleCtx)}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.metaRow}>
+              <View style={[styles.metaCell, { borderColor: c.border, backgroundColor: c.surfaceMuted }]}>
+                <Text style={[styles.metaLabel, { color: c.textSecondary, fontFamily: Font.medium }]}>PRIORITY</Text>
+                <Text style={[styles.metaValue, { color: c.text, fontFamily: Font.semibold }]}>
+                  {titleCase(displayValue(ticket.priority))}
+                </Text>
+              </View>
+              <View style={[styles.metaCell, { borderColor: c.border, backgroundColor: c.surfaceMuted }]}>
+                <Text style={[styles.metaLabel, { color: c.textSecondary, fontFamily: Font.medium }]}>SENTIMENT</Text>
+                <Text style={[styles.metaValue, { color: c.text, fontFamily: Font.semibold }]} numberOfLines={2}>
+                  {titleCase(displayValue(ticket.sentiment))}
                 </Text>
               </View>
             </View>

@@ -5,7 +5,6 @@ import {
   BrainCircuit,
   BadgeCheck,
   BellRing,
-  Building2,
   CircleGauge,
   CheckCircle2,
   ClipboardList,
@@ -21,6 +20,7 @@ import {
   ScanSearch,
   ShieldCheck,
   Sparkles,
+  Ticket,
   UsersRound,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
@@ -136,7 +136,9 @@ const Landing = () => {
 
       <header className="relative mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6 md:px-10">
         <Link to="/" className="flex items-center gap-2 text-lg font-bold tracking-tight text-slate-900">
-          <span className="landing-soft-glow inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white">P</span>
+          <span className="landing-soft-glow inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white">
+            <Ticket size={18} strokeWidth={2.25} />
+          </span>
           PVG Support Hub
         </Link>
 
@@ -381,7 +383,7 @@ const Landing = () => {
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
               <div className="max-w-xl">
                 <p className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-white/90 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-700">
-                  <Building2 size={14} />
+                  <Ticket size={14} />
                   For High-Volume Support Teams
                 </p>
                 <h3 className="mt-3 text-2xl font-bold text-slate-900 md:text-3xl">

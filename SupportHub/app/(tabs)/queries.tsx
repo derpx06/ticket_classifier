@@ -50,7 +50,7 @@ const STATUS_OPTIONS: (TicketStatus | 'all')[] = ['all', 'pending', 'assigned', 
 const PRIORITY_OPTIONS: (TicketPriority | 'all')[] = ['all', 'low', 'medium', 'high', 'critical'];
 
 export default function QueriesScreen() {
-  const { signOut, user } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams<{ status?: string | string[] }>();
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -187,7 +187,7 @@ export default function QueriesScreen() {
         <Feather name="search" size={18} color={c.icon} style={styles.searchIcon} />
         <TextInput
           style={[styles.searchInput, { color: c.text, fontFamily: Font.regular }]}
-          placeholder="Search ticket archives..."
+          placeholder="Search ticket..."
           placeholderTextColor={c.textSecondary}
           value={search}
           onChangeText={setSearch}
@@ -305,17 +305,6 @@ export default function QueriesScreen() {
             <Text style={[styles.pageSubtitle, { color: subtleText, fontFamily: Font.regular }]}>
               Browse and filter your queue
             </Text>
-          </View>
-          <View style={styles.headerActions}>
-            <Pressable
-              onPress={() => void signOut()}
-              style={({ pressed }) => [styles.headerIconBtn, { opacity: pressed ? 0.55 : 1 }]}
-              accessibilityRole="button"
-              accessibilityLabel="Sign out"
-              hitSlop={8}
-            >
-              <Feather name="log-out" size={20} color={c.icon} />
-            </Pressable>
           </View>
         </View>
       </View>
@@ -500,15 +489,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     marginTop: Spacing.xs,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-    paddingTop: 2,
-  },
-  headerIconBtn: {
-    padding: Spacing.sm,
   },
   listFlex: {
     flex: 1,

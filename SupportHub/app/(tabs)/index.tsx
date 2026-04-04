@@ -73,7 +73,7 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [detailTicket, setDetailTicket] = useState<Ticket | null>(null);
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
@@ -209,6 +209,18 @@ export default function DashboardScreen() {
             >
               <Feather name="user" size={22} color={c.icon} />
             </Pressable>
+            <Pressable
+              onPress={() => void signOut()}
+              style={({ pressed }) => [
+                styles.headerIconBtn,
+                { opacity: pressed ? 0.55 : 1 },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Sign out"
+              hitSlop={8}
+            >
+              <Feather name="log-out" size={22} color={c.icon} />
+            </Pressable>
           </View>
         </View>
       </View>
@@ -229,18 +241,12 @@ export default function DashboardScreen() {
           <Feather name="search" size={20} color={c.icon} style={styles.searchGlyph} />
           <TextInput
             style={[styles.searchField, { color: c.text, fontFamily: Font.regular }]}
-            placeholder="Smart search…"
+            placeholder="Search…"
             placeholderTextColor={c.textSecondary}
             value={search}
             onChangeText={setSearch}
           />
-          <TouchableOpacity
-            style={styles.askAiBtn}
-            onPress={() => router.push('/(tabs)/chat')}
-            activeOpacity={0.88}
-          >
-            <Text style={[styles.askAiBtnText, { fontFamily: Font.bold }]}>ASK AI</Text>
-          </TouchableOpacity>
+         
         </View>
 
         <View style={styles.statGrid}>
