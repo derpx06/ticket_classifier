@@ -192,11 +192,7 @@ export async function getMessagesByTicket(req: Request, res: Response): Promise<
       .toLowerCase() === "true";
     const messageFilter = includeBot
       ? { ticketId: ticketObjectId, companyId: req.auth.companyId }
-      : {
-          ticketId: ticketObjectId,
-          companyId: req.auth.companyId,
-          sender: { $in: ["user", "agent"] },
-        };
+      : { ticketId: ticketObjectId, companyId: req.auth.companyId, sender: { $in: ["user", "agent"] } };
 
     const messages = await db
       .collection("messages")
