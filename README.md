@@ -4,6 +4,12 @@ An integrated support platform with:
 - Ticketing + agent dashboard
 - Knowledge base indexing per website
 - Vector search for smart query matching
+<img width="1600" height="911" alt="image" src="https://github.com/user-attachments/assets/6dc0c52d-a7f4-4102-95b9-553e390ba8d9" />
+<img width="1600" height="911" alt="image" src="https://github.com/user-attachments/assets/185014f8-3d83-4872-960f-407276e683fa" />
+<img width="1600" height="911" alt="image" src="https://github.com/user-attachments/assets/8eb25a42-4f68-4c1e-a998-dbf6f28a2b8f" />
+<img width="1600" height="911" alt="image" src="https://github.com/user-attachments/assets/8a66f3aa-04ca-4192-99c1-8ef9873d9644" />
+<img width="1600" height="904" alt="image" src="https://github.com/user-attachments/assets/dd333895-bd8a-4e4d-bf3c-e1a3f1e0befe" />
+<img width="1855" height="1158" alt="image" src="https://github.com/user-attachments/assets/058df3b6-29bb-4a21-9a3c-88e5e203a934" />
 
 ## Projects
 - `backend/` API + crawling + vector indexing
